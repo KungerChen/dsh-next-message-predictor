@@ -30,6 +30,14 @@
 
 ## 安装到 profile 与更新
 
+普通用户从 GitHub 安装，一条命令即可（无依赖、无构建步骤）：
+
+```powershell
+dsh plugin --profile desktop add github:KungerChen/dsh-next-message-predictor
+```
+
+开发时从本地目录安装：
+
 `<DSH 安装目录>` 是 DeepSeek Harness 的安装位置，`<插件目录>` 是本仓库在你机器上的位置。
 
 ```powershell

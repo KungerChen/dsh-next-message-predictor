@@ -143,7 +143,18 @@
 
 ## 安装
 
-需要 DeepSeek Harness `0.2.2-rc.1`（`>=0.2.2-rc.1 <0.3.0`）。插件没有第三方依赖，克隆下来即可安装。
+需要 DeepSeek Harness `0.2.2-rc.1`（`>=0.2.2-rc.1 <0.3.0`）。插件没有第三方依赖，也不需要构建，一条命令装好：
+
+```powershell
+dsh plugin --profile desktop add github:KungerChen/dsh-next-message-predictor
+```
+
+`--profile` 后面是你日常使用的 profile：桌面版是 `desktop`，Web 版是 `web`。装好后**完全退出并重新打开 DSH**。
+
+<details>
+<summary>找不到 <code>dsh</code> 命令，或者想从本地目录安装</summary>
+
+`dsh` 命令行在 DeepSeek Harness 的安装目录里，可以写全路径来调用。想自己改代码，就先克隆再从本地目录安装：
 
 ```powershell
 git clone https://github.com/KungerChen/dsh-next-message-predictor.git
@@ -151,7 +162,9 @@ $dsh = '<DSH 安装目录>\resources\runtime\cli\bin\dsh.cmd'
 & $dsh plugin --profile desktop add '<插件目录>'
 ```
 
-`<DSH 安装目录>` 是 DeepSeek Harness 的安装位置，`<插件目录>` 是刚才克隆下来的文件夹。装好后**完全退出并重新打开 DSH**。
+`<DSH 安装目录>` 是 DeepSeek Harness 的安装位置，`<插件目录>` 是刚才克隆下来的文件夹。
+
+</details>
 
 然后三步开始使用：
 
@@ -162,12 +175,12 @@ $dsh = '<DSH 安装目录>\resources\runtime\cli\bin\dsh.cmd'
 <details>
 <summary>更新与卸载</summary>
 
-**更新**：在插件目录里 `git pull`，然后重启 DSH。只刷新页面不够，那样页面是新版而后台还是旧版，设置页会提示版本不一致。
+**更新**：从 GitHub 安装的，先卸载再重新执行上面的安装命令；从本地目录安装的，在插件目录里 `git pull`。然后重启 DSH。只刷新页面不够，那样页面是新版而后台还是旧版，设置页会提示版本不一致。
 
 **卸载**：
 
 ```powershell
-& $dsh plugin --profile desktop remove dsh-next-message-predictor
+dsh plugin --profile desktop remove dsh-next-message-predictor
 ```
 
 同一个 profile 里只启用一个输入框预测插件。检测到另一个同类插件时，本插件会自动暂停，并在设置页说明原因。

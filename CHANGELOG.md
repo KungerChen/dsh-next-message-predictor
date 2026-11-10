@@ -5,6 +5,8 @@
 ## 未发布
 
 - README 改为图文版：动图演示、功能截图、常见问题。截图在 `docs/images/`，由新增的 `tools/capture-screenshots.mjs` 从隔离 profile 的真实界面生成。插件代码没有变化。
+- README 的安装步骤改为一条命令从 GitHub 安装（`dsh plugin --profile desktop add github:KungerChen/dsh-next-message-predictor`，已在全新的 profile 上验证）；本地目录安装保留为备选。
+- 新增 `screenshots.json` 和 `docs/images/icon-180.png`，供插件列表与市场展示截图和图标。
 
 ## 0.3.0 — 2026-11-10
 
