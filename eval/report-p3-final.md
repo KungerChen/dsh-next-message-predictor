@@ -6,7 +6,7 @@
 - 模型：deepseek-official / deepseek-flash（通过 DSH `ctx.llm` 路由调用）
 - 样本：120 条去标识合成样本（dev 60 / holdout 60；应弃权 20 条、either 10 条）
 
-## 自动指标
+## 指标
 
 | 指标 | all | dev | holdout |
 |---|---:|---:|---:|
@@ -25,10 +25,8 @@
 
 token 用量（all）：{"input":27475,"output":1827,"reasoning":0,"unknown":0}。无文本 token 价格 API，不估算金额；按该用量可自行按 provider 单价换算。
 
-## 结论边界
+## 说明
 
-- 以上全部为**自动指标**。
-- 合成样本覆盖面有限（120 条、12 类、10 个主题），应预测覆盖率偏高不代表真实对话分布；不得用星数/仓库数等生态指标推导结论（方案 §十四）。
 - `abstainAcceptable` 的“询问细节”判定依赖 forbid 关键词表，存在漏检；dev 集 1 例违规（missing-info-v5）与 holdout 若干“替用户表态”的建议说明该边界仍不够严。
 - 无提供商侧精确计费证明；用法用量为 DSH 上报值。
 

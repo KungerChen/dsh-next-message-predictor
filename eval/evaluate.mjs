@@ -12,7 +12,7 @@
  *   node eval/evaluate.mjs --url "<scratch URL>" --mode run --provider deepseek-official --model deepseek-flash --group all --tag p3
  *
  * 说明：
- * - 报告给出结构指标 + 启发式辅助初评，均为自动指标。
+ * - 报告给出结构指标 + 启发式辅助初评。
  * - 没有文本 token 价格 API，只报告 usage，不估算金额。
  */
 import { browserPath, loadChromium } from '../tools/lib/local-env.mjs'

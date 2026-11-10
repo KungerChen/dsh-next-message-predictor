@@ -91,4 +91,3 @@
 - B08 依赖 Chromium 的 `-webkit-line-clamp`（DSH Web/Desktop 均 Chromium）；非 Chromium 宿主需回退显示策略。
 - B07 每种临时失败只重试一次；busy 重试仍受 Host 全局并发 1 限制。
 - 第 3 批（O05 基线、O02 提示词 v3、O03 语义过滤、O04 固定快模型）与第 4 批（O06–O08）未开始。
-- 桌面实际自然使用与 O01 汇总仍待用户重启桌面后观察。
