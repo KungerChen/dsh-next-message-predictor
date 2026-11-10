@@ -1,0 +1,18 @@
+{
+  "name": "dsh-nmp-eval-host",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Scratch-profile-only evaluation host for dsh-next-message-predictor. Calls the configured DSH model route with an explicit prompt and returns raw output + usage. Not part of the published predictor bundle.",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "engines": {
+    "dsh": "0.2.2-rc.1"
+  }
+}

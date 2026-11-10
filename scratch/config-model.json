@@ -1,0 +1,10 @@
+{
+  "enabled": true,
+  "modelMode": "session",
+  "provider": "",
+  "model": "",
+  "reasoningEffort": "",
+  "timeoutMs": 8000,
+  "dailyRequestLimit": 200,
+  "dailyTokenBudget": 500000
+}

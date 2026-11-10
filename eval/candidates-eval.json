@@ -1,0 +1,36 @@
+{
+  "runner": "eval/candidates-eval.mjs",
+  "generatedAt": "2026-11-10T16:36:35.238Z",
+  "habit": {
+    "samples": 37,
+    "offered": 0,
+    "firstExact": 0,
+    "anyExact": 0,
+    "bestEditAtLeastHalf": 0
+  },
+  "candidates": {
+    "samples": 30,
+    "single": {
+      "offered": 18,
+      "invalid": 1,
+      "exact": 0,
+      "editAtLeastHalf": 1,
+      "medianMs": 1531,
+      "medianOutputTokens": 10
+    },
+    "multi": {
+      "offered": 27,
+      "invalid": 0,
+      "cutOff": 0,
+      "one": 1,
+      "two": 1,
+      "three": 25,
+      "firstExact": 0,
+      "anyExact": 0,
+      "anyEditAtLeastHalf": 1,
+      "sameFirstAsSingle": 1,
+      "medianMs": 1847,
+      "medianOutputTokens": 34
+    }
+  }
+}

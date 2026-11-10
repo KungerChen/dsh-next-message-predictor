@@ -1,0 +1,59 @@
+{
+  "name": "dsh-next-message-predictor",
+  "version": "0.3.0",
+  "private": true,
+  "description": "Next-message suggestions in the DeepSeek Harness composer: Tab fills the draft, Esc hides the suggestion, nothing is sent automatically.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KungerChen/dsh-next-message-predictor.git"
+  },
+  "homepage": "https://github.com/KungerChen/dsh-next-message-predictor#readme",
+  "bugs": {
+    "url": "https://github.com/KungerChen/dsh-next-message-predictor/issues"
+  },
+  "license": "MIT",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/client.js",
+    "src/",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-connection",
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-settings"
+      ]
+    }
+  },
+  "engines": {
+    "dsh": ">=0.2.2-rc.1 <0.3.0"
+  },
+  "scripts": {
+    "build": "node scripts/build-client.mjs",
+    "test": "node --test \"test/*.test.mjs\"",
+    "check": "npm run build && npm test && node --check lib/index.js && node --check lib/client.js"
+  }
+}

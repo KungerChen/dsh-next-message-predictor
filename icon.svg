@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="Next message predictor">
+  <path fill="#4d6bfe" opacity="0.18" d="M12 14h32a8 8 0 0 1 8 8v18a8 8 0 0 1-8 8H26l-10 8v-8h-4a8 8 0 0 1-8-8V22a8 8 0 0 1 8-8z"/>
+  <path fill="none" stroke="#4d6bfe" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M20 26h24M20 34h16"/>
+  <path fill="#ffb454" d="M47 42l2.2 5.4L55 49l-5.8 1.6L47 56l-2.2-5.4L39 49l5.8-1.6z"/>
+</svg>

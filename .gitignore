@@ -1,0 +1,25 @@
+# Dependencies (the plugin itself has none; tools may be run from elsewhere)
+node_modules/
+
+# Isolated-profile test output: logs carry per-boot access tokens, evidence is
+# screenshots of the local app, data-home is the test ledger and statistics,
+# asar-copy is extracted DSH code used for reference.
+scratch/logs/
+scratch/evidence/
+scratch/data-home/
+scratch/asar-copy/
+
+# Editor and OS noise
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.tmp
+*.log
+
+# One-off local probes (hard-coded local paths)
+scratch/extract-session-evidence.mjs
+scratch/probe-dom.mjs
+
+# This machine's install locations for the verification scripts
+tools/local.config.json

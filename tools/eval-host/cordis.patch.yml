@@ -1,0 +1,4 @@
+# Scratch-profile-only evaluation host (not installed in normal usage).
+- insert:
+    - id: nmp-eval-host
+      name: dsh-nmp-eval-host

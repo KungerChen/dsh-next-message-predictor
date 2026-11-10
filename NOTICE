@@ -1,0 +1,17 @@
+dsh-next-message-predictor
+Copyright (c) 2026 KungerChen
+Licensed under the MIT License; see the LICENSE file.
+
+This package is an original implementation.
+
+Prior art and extension-point reference (patterns only, no source copied):
+- dsh-composer-prediction 0.7.8, MIT License,
+  https://github.com/Amir-Bazylkhanov/dsh-composer-prediction
+  Referenced for the `conversation.input.overlay` slot usage, composer DOM
+  markers, and the "ghost text + Tab adopt + Esc dismiss" interaction pattern.
+  Its implementation uses `inputActions.setDraft` for adoption; this package
+  does not copy that and uses the native `captureInsertion()` / `insertText()`
+  pair instead.
+
+DeepSeek Harness, which this plugin extends, is a separate product distributed
+under its own license; it is not part of this package.

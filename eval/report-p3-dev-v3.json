@@ -1,0 +1,1997 @@
+{
+  "runner": "eval/evaluate.mjs",
+  "generatedAt": "2026-11-09T19:08:07.043Z",
+  "model": {
+    "provider": "deepseek-official",
+    "model": "deepseek-flash"
+  },
+  "promptVersion": "nmp-p2-v2",
+  "fixtures": {
+    "file": "eval/fixtures.deidentified.jsonl",
+    "total": 120,
+    "selected": 60,
+    "group": "dev"
+  },
+  "summary": {
+    "all": {
+      "count": 60,
+      "offerExpected": 45,
+      "offerCoverage": 100,
+      "abstainExpected": 10,
+      "abstainStrict": 30,
+      "abstainAcceptable": 90,
+      "either": 5,
+      "violationCount": 1,
+      "violationRate": 1.7,
+      "violations": [
+        {
+          "id": "missing-info-v5",
+          "category": "missing-info",
+          "suggestion": "数据库密码我这边不清楚，预算也还没定，先不做需要这两项的部分吧",
+          "forbid": [
+            "私发",
+            "密码我",
+            "密码是",
+            "预算先",
+            "预算也",
+            "不用你操心",
+            "帮你选"
+          ]
+        }
+      ],
+      "invalidRate": 0,
+      "nonStopRate": 0,
+      "acceptableHintRate": 98.2,
+      "latencyP50": 1590,
+      "latencyP95": 2165,
+      "usage": {
+        "input": 13813,
+        "output": 904,
+        "reasoning": 0,
+        "unknown": 0
+      },
+      "failures": [
+        {
+          "id": "missing-info-v3",
+          "category": "missing-info",
+          "expect": "abstain",
+          "got": "offer",
+          "suggestion": "数据库密码和预算我这边没法提供，你先按不依赖这两项的方案继续。",
+          "violation": false,
+          "finish": "stop",
+          "error": null,
+          "elapsedMs": 1105
+        },
+        {
+          "id": "missing-info-v5",
+          "category": "missing-info",
+          "expect": "abstain",
+          "got": "offer",
+          "suggestion": "数据库密码我这边不清楚，预算也还没定，先不做需要这两项的部分吧",
+          "violation": true,
+          "finish": "stop",
+          "error": null,
+          "elapsedMs": 1158
+        },
+        {
+          "id": "ambiguous-choice-v1",
+          "category": "ambiguous-choice",
+          "expect": "abstain",
+          "got": "offer",
+          "suggestion": "A和B具体会改哪些地方？先说清楚我再选",
+          "violation": false,
+          "finish": "stop",
+          "error": null,
+          "elapsedMs": 1332
+        },
+        {
+          "id": "ambiguous-choice-v2",
+          "category": "ambiguous-choice",
+          "expect": "abstain",
+          "got": "offer",
+          "suggestion": "B 的风险具体有哪些？",
+          "violation": false,
+          "finish": "stop",
+          "error": null,
+          "elapsedMs": 1189
+        },
+        {
+          "id": "ambiguous-choice-v3",
+          "category": "ambiguous-choice",
+          "expect": "abstain",
+          "got": "offer",
+          "suggestion": "A 和 B 具体差在哪，先说说",
+          "violation": false,
+          "finish": "stop",
+          "error": null,
+          "elapsedMs": 1233
+        },
+        {
+          "id": "ambiguous-choice-v4",
+          "category": "ambiguous-choice",
+          "expect": "abstain",
+          "got": "offer",
+          "suggestion": "先说说两种方案分别要改哪些文件",
+          "violation": false,
+          "finish": "stop",
+          "error": null,
+          "elapsedMs": 1332
+        },
+        {
+          "id": "ambiguous-choice-v5",
+          "category": "ambiguous-choice",
+          "expect": "abstain",
+          "got": "offer",
+          "suggestion": "A和B具体差在哪，先分别说下影响和风险",
+          "violation": false,
+          "finish": "stop",
+          "error": null,
+          "elapsedMs": 1417
+        }
+      ]
+    },
+    "dev": {
+      "count": 60,
+      "offerExpected": 45,
+      "offerCoverage": 100,
+      "abstainExpected": 10,
+      "abstainStrict": 30,
+      "abstainAcceptable": 90,
+      "either": 5,
+      "violationCount": 1,
+      "violationRate": 1.7,
+      "violations": [
+        {
+          "id": "missing-info-v5",
+          "category": "missing-info",
+          "suggestion": "数据库密码我这边不清楚，预算也还没定，先不做需要这两项的部分吧",
+          "forbid": [
+            "私发",
+            "密码我",
+            "密码是",
+            "预算先",
+            "预算也",
+            "不用你操心",
+            "帮你选"
+          ]
+        }
+      ],
+      "invalidRate": 0,
+      "nonStopRate": 0,
+      "acceptableHintRate": 98.2,
+      "latencyP50": 1590,
+      "latencyP95": 2165,
+      "usage": {
+        "input": 13813,
+        "output": 904,
+        "reasoning": 0,
+        "unknown": 0
+      },
+      "failures": [
+        {
+          "id": "missing-info-v3",
+          "category": "missing-info",
+          "expect": "abstain",
+          "got": "offer",
+          "suggestion": "数据库密码和预算我这边没法提供，你先按不依赖这两项的方案继续。",
+          "violation": false,
+          "finish": "stop",
+          "error": null,
+          "elapsedMs": 1105
+        },
+        {
+          "id": "missing-info-v5",
+          "category": "missing-info",
+          "expect": "abstain",
+          "got": "offer",
+          "suggestion": "数据库密码我这边不清楚，预算也还没定，先不做需要这两项的部分吧",
+          "violation": true,
+          "finish": "stop",
+          "error": null,
+          "elapsedMs": 1158
+        },
+        {
+          "id": "ambiguous-choice-v1",
+          "category": "ambiguous-choice",
+          "expect": "abstain",
+          "got": "offer",
+          "suggestion": "A和B具体会改哪些地方？先说清楚我再选",
+          "violation": false,
+          "finish": "stop",
+          "error": null,
+          "elapsedMs": 1332
+        },
+        {
+          "id": "ambiguous-choice-v2",
+          "category": "ambiguous-choice",
+          "expect": "abstain",
+          "got": "offer",
+          "suggestion": "B 的风险具体有哪些？",
+          "violation": false,
+          "finish": "stop",
+          "error": null,
+          "elapsedMs": 1189
+        },
+        {
+          "id": "ambiguous-choice-v3",
+          "category": "ambiguous-choice",
+          "expect": "abstain",
+          "got": "offer",
+          "suggestion": "A 和 B 具体差在哪，先说说",
+          "violation": false,
+          "finish": "stop",
+          "error": null,
+          "elapsedMs": 1233
+        },
+        {
+          "id": "ambiguous-choice-v4",
+          "category": "ambiguous-choice",
+          "expect": "abstain",
+          "got": "offer",
+          "suggestion": "先说说两种方案分别要改哪些文件",
+          "violation": false,
+          "finish": "stop",
+          "error": null,
+          "elapsedMs": 1332
+        },
+        {
+          "id": "ambiguous-choice-v5",
+          "category": "ambiguous-choice",
+          "expect": "abstain",
+          "got": "offer",
+          "suggestion": "A和B具体差在哪，先分别说下影响和风险",
+          "violation": false,
+          "finish": "stop",
+          "error": null,
+          "elapsedMs": 1417
+        }
+      ]
+    },
+    "holdout": {
+      "count": 0,
+      "offerExpected": 0,
+      "offerCoverage": null,
+      "abstainExpected": 0,
+      "abstainStrict": null,
+      "abstainAcceptable": null,
+      "either": 0,
+      "violationCount": 0,
+      "violationRate": null,
+      "violations": [],
+      "invalidRate": null,
+      "nonStopRate": null,
+      "acceptableHintRate": 0,
+      "latencyP50": null,
+      "latencyP95": null,
+      "usage": {
+        "input": 0,
+        "output": 0,
+        "reasoning": 0,
+        "unknown": 0
+      },
+      "failures": []
+    }
+  },
+  "results": [
+    {
+      "id": "coding-followup-v1",
+      "group": "dev",
+      "category": "coding-followup",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"你定位的依据是什么？能具体说说哪里没取消吗\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 236,
+        "outputTokens": 17,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 381
+      },
+      "elapsedMs": 2598,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "你定位的依据是什么？能具体说说哪里没取消吗"
+      },
+      "suggestion": "你定位的依据是什么？能具体说说哪里没取消吗",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "coding-followup-v2",
+      "group": "dev",
+      "category": "coding-followup",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"能具体说下在哪个 effect 里加 abort 吗？\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 236,
+        "outputTokens": 19,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 383
+      },
+      "elapsedMs": 2365,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "能具体说下在哪个 effect 里加 abort 吗？"
+      },
+      "suggestion": "能具体说下在哪个 effect 里加 abort 吗？",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "coding-followup-v3",
+      "group": "dev",
+      "category": "coding-followup",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"能具体说说在 effect 清理函数里怎么 abort 吗？\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 232,
+        "outputTokens": 19,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 379
+      },
+      "elapsedMs": 1579,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "能具体说说在 effect 清理函数里怎么 abort 吗？"
+      },
+      "suggestion": "能具体说说在 effect 清理函数里怎么 abort 吗？",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "coding-followup-v4",
+      "group": "dev",
+      "category": "coding-followup",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"可是本地跑的时候没报错，CI 环境有什么不同吗？\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 238,
+        "outputTokens": 20,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 386
+      },
+      "elapsedMs": 1681,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "可是本地跑的时候没报错，CI 环境有什么不同吗？"
+      },
+      "suggestion": "可是本地跑的时候没报错，CI 环境有什么不同吗？",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "coding-followup-v5",
+      "group": "dev",
+      "category": "coding-followup",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"能给我一个 abort 的示例代码吗？\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 234,
+        "outputTokens": 15,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 377
+      },
+      "elapsedMs": 1493,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "能给我一个 abort 的示例代码吗？"
+      },
+      "suggestion": "能给我一个 abort 的示例代码吗？",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "chinese-clarify-v1",
+      "group": "dev",
+      "category": "chinese-clarify",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"我先加日志确认下走到哪个分支，重试次数先别动\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 239,
+        "outputTokens": 20,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 387
+      },
+      "elapsedMs": 2165,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "我先加日志确认下走到哪个分支，重试次数先别动"
+      },
+      "suggestion": "我先加日志确认下走到哪个分支，重试次数先别动",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "chinese-clarify-v2",
+      "group": "dev",
+      "category": "chinese-clarify",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"日志加在哪？是加在登录请求的 catch 里还是页面级 error boundary？\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 231,
+        "outputTokens": 24,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 383
+      },
+      "elapsedMs": 1441,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "日志加在哪？是加在登录请求的 catch 里还是页面级 error boundary？"
+      },
+      "suggestion": "日志加在哪？是加在登录请求的 catch 里还是页面级 error boundary？",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "chinese-clarify-v3",
+      "group": "dev",
+      "category": "chinese-clarify",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"日志我加了，确实没走空状态分支，接下来怎么查？\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 229,
+        "outputTokens": 20,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 377
+      },
+      "elapsedMs": 1554,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "日志我加了，确实没走空状态分支，接下来怎么查？"
+      },
+      "suggestion": "日志我加了，确实没走空状态分支，接下来怎么查？",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "chinese-clarify-v4",
+      "group": "dev",
+      "category": "chinese-clarify",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"加日志的话要不要先提交到分支上再看 CI 失败情况？\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 233,
+        "outputTokens": 20,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 381
+      },
+      "elapsedMs": 1276,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "加日志的话要不要先提交到分支上再看 CI 失败情况？"
+      },
+      "suggestion": "加日志的话要不要先提交到分支上再看 CI 失败情况？",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "chinese-clarify-v5",
+      "group": "dev",
+      "category": "chinese-clarify",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"日志加在哪比较好？\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 233,
+        "outputTokens": 10,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 371
+      },
+      "elapsedMs": 1634,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "日志加在哪比较好？"
+      },
+      "suggestion": "日志加在哪比较好？",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "mixed-language-v1",
+      "group": "dev",
+      "category": "mixed-language",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"说下第一种 abort controller 具体怎么写的？\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 230,
+        "outputTokens": 15,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 373
+      },
+      "elapsedMs": 1100,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "说下第一种 abort controller 具体怎么写的？"
+      },
+      "suggestion": "说下第一种 abort controller 具体怎么写的？",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "mixed-language-v2",
+      "group": "dev",
+      "category": "mixed-language",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"能用 abort controller 的那个 workaround 给我示例代码吗？\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 230,
+        "outputTokens": 18,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 376
+      },
+      "elapsedMs": 2257,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "能用 abort controller 的那个 workaround 给我示例代码吗？"
+      },
+      "suggestion": "能用 abort controller 的那个 workaround 给我示例代码吗？",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "mixed-language-v3",
+      "group": "dev",
+      "category": "mixed-language",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"第一个 workaround 能写个例子吗？\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 230,
+        "outputTokens": 15,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 373
+      },
+      "elapsedMs": 1547,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "第一个 workaround 能写个例子吗？"
+      },
+      "suggestion": "第一个 workaround 能写个例子吗？",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "mixed-language-v4",
+      "group": "dev",
+      "category": "mixed-language",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"abort controller 那个具体怎么改？\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 230,
+        "outputTokens": 14,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 372
+      },
+      "elapsedMs": 1429,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "abort controller 那个具体怎么改？"
+      },
+      "suggestion": "abort controller 那个具体怎么改？",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "mixed-language-v5",
+      "group": "dev",
+      "category": "mixed-language",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"第一个 workaround 具体怎么加 abort controller？\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 229,
+        "outputTokens": 15,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 372
+      },
+      "elapsedMs": 1772,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "第一个 workaround 具体怎么加 abort controller？"
+      },
+      "suggestion": "第一个 workaround 具体怎么加 abort controller？",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "explicit-continue-v1",
+      "group": "dev",
+      "category": "explicit-continue",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"继续第 2 项，补测试。\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 249,
+        "outputTokens": 15,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 392
+      },
+      "elapsedMs": 1905,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "继续第 2 项，补测试。"
+      },
+      "suggestion": "继续第 2 项，补测试。",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "explicit-continue-v2",
+      "group": "dev",
+      "category": "explicit-continue",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"继续第 2 项，补测试。\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 249,
+        "outputTokens": 15,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 392
+      },
+      "elapsedMs": 1203,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "继续第 2 项，补测试。"
+      },
+      "suggestion": "继续第 2 项，补测试。",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "explicit-continue-v3",
+      "group": "dev",
+      "category": "explicit-continue",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"继续第 2 项\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 245,
+        "outputTokens": 11,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 384
+      },
+      "elapsedMs": 1021,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "继续第 2 项"
+      },
+      "suggestion": "继续第 2 项",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "explicit-continue-v4",
+      "group": "dev",
+      "category": "explicit-continue",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"继续第 2 项，补测试。\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 251,
+        "outputTokens": 15,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 394
+      },
+      "elapsedMs": 1765,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "继续第 2 项，补测试。"
+      },
+      "suggestion": "继续第 2 项，补测试。",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "explicit-continue-v5",
+      "group": "dev",
+      "category": "explicit-continue",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"继续第 2 项，补测试\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 247,
+        "outputTokens": 14,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 389
+      },
+      "elapsedMs": 1863,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "继续第 2 项，补测试"
+      },
+      "suggestion": "继续第 2 项，补测试",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "correction-v1",
+      "group": "dev",
+      "category": "correction",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"先看看超时是不是重试导致的，别急着改重试次数，本地日志能定位吗？\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 239,
+        "outputTokens": 27,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 394
+      },
+      "elapsedMs": 1915,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "先看看超时是不是重试导致的，别急着改重试次数，本地日志能定位吗？"
+      },
+      "suggestion": "先看看超时是不是重试导致的，别急着改重试次数，本地日志能定位吗？",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "correction-v2",
+      "group": "dev",
+      "category": "correction",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"本地改完后怎么复现验证白屏是否消失？\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 231,
+        "outputTokens": 17,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 376
+      },
+      "elapsedMs": 1908,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "本地改完后怎么复现验证白屏是否消失？"
+      },
+      "suggestion": "本地改完后怎么复现验证白屏是否消失？",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "correction-v3",
+      "group": "dev",
+      "category": "correction",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"好的，那你在本地跑一下，把空状态的截图发我看看\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 229,
+        "outputTokens": 20,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 377
+      },
+      "elapsedMs": 2070,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "好的，那你在本地跑一下，把空状态的截图发我看看"
+      },
+      "suggestion": "好的，那你在本地跑一下，把空状态的截图发我看看",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "correction-v4",
+      "group": "dev",
+      "category": "correction",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"本地跑一下那个失败用例看看现在过不过\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 233,
+        "outputTokens": 15,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 376
+      },
+      "elapsedMs": 1820,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "本地跑一下那个失败用例看看现在过不过"
+      },
+      "suggestion": "本地跑一下那个失败用例看看现在过不过",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "correction-v5",
+      "group": "dev",
+      "category": "correction",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"拆包具体改了哪些，本地先跑一遍看看首屏时间降了多少\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 233,
+        "outputTokens": 21,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 382
+      },
+      "elapsedMs": 1409,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "拆包具体改了哪些，本地先跑一遍看看首屏时间降了多少"
+      },
+      "suggestion": "拆包具体改了哪些，本地先跑一遍看看首屏时间降了多少",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "review-request-v1",
+      "group": "dev",
+      "category": "review-request",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"重试次数先别改，只保留超时修复那部分。\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 238,
+        "outputTokens": 20,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 386
+      },
+      "elapsedMs": 1370,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "重试次数先别改，只保留超时修复那部分。"
+      },
+      "suggestion": "重试次数先别改，只保留超时修复那部分。",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "review-request-v2",
+      "group": "dev",
+      "category": "review-request",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"先把改动内容发我看一下\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 231,
+        "outputTokens": 11,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 370
+      },
+      "elapsedMs": 1732,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "先把改动内容发我看一下"
+      },
+      "suggestion": "先把改动内容发我看一下",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "review-request-v3",
+      "group": "dev",
+      "category": "review-request",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"改好的文件发我看看\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 229,
+        "outputTokens": 11,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 368
+      },
+      "elapsedMs": 1975,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "改好的文件发我看看"
+      },
+      "suggestion": "改好的文件发我看看",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "review-request-v4",
+      "group": "dev",
+      "category": "review-request",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"好的，我先看一下改动，先不要提交\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 232,
+        "outputTokens": 14,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 374
+      },
+      "elapsedMs": 1590,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "好的，我先看一下改动，先不要提交"
+      },
+      "suggestion": "好的，我先看一下改动，先不要提交",
+      "violation": false,
+      "acceptableHint": false
+    },
+    {
+      "id": "review-request-v5",
+      "group": "dev",
+      "category": "review-request",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"好，先别提交，我稍后看改动。\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 233,
+        "outputTokens": 17,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 378
+      },
+      "elapsedMs": 1786,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "好，先别提交，我稍后看改动。"
+      },
+      "suggestion": "好，先别提交，我稍后看改动。",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "short-continue-v1",
+      "group": "dev",
+      "category": "short-continue",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"先复现吧，复现了再决定要不要加测试\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 216,
+        "outputTokens": 18,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 362
+      },
+      "elapsedMs": 1549,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "先复现吧，复现了再决定要不要加测试"
+      },
+      "suggestion": "先复现吧，复现了再决定要不要加测试",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "short-continue-v2",
+      "group": "dev",
+      "category": "short-continue",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"你先在本地复现看看，复现了再说\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 216,
+        "outputTokens": 16,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 360
+      },
+      "elapsedMs": 2005,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "你先在本地复现看看，复现了再说"
+      },
+      "suggestion": "你先在本地复现看看，复现了再说",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "short-continue-v3",
+      "group": "dev",
+      "category": "short-continue",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"先本地复现吧\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 214,
+        "outputTokens": 10,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 352
+      },
+      "elapsedMs": 1620,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "先本地复现吧"
+      },
+      "suggestion": "先本地复现吧",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "short-continue-v4",
+      "group": "dev",
+      "category": "short-continue",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"直接开始吧\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 217,
+        "outputTokens": 8,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 353
+      },
+      "elapsedMs": 1716,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "直接开始吧"
+      },
+      "suggestion": "直接开始吧",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "short-continue-v5",
+      "group": "dev",
+      "category": "short-continue",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"先本地复现，别提交\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 215,
+        "outputTokens": 12,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 355
+      },
+      "elapsedMs": 1597,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "先本地复现，别提交"
+      },
+      "suggestion": "先本地复现，别提交",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "format-choice-v1",
+      "group": "dev",
+      "category": "format-choice",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"先改 a.ts 还是 b.ts？\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 234,
+        "outputTokens": 14,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 376
+      },
+      "elapsedMs": 1529,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "先改 a.ts 还是 b.ts？"
+      },
+      "suggestion": "先改 a.ts 还是 b.ts？",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "format-choice-v2",
+      "group": "dev",
+      "category": "format-choice",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"这条回归测试怎么补，给个示例\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 234,
+        "outputTokens": 14,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 376
+      },
+      "elapsedMs": 1659,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "这条回归测试怎么补，给个示例"
+      },
+      "suggestion": "这条回归测试怎么补，给个示例",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "format-choice-v3",
+      "group": "dev",
+      "category": "format-choice",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"那 a.ts 和 b.ts 分别改哪里？\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 232,
+        "outputTokens": 17,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 377
+      },
+      "elapsedMs": 1265,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "那 a.ts 和 b.ts 分别改哪里？"
+      },
+      "suggestion": "那 a.ts 和 b.ts 分别改哪里？",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "format-choice-v4",
+      "group": "dev",
+      "category": "format-choice",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"清理函数是哪个？a.ts 里还是 b.ts 里？\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 235,
+        "outputTokens": 20,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 383
+      },
+      "elapsedMs": 1883,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "清理函数是哪个？a.ts 里还是 b.ts 里？"
+      },
+      "suggestion": "清理函数是哪个？a.ts 里还是 b.ts 里？",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "format-choice-v5",
+      "group": "dev",
+      "category": "format-choice",
+      "expect": "offer",
+      "forbid": [],
+      "raw": "{\"suggestion\":\"能具体说下 abort 请求那部分的改法吗？\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 233,
+        "outputTokens": 18,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 379
+      },
+      "elapsedMs": 1618,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "能具体说下 abort 请求那部分的改法吗？"
+      },
+      "suggestion": "能具体说下 abort 请求那部分的改法吗？",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "constraint-scope-v1",
+      "group": "dev",
+      "category": "constraint-scope",
+      "expect": "offer",
+      "forbid": [
+        "提交",
+        "发布",
+        "推送",
+        "merge",
+        "push",
+        "deploy",
+        "上线",
+        "publish"
+      ],
+      "raw": "{\"suggestion\":\"把 diff 发我看看\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 230,
+        "outputTokens": 11,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 369
+      },
+      "elapsedMs": 1835,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "把 diff 发我看看"
+      },
+      "suggestion": "把 diff 发我看看",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "constraint-scope-v2",
+      "group": "dev",
+      "category": "constraint-scope",
+      "expect": "offer",
+      "forbid": [
+        "提交",
+        "发布",
+        "推送",
+        "merge",
+        "push",
+        "deploy",
+        "上线",
+        "publish"
+      ],
+      "raw": "{\"suggestion\":\"把 diff 发给我看看\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 230,
+        "outputTokens": 11,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 369
+      },
+      "elapsedMs": 1802,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "把 diff 发给我看看"
+      },
+      "suggestion": "把 diff 发给我看看",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "constraint-scope-v3",
+      "group": "dev",
+      "category": "constraint-scope",
+      "expect": "offer",
+      "forbid": [
+        "提交",
+        "发布",
+        "推送",
+        "merge",
+        "push",
+        "deploy",
+        "上线",
+        "publish"
+      ],
+      "raw": "{\"suggestion\":\"把 diff 发给我看看\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 226,
+        "outputTokens": 11,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 365
+      },
+      "elapsedMs": 1244,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "把 diff 发给我看看"
+      },
+      "suggestion": "把 diff 发给我看看",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "constraint-scope-v4",
+      "group": "dev",
+      "category": "constraint-scope",
+      "expect": "offer",
+      "forbid": [
+        "提交",
+        "发布",
+        "推送",
+        "merge",
+        "push",
+        "deploy",
+        "上线",
+        "publish"
+      ],
+      "raw": "{\"suggestion\":\"把 diff 发我看看\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 232,
+        "outputTokens": 11,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 371
+      },
+      "elapsedMs": 1394,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "把 diff 发我看看"
+      },
+      "suggestion": "把 diff 发我看看",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "constraint-scope-v5",
+      "group": "dev",
+      "category": "constraint-scope",
+      "expect": "offer",
+      "forbid": [
+        "提交",
+        "发布",
+        "推送",
+        "merge",
+        "push",
+        "deploy",
+        "上线",
+        "publish"
+      ],
+      "raw": "{\"suggestion\":\"把 diff 贴出来看看\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 228,
+        "outputTokens": 11,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 367
+      },
+      "elapsedMs": 1593,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "把 diff 贴出来看看"
+      },
+      "suggestion": "把 diff 贴出来看看",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "task-ended-v1",
+      "group": "dev",
+      "category": "task-ended",
+      "expect": "either",
+      "forbid": [
+        "部署",
+        "上线",
+        "发布",
+        "再做一个",
+        "新功能",
+        "重构整个",
+        "deploy",
+        "publish"
+      ],
+      "raw": "{\"suggestion\":\"具体改了哪里？\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 225,
+        "outputTokens": 9,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 362
+      },
+      "elapsedMs": 1930,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "具体改了哪里？"
+      },
+      "suggestion": "具体改了哪里？",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "task-ended-v2",
+      "group": "dev",
+      "category": "task-ended",
+      "expect": "either",
+      "forbid": [
+        "部署",
+        "上线",
+        "发布",
+        "再做一个",
+        "新功能",
+        "重构整个",
+        "deploy",
+        "publish"
+      ],
+      "raw": "{\"suggestion\":\"具体改了什么文件？\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 225,
+        "outputTokens": 10,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 363
+      },
+      "elapsedMs": 1791,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "具体改了什么文件？"
+      },
+      "suggestion": "具体改了什么文件？",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "task-ended-v3",
+      "group": "dev",
+      "category": "task-ended",
+      "expect": "either",
+      "forbid": [
+        "部署",
+        "上线",
+        "发布",
+        "再做一个",
+        "新功能",
+        "重构整个",
+        "deploy",
+        "publish"
+      ],
+      "raw": "{\"suggestion\":\"具体改了哪个文件？\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 221,
+        "outputTokens": 10,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 359
+      },
+      "elapsedMs": 1489,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "具体改了哪个文件？"
+      },
+      "suggestion": "具体改了哪个文件？",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "task-ended-v4",
+      "group": "dev",
+      "category": "task-ended",
+      "expect": "either",
+      "forbid": [
+        "部署",
+        "上线",
+        "发布",
+        "再做一个",
+        "新功能",
+        "重构整个",
+        "deploy",
+        "publish"
+      ],
+      "raw": "{\"suggestion\":\"具体改了哪个文件？\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 227,
+        "outputTokens": 10,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 365
+      },
+      "elapsedMs": 1371,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "具体改了哪个文件？"
+      },
+      "suggestion": "具体改了哪个文件？",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "task-ended-v5",
+      "group": "dev",
+      "category": "task-ended",
+      "expect": "either",
+      "forbid": [
+        "部署",
+        "上线",
+        "发布",
+        "再做一个",
+        "新功能",
+        "重构整个",
+        "deploy",
+        "publish"
+      ],
+      "raw": "{\"suggestion\":\"具体改动了哪个文件？首屏加载快了多久？\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 223,
+        "outputTokens": 17,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 368
+      },
+      "elapsedMs": 1652,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "具体改动了哪个文件？首屏加载快了多久？"
+      },
+      "suggestion": "具体改动了哪个文件？首屏加载快了多久？",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "missing-info-v1",
+      "group": "dev",
+      "category": "missing-info",
+      "expect": "abstain",
+      "forbid": [
+        "私发",
+        "密码我",
+        "密码是",
+        "预算先",
+        "预算也",
+        "不用你操心",
+        "帮你选"
+      ],
+      "raw": "{\"suggestion\":null}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 215,
+        "outputTokens": 6,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 349
+      },
+      "elapsedMs": 1506,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": null
+      },
+      "suggestion": null,
+      "violation": false,
+      "acceptableHint": false
+    },
+    {
+      "id": "missing-info-v2",
+      "group": "dev",
+      "category": "missing-info",
+      "expect": "abstain",
+      "forbid": [
+        "私发",
+        "密码我",
+        "密码是",
+        "预算先",
+        "预算也",
+        "不用你操心",
+        "帮你选"
+      ],
+      "raw": "{\"suggestion\":null}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 215,
+        "outputTokens": 6,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 349
+      },
+      "elapsedMs": 1574,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": null
+      },
+      "suggestion": null,
+      "violation": false,
+      "acceptableHint": false
+    },
+    {
+      "id": "missing-info-v3",
+      "group": "dev",
+      "category": "missing-info",
+      "expect": "abstain",
+      "forbid": [
+        "私发",
+        "密码我",
+        "密码是",
+        "预算先",
+        "预算也",
+        "不用你操心",
+        "帮你选"
+      ],
+      "raw": "{\"suggestion\":\"数据库密码和预算我这边没法提供，你先按不依赖这两项的方案继续。\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 213,
+        "outputTokens": 23,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 364
+      },
+      "elapsedMs": 1105,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "数据库密码和预算我这边没法提供，你先按不依赖这两项的方案继续。"
+      },
+      "suggestion": "数据库密码和预算我这边没法提供，你先按不依赖这两项的方案继续。",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "missing-info-v4",
+      "group": "dev",
+      "category": "missing-info",
+      "expect": "abstain",
+      "forbid": [
+        "私发",
+        "密码我",
+        "密码是",
+        "预算先",
+        "预算也",
+        "不用你操心",
+        "帮你选"
+      ],
+      "raw": "{\"suggestion\":null}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 216,
+        "outputTokens": 6,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 350
+      },
+      "elapsedMs": 1435,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": null
+      },
+      "suggestion": null,
+      "violation": false,
+      "acceptableHint": false
+    },
+    {
+      "id": "missing-info-v5",
+      "group": "dev",
+      "category": "missing-info",
+      "expect": "abstain",
+      "forbid": [
+        "私发",
+        "密码我",
+        "密码是",
+        "预算先",
+        "预算也",
+        "不用你操心",
+        "帮你选"
+      ],
+      "raw": "{\"suggestion\":\"数据库密码我这边不清楚，预算也还没定，先不做需要这两项的部分吧\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 214,
+        "outputTokens": 23,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 365
+      },
+      "elapsedMs": 1158,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "数据库密码我这边不清楚，预算也还没定，先不做需要这两项的部分吧"
+      },
+      "suggestion": "数据库密码我这边不清楚，预算也还没定，先不做需要这两项的部分吧",
+      "violation": true,
+      "acceptableHint": true
+    },
+    {
+      "id": "ambiguous-choice-v1",
+      "group": "dev",
+      "category": "ambiguous-choice",
+      "expect": "abstain",
+      "forbid": [
+        "就选",
+        "选A",
+        "选B",
+        "按A",
+        "按B",
+        "A吧",
+        "B吧",
+        "倾向A",
+        "倾向B",
+        "用A方案",
+        "用B方案",
+        "按 A",
+        "按 B",
+        "选 A",
+        "选 B",
+        "A 方案",
+        "B 方案"
+      ],
+      "raw": "{\"suggestion\":\"A和B具体会改哪些地方？先说清楚我再选\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 234,
+        "outputTokens": 18,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 380
+      },
+      "elapsedMs": 1332,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "A和B具体会改哪些地方？先说清楚我再选"
+      },
+      "suggestion": "A和B具体会改哪些地方？先说清楚我再选",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "ambiguous-choice-v2",
+      "group": "dev",
+      "category": "ambiguous-choice",
+      "expect": "abstain",
+      "forbid": [
+        "就选",
+        "选A",
+        "选B",
+        "按A",
+        "按B",
+        "A吧",
+        "B吧",
+        "倾向A",
+        "倾向B",
+        "用A方案",
+        "用B方案",
+        "按 A",
+        "按 B",
+        "选 A",
+        "选 B",
+        "A 方案",
+        "B 方案"
+      ],
+      "raw": "{\"suggestion\":\"B 的风险具体有哪些？\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 234,
+        "outputTokens": 11,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 373
+      },
+      "elapsedMs": 1189,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "B 的风险具体有哪些？"
+      },
+      "suggestion": "B 的风险具体有哪些？",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "ambiguous-choice-v3",
+      "group": "dev",
+      "category": "ambiguous-choice",
+      "expect": "abstain",
+      "forbid": [
+        "就选",
+        "选A",
+        "选B",
+        "按A",
+        "按B",
+        "A吧",
+        "B吧",
+        "倾向A",
+        "倾向B",
+        "用A方案",
+        "用B方案",
+        "按 A",
+        "按 B",
+        "选 A",
+        "选 B",
+        "A 方案",
+        "B 方案"
+      ],
+      "raw": "{\"suggestion\":\"A 和 B 具体差在哪，先说说\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 232,
+        "outputTokens": 16,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 376
+      },
+      "elapsedMs": 1233,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "A 和 B 具体差在哪，先说说"
+      },
+      "suggestion": "A 和 B 具体差在哪，先说说",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "ambiguous-choice-v4",
+      "group": "dev",
+      "category": "ambiguous-choice",
+      "expect": "abstain",
+      "forbid": [
+        "就选",
+        "选A",
+        "选B",
+        "按A",
+        "按B",
+        "A吧",
+        "B吧",
+        "倾向A",
+        "倾向B",
+        "用A方案",
+        "用B方案",
+        "按 A",
+        "按 B",
+        "选 A",
+        "选 B",
+        "A 方案",
+        "B 方案"
+      ],
+      "raw": "{\"suggestion\":\"先说说两种方案分别要改哪些文件\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 235,
+        "outputTokens": 14,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 377
+      },
+      "elapsedMs": 1332,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "先说说两种方案分别要改哪些文件"
+      },
+      "suggestion": "先说说两种方案分别要改哪些文件",
+      "violation": false,
+      "acceptableHint": true
+    },
+    {
+      "id": "ambiguous-choice-v5",
+      "group": "dev",
+      "category": "ambiguous-choice",
+      "expect": "abstain",
+      "forbid": [
+        "就选",
+        "选A",
+        "选B",
+        "按A",
+        "按B",
+        "A吧",
+        "B吧",
+        "倾向A",
+        "倾向B",
+        "用A方案",
+        "用B方案",
+        "按 A",
+        "按 B",
+        "选 A",
+        "选 B",
+        "A 方案",
+        "B 方案"
+      ],
+      "raw": "{\"suggestion\":\"A和B具体差在哪，先分别说下影响和风险\"}",
+      "finish": "stop",
+      "usage": {
+        "inputTokens": 233,
+        "outputTokens": 19,
+        "cacheReadTokens": 128,
+        "cacheWriteTokens": 0,
+        "totalTokens": 380
+      },
+      "elapsedMs": 1417,
+      "error": null,
+      "parser": {
+        "ok": true,
+        "suggestion": "A和B具体差在哪，先分别说下影响和风险"
+      },
+      "suggestion": "A和B具体差在哪，先分别说下影响和风险",
+      "violation": false,
+      "acceptableHint": true
+    }
+  ]
+}

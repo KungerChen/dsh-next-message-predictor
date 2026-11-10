@@ -1,0 +1,8 @@
+# Bundle patch: one loader row loads the Host half from the package main entry.
+# The `dsh.client` declaration in package.json makes the Web app load ./client
+# as the browser half. Users may override `config:` on this row (a matching
+# override replaces the whole config object) or change it through the plugin's
+# own Settings section, which persists through the profile config editor.
+- insert:
+    - id: next-message-predictor
+      name: dsh-next-message-predictor

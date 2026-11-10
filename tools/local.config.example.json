@@ -1,0 +1,5 @@
+{
+  "harnessRoot": "<folder that contains \"DeepSeek Harness.exe\">",
+  "playwrightPath": "<a playwright-core package folder; leave out if `npm install --no-save playwright-core` was run here>",
+  "browserPath": "<chrome.exe or msedge.exe; leave out to use the standard install location>"
+}

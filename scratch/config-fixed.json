@@ -1,0 +1,10 @@
+{
+  "enabled": true,
+  "modelMode": "fixed",
+  "provider": "fixed-test",
+  "model": "",
+  "fakeSuggestion": "固定测试建议：继续第二项",
+  "timeoutMs": 8000,
+  "dailyRequestLimit": 200,
+  "dailyTokenBudget": 500000
+}
