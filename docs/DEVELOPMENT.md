@@ -119,6 +119,27 @@ node tools/p2-e2e.mjs --url $u --out scratch/evidence --tag p2
 
 更早阶段的记录见 `VALIDATION.md`、`VALIDATION-P2P4.md`。
 
+### 重新生成 README 的截图
+
+`docs/images/` 里的图片由 `tools/capture-screenshots.mjs` 从真实界面截取：它在隔离 profile 里用 mock 模型跑一段两轮的演示对话，截下输入框里的建议、动图的各帧、模式卡片、左侧栏入口和完整的设置页。界面有变化时重新运行即可。
+
+```powershell
+# 用一个空的统计目录启动，截图里的“近 7 天统计”才只包含这次演示
+$env:NMP_DATA_HOME = "$PWD\scratch\data-home-demo"
+Remove-Item -Recurse -Force $env:NMP_DATA_HOME -ErrorAction SilentlyContinue
+.\tools\launch-scratch-web.ps1 -ForceRestart
+.\tools\mock-llm-control.ps1 -Action start
+$u = (Get-Content scratch\logs\web-3090.url.txt -Raw).Trim()
+
+node tools/capture-screenshots.mjs --url $u
+
+.\tools\mock-llm-control.ps1 -Action stop
+.\tools\stop-scratch-web.ps1
+Remove-Item Env:NMP_DATA_HOME
+```
+
+脚本只截取属于本插件或演示对话的区域，侧栏里的会话列表不会进入图片。结束时它会把隔离 profile 的插件配置和 mock 的回复恢复原样；演示对话本身会留在会话列表里。`demo.png` 是动画 PNG（APNG），不支持动画的查看器会显示第一帧。提交前请逐张看一遍，确认没有不该公开的内容。
+
 其他脚本：
 
 | 脚本 | 用途 |

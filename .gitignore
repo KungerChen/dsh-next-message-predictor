@@ -6,7 +6,7 @@ node_modules/
 # asar-copy is extracted DSH code used for reference.
 scratch/logs/
 scratch/evidence/
-scratch/data-home/
+scratch/data-home*/
 scratch/asar-copy/
 
 # Editor and OS noise

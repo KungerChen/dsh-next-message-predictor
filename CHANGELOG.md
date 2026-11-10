@@ -2,6 +2,10 @@
 
 版本号遵循语义化版本。`package.json` 的 `version` 与 `src/shared/version.js` 的 `PLUGIN_VERSION` 必须一致，构建脚本和测试都会检查。
 
+## 未发布
+
+- README 改为图文版：动图演示、功能截图、常见问题。截图在 `docs/images/`，由新增的 `tools/capture-screenshots.mjs` 从隔离 profile 的真实界面生成。插件代码没有变化。
+
 ## 0.3.0 — 2026-11-10
 
 ### 新增
