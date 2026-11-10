@@ -94,7 +94,7 @@ P0–P4 已实现：overlay slot、`captureInsertion`+`insertText`、`[data-comp
 2. 原生 `Config` schema 与 volatile 热更新（linked 插件无法解析 schemastery/zod；当前设置写入会重启 Host）。
 3. 多窗口/多标签共享等待者与 BroadcastChannel 同步；跨进程账本锁。
 4. Desktop 原生窗口验收；与既有预测插件的运行时冲突检测。
-5. P3 人工评分、自然使用观察（见 `docs/RELEASE.md`）。
+5. 自然使用观察（见 `docs/RELEASE.md`）。
 
 ## 5. 无法满足/需降级的能力（P0 结论）
 

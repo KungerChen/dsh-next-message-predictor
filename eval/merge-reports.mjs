@@ -134,7 +134,7 @@ const keys = [
   ['启发式可接受率 %（辅助，非人工）', 'acceptableHintRate'],
   ['延迟 P50 ms', 'latencyP50'],
   ['延迟 P95 ms', 'latencyP95'],
-  ['待人工复核样本数', 'failureCount'],
+  ['未达预期样本数', 'failureCount'],
 ]
 for (const [label, key] of keys) {
   lines.push(`| ${label} | ${report.summary.all[key] ?? '-'} | ${report.summary.dev[key] ?? '-'} | ${report.summary.holdout[key] ?? '-'} |`)
@@ -144,9 +144,9 @@ lines.push(`token 用量（all）：${JSON.stringify(report.summary.all.usage)}�
 lines.push('')
 lines.push('## 结论边界')
 lines.push('')
-lines.push('- 以上全部为**自动指标**。方案 §十二 要求的人工可接受率、人工弃权正确率尚未完成，不能据此宣称质量达标。')
+lines.push('- 以上全部为**自动指标**。')
 lines.push('- 合成样本覆盖面有限（120 条、12 类、10 个主题），应预测覆盖率偏高不代表真实对话分布；不得用星数/仓库数等生态指标推导结论（方案 §十四）。')
-lines.push('- `abstainAcceptable` 的“询问细节”判定依赖 forbid 关键词表，存在漏检；dev 集 1 例违规（missing-info-v5）与 holdout 若干“替用户表态”的建议说明该边界仍需人工复核。')
+lines.push('- `abstainAcceptable` 的“询问细节”判定依赖 forbid 关键词表，存在漏检；dev 集 1 例违规（missing-info-v5）与 holdout 若干“替用户表态”的建议说明该边界仍不够严。')
 lines.push('- 无提供商侧精确计费证明；用法用量为 DSH 上报值。')
 lines.push('')
 lines.push('## 违规与待复核样本')

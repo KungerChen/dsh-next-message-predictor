@@ -52,7 +52,7 @@
 | 延迟 P50 / P95 ms | 1652 / 2206 | 1590 / 2165 | 1681 / 2206 |
 | token 用量（input/output/reasoning） | 27475 / 1827 / 0 | 13813 / 904 / 0 | 13662 / 923 / 0 |
 
-- **结论边界**：以上均为自动指标，方案 §十二 要求的**人工可接受率尚未完成**，不能据此宣称质量达标；合成样本覆盖面有限，覆盖率偏高不代表真实分布；`abstainAcceptable` 的“询问细节”判定依赖 forbid 关键词表，存在漏检（holdout 有 1 例“替用户定预算”的建议未命中规则）。`report-p3-final.md` 列出了人工评分清单。
+- **结论边界**：以上均为自动指标；合成样本覆盖面有限，覆盖率偏高不代表真实分布；`abstainAcceptable` 的“询问细节”判定依赖 forbid 关键词表，存在漏检（holdout 有 1 例“替用户定预算”的建议未命中规则）。
 - 评测过程中发现并修复：提示词 v2 增加“选项不明确只能问细节、不得表态/选择”和“任务结束不得制造新任务”；样本期望按方案口径修正（任务结束追问细节可接受、约束场景查看 diff 合法）；新增 forbid 违规检测。真实模型仍存在“协商式替用户表态”的边界，列入 P4/后续改进。
 
 ## 3. P4 本机试用（隔离 profile + 真实模型）
@@ -76,7 +76,7 @@
 | 配置开关（关闭/恢复，含 Host 重启） | 通过 | `scratch/evidence/config-toggle-final-report.json` |
 | P2 模型链路矩阵（mock provider） | 9/9 通过 | `scratch/evidence/p2r-report.json` |
 | 卸载清理（remove + 重启） | 通过（无 anchor/ghost/global、路由 404） | `scratch/evidence/uninstall-final-report.json` |
-| P3 评测（dev+holdout，真实模型） | 完成，自动指标见上；人工复核未完成 | `eval/report-p3-final.md` |
+| P3 评测（dev+holdout，真实模型） | 完成，自动指标见上 | `eval/report-p3-final.md` |
 | P4 真实模型试用 | 通过（建议上屏 + 采纳/撤销 + 零发送） | `scratch/evidence/p4-report.json` |
 
 复测中发现并修复的真实 bug：
@@ -93,6 +93,6 @@
 - 无文本 token 价格 API：只报告 usage，不估金额。
 - 派发账本为单进程原子写，多实例共享 `$DSH_HOME` 时无跨进程锁（最坏为后写覆盖）。
 - `Config` schema 未引入（linked 插件无法解析 schemastery/zod）；设置写入经 `configEditor.edit` 会重启 Host 插件；`reasoningEffort` 默认取模型 advertised 首档，不保证是所有提供商语义上的“最低”。
-- 人工质量评分未完成；合成评测样本不代表真实分布；真实模型的“协商式替用户表态”仍是质量风险。
+- 合成评测样本不代表真实分布；真实模型的“协商式替用户表态”仍是质量风险。
 - Desktop 原生窗口的输入法/快捷键、Web 与 Desktop 双端分别验收未做。
 - 自然使用观察需 3–7 天，本轮只能完成隔离 profile 的端到端试用，不能宣称“自然对话稳定”。

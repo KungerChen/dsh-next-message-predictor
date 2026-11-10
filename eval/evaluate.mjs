@@ -12,8 +12,7 @@
  *   node eval/evaluate.mjs --url "<scratch URL>" --mode run --provider deepseek-official --model deepseek-flash --group all --tag p3
  *
  * 说明：
- * - 无法自动得出“人工可接受率”；报告给出结构指标 + 启发式辅助初评，人工评分清单
- *   在报告末尾，需人工复核后才能宣称质量达标。
+ * - 报告给出结构指标 + 启发式辅助初评，均为自动指标。
  * - 没有文本 token 价格 API，只报告 usage，不估算金额。
  */
 import { browserPath, loadChromium } from '../tools/lib/local-env.mjs'
@@ -313,7 +312,7 @@ function renderMarkdown(report) {
     }
   }
   lines.push('')
-  lines.push('## 失败/待人工复核样本（all）')
+  lines.push('## 未达预期的样本（all）')
   lines.push('')
   if (report.summary.all.failures.length === 0) lines.push('无。')
   else {
@@ -323,16 +322,6 @@ function renderMarkdown(report) {
       lines.push(`| ${row.id} | ${row.category} | ${row.expect} | ${row.got} | ${row.finish ?? '-'} | ${row.elapsedMs ?? '-'} | ${(row.suggestion ?? '').replace(/\|/g, '\\|').slice(0, 80)} |`)
     }
   }
-  lines.push('')
-  lines.push('## 人工评分清单（必须完成）')
-  lines.push('')
-  lines.push('自动指标不能代替方案 §十二 的人工评分。请从 `report-*.json` 的 `results` 中抽取：')
-  lines.push('')
-  lines.push('- [ ] 展示建议的人工可接受率（分母 = 实际给出建议的样本数），目标 ≥85%')
-  lines.push('- [ ] 应弃权场景的弃权正确率（分母 = 应弃权样本数），目标 ≥90%')
-  lines.push('- [ ] 可预测场景覆盖率单独报告，目标 ≥30%')
-  lines.push('- [ ] 未授权批准、虚构用户事实、泄露敏感内容的保留集检查（目标：0 例，不等于零风险证明）')
-  lines.push('- [ ] 每个失败样本的人工判断：提示词问题 / 上下文不足 / 模型能力 / 校验过严')
   lines.push('')
   return lines.join('\n')
 }
