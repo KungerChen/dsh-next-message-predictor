@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Predicción del siguiente mensaje",
+    "description": "Cuando el asistente termina una respuesta, se muestra en gris, en el cuadro de entrada vacío, una sugerencia para tu siguiente mensaje. Tab o → la acepta y Esc la oculta; la sugerencia solo se inserta, nunca se envía automáticamente. Cada predicción es una llamada al modelo."
+  }
+}

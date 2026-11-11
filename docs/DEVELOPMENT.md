@@ -1,6 +1,6 @@
 # 开发与验证
 
-适用版本：0.3.0。
+适用版本：0.4.0。
 
 ## 环境
 
@@ -38,14 +38,15 @@ npm run check   # build + test + node --check
 
 - `src/shared/` 和 `src/client/` 的文件会被拼成一个函数作用域：只写普通的顶层声明；顶层名字在所有文件间唯一（客户端辅助函数习惯加 `nmp` 前缀）；新增文件要加进 `scripts/build-client.mjs` 的 `INPUTS`，顺序即依赖顺序。
 - 新增配置项：在 `src/shared/config.js` 的 `DEFAULT_CONFIG` 加默认值，并登记到 `NUMBER_FIELDS` / `STRING_FIELDS` / `BOOLEAN_FIELDS`；要在设置页显示数值项再加 `SETTING_LIMITS`。同步更新 [CONFIGURATION.md](CONFIGURATION.md)。
-- 新增界面文字：`src/client/index.js` 的 `en` 和 `zh` 两个字典必须有相同的键（测试会检查）。
+- 新增界面文字：在 `src/client/locales/` 的九个语言文件里都加上同一个键，位置相同（`test/i18n.test.mjs` 检查键、顺序和 `{key}` 这类占位符）。先写 `zh.js` 和 `en.js`，其余语言照英文翻译。
+- 新增一种语言：加 `src/client/locales/<语言>.js`，登记到 `src/shared/config.js` 的 `LANGUAGE_IDS`、`src/client/i18n.js` 的字典和语言名称、`scripts/build-client.mjs` 的 `INPUTS`，再加 `locale/<语言>.json` 和 `README.<语言>.md`。
 - 新增原因码：给它加 `reason.<code>` 文案。带细节的原因码写成 `<code>:<细节>`，文案只需覆盖冒号前的部分（见 `src/client/labels.js`）。
 - 修改提示词：递增 `src/shared/prompt.js` 的 `PROMPT_VERSION`（它是结果缓存键的一部分）。
 - 发版：同时改 `package.json` 的 `version` 和 `src/shared/version.js` 的 `PLUGIN_VERSION`，更新 `CHANGELOG.md`，然后 `npm run check`。
 
 ## 测试
 
-`node --test "test/*.test.mjs"`，共 199 项。
+`node --test "test/*.test.mjs"`，共 242 项。
 
 | 文件 | 覆盖 |
 |---|---|
@@ -59,6 +60,8 @@ npm run check   # build + test + node --check
 | `results-log.test.mjs` | 结果记录、轮换、汇总 |
 | `request-registry.test.mjs` / `semantic-filter.test.mjs` / `ghost-conflict.test.mjs` | 各自的模块 |
 | `v030.test.mjs` | 版本、模式、左侧栏选项、原因码文案、0.3.0 修复的回归 |
+| `v040.test.mjs` | 0.4.0 修复的回归：遮蔽范围、配置字段名、快捷键限制、行分隔符、片段上限、次数与额度的退还、切会话恢复、后台无响应 |
+| `i18n.test.mjs` | 九种语言的字典一致性、语言解析、`language` 配置项、打包内容、各语言 README 的语言栏 |
 | `bundle-smoke.test.mjs` | 对 `lib/client.js` 的冒烟测试，见下 |
 | `no-local-paths.test.mjs` | 已入库的文件里没有本机路径 |
 
@@ -67,7 +70,8 @@ npm run check   # build + test + node --check
 `node --check` 只能证明 bundle 语法正确。`bundle-smoke.test.mjs` 像 DSH 一样加载它（ModuleLoader 工厂 + 宿主提供的 React），用假的 slot 注册表和一个进程内的真实 Host 服务把两半接起来，然后渲染设置页并点击：
 
 - 所有扩展点都已注册，版本号正确；
-- 设置页在中文和英文下都能渲染，没有漏出未翻译的键或未替换的占位符；
+- 设置页在九种语言下都能渲染，没有漏出未翻译的键或未替换的占位符；
+- “跟随 DSH”随 DSH 的语言变化，在语言列表里选一项后页面和入口名称随之切换；
 - 点“添加到左侧栏”后入口出现，再点一次入口消失而面板仍在；
 - 点模式卡片后配置变成对应模式，改一项后变成“自定义”；
 - 插件卸载时面板开着，会留下重新打开的标记。
@@ -109,6 +113,14 @@ node tools/p2-e2e.mjs --url $u --out scratch/evidence --tag p2
 
 启动脚本设置 `NMP_DATA_HOME=scratch\data-home`，测试产生的账本和统计不会混入真实数据。URL 带有本次启动的访问令牌，`scratch/logs/` 和 `scratch/evidence/` 不入库。
 
+0.4.0 的结果（2026-11-11，DSH 0.2.2-rc.1）：
+
+| 脚本 | 结果 |
+|---|---|
+| `p1-e2e.mjs` | 13 步全部通过：加载、自动触发、Tab 采纳、撤销、Esc、输入法、菜单守卫、多输入框、占位符恢复、窄输入框、方向键采纳、冲突让位、零发送审计 |
+| `p2-e2e.mjs` | 9 步全部通过：模型建议上屏、证据核对、采纳、撤销、非法 JSON、超时、预算耗尽、恢复 |
+| 手动（浏览器） | 设置页标题显示 `v0.4.0`；“界面语言”选 English 后页面立即变为英文并出现“撤销”，面板保持打开；语言列表以各语言自己的名称列出九种语言；“跟随 DSH”时显示 DSH 的语言，且不受 `<html lang>` 被改动的影响；在页面不知情的情况下把配置改为韩语，左侧栏入口和输入框的“预测”按钮随即变为韩语 |
+
 0.3.0 的结果（2026-11-10，DSH 0.2.2-rc.1）：
 
 | 脚本 | 结果 |
@@ -121,7 +133,7 @@ node tools/p2-e2e.mjs --url $u --out scratch/evidence --tag p2
 
 ### 重新生成 README 的截图
 
-`docs/images/` 里的图片由 `tools/capture-screenshots.mjs` 从真实界面截取：它在隔离 profile 里用 mock 模型跑一段两轮的演示对话，截下输入框里的建议、动图的各帧、模式卡片、左侧栏入口和完整的设置页。界面有变化时重新运行即可。
+`docs/images/` 里的图片由 `tools/capture-screenshots.mjs` 从真实界面截取：它在隔离 profile 里用 mock 模型跑一段两轮的演示对话，截下输入框里的建议、动图的各帧、模式卡片、左侧栏入口和完整的设置页，最后把界面语言依次切到英语、日语、西班牙语和俄语，拼成 `languages.png`。界面有变化时重新运行即可。
 
 ```powershell
 # 用一个空的统计目录启动，截图里的“近 7 天统计”才只包含这次演示

@@ -23,6 +23,10 @@ const KEEP_DAYS = 14
 const PENDING_TTL_MS = 2 * 60 * 60 * 1000
 const MAX_PENDING = 200
 const MAX_SUMMARY_LINES = 50000
+/** 汇总时每解析这么多行让出一次事件循环。 */
+const SUMMARY_YIELD_EVERY = 4000
+/** 汇总结果的缓存时间；期间有新记录写入就作废。 */
+const SUMMARY_CACHE_MS = 15000
 
 /** 稳定、不可逆的短哈希（只用于关联，不是安全边界）。 */
 export function hashId(value) {
@@ -73,6 +77,14 @@ function levenshteinBounded(a, b, limit) {
   return Math.min(limit, previous[b.length])
 }
 
+/** `events.2026-11-10T18-01-34-123Z.jsonl` -> 轮换时刻（毫秒）；认不出时返回 null。 */
+function rotationTime(name) {
+  const match = /^events\.(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z\.jsonl$/u.exec(name)
+  if (match === null) return null
+  const time = Date.parse(`${match[1]}T${match[2]}:${match[3]}:${match[4]}.${match[5]}Z`)
+  return Number.isFinite(time) ? time : null
+}
+
 function dayKey(nowMs, timeZone) {
   const date = new Date(nowMs)
   try {
@@ -106,6 +118,9 @@ export function createResultsLog(options) {
   /** @type {Map<string, object>} suggestionId -> in-memory pending offer (正文只在内存) */
   const pending = new Map()
   let bytes = -1
+  /** 已写入的行数；汇总缓存用它判断“之后有没有新记录”。 */
+  let writeCount = 0
+  let summaryCache = null
   let queue = Promise.resolve()
   let lastCleanup = 0
   let initialized = false
@@ -162,10 +177,11 @@ export function createResultsLog(options) {
     const stamp = new Date(now()).toISOString().replace(/[:.]/g, '-')
     try {
       await rename(filePath, join(dir, `events.${stamp}.jsonl`))
+      bytes = 0
     } catch (error) {
+      // 没轮换成：文件还在原处继续变大，计数不能清零，下一行会再试一次。
       logger(`[next-message-predictor] results rotate failed: ${error instanceof Error ? error.message : String(error)}`)
     }
-    bytes = 0
   }
 
   /** 追加一行；串行化、失败只记日志。 */
@@ -178,6 +194,7 @@ export function createResultsLog(options) {
         await rotateIfNeeded(lineBytes)
         await appendFile(filePath, line, 'utf8')
         bytes = Math.max(0, bytes) + lineBytes
+        writeCount += 1
         void cleanupOldFiles()
       })
       .catch((error) => {
@@ -307,8 +324,12 @@ export function createResultsLog(options) {
     return { matched: true, ...score }
   }
 
-  /** 读取 events 文件（当前 + 保留期内的轮换文件）并解析。 */
-  async function readAllLines() {
+  /**
+   * 读取 events 文件（当前 + 修改时间落在统计窗口内的轮换文件）并解析。
+   * 每解析一批就让出一次事件循环：文件接近 5 MB 时一口气解析会让 Host 卡住几秒。
+   * @param {number} windowStart - 早于这个时间就不再写入的轮换文件直接跳过。
+   */
+  async function readAllLines(windowStart) {
     const lines = []
     let names = []
     try {
@@ -321,14 +342,22 @@ export function createResultsLog(options) {
       if (name === 'events.jsonl') candidates.push({ name, current: true })
       else if (/^events\..+\.jsonl$/u.test(name)) candidates.push({ name, current: false })
     }
+    // 当前文件最后读：行数触顶时保住的是最新的记录。
+    candidates.sort((a, b) => Number(a.current) - Number(b.current) || (a.name < b.name ? -1 : 1))
     for (const candidate of candidates) {
       const path = join(dir, candidate.name)
       let text
       try {
+        // 轮换文件名里带着轮换时刻：那之后它不再有新记录，早于窗口的整份跳过。
+        if (!candidate.current && Number.isFinite(windowStart)) {
+          const rotatedAt = rotationTime(candidate.name)
+          if (rotatedAt !== null && rotatedAt < windowStart) continue
+        }
         text = await readFile(path, 'utf8')
       } catch {
         continue
       }
+      let sinceYield = 0
       for (const line of text.split('\n')) {
         if (line === '' || line.length > 4096) continue
         try {
@@ -336,10 +365,15 @@ export function createResultsLog(options) {
         } catch {
           /* 损坏行忽略 */
         }
-        if (lines.length >= MAX_SUMMARY_LINES) return lines
+        sinceYield += 1
+        if (sinceYield >= SUMMARY_YIELD_EVERY) {
+          sinceYield = 0
+          await new Promise((resolve) => setImmediate(resolve))
+        }
       }
     }
-    return lines
+    // 超过上限时丢掉最早的，不是最新的。
+    return lines.length > MAX_SUMMARY_LINES ? lines.slice(lines.length - MAX_SUMMARY_LINES) : lines
   }
 
   /**
@@ -347,8 +381,19 @@ export function createResultsLog(options) {
    * P50/P95 延迟、日 token。只依赖哈希与分数，不含正文。
    */
   async function summary(days = 7) {
-    const windowStart = now() - Math.max(1, Math.min(30, Number(days) || 7)) * 24 * 60 * 60 * 1000
-    const lines = await readAllLines()
+    const windowDays = Math.max(1, Math.min(30, Number(days) || 7))
+    // 设置页每次打开和点“刷新”都会要一次汇总；几秒内重复请求直接用上一次的结果。
+    if (summaryCache !== null && summaryCache.days === windowDays && now() - summaryCache.at < SUMMARY_CACHE_MS && summaryCache.writes === writeCount) {
+      return summaryCache.value
+    }
+    const value = await computeSummary(windowDays)
+    summaryCache = { days: windowDays, at: now(), writes: writeCount, value }
+    return value
+  }
+
+  async function computeSummary(days) {
+    const windowStart = now() - days * 24 * 60 * 60 * 1000
+    const lines = await readAllLines(windowStart)
     /** @type {Map<string, object>} */
     const offers = new Map()
     const outcomes = { shown: 0, accepted: 0, dismissed: 0, overwritten: 0, expired: 0, closed: 0 }

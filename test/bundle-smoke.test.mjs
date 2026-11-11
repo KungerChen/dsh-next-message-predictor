@@ -4,7 +4,7 @@
 // `node --check` only proves the bundle parses. This loads it the way DSH does
 // (ModuleLoader factory + host React), applies the plugin against a fake slot
 // registry, renders the Settings page with a minimal React stand-in and clicks
-// through the 0.3.0 features. A missing function, a missing locale key or a
+// through the features. A missing function, a missing locale key or a
 // registration that never happens fails here instead of in the user's window.
 import test from 'node:test'
 import assert from 'node:assert/strict'
@@ -12,7 +12,8 @@ import { readFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { DEFAULT_CONFIG, PANEL_ID, ROUTE } from '../src/shared/config.js'
+import { DEFAULT_CONFIG, LANGUAGE_IDS, PANEL_ID, ROUTE } from '../src/shared/config.js'
+import { NMP_DICTIONARIES, NMP_LANGUAGE_NAMES } from '../src/client/i18n.js'
 import { matchPreset } from '../src/shared/presets.js'
 import { PLUGIN_VERSION } from '../src/shared/version.js'
 import { createPredictorService } from '../src/host/predictor-service.js'
@@ -111,8 +112,9 @@ async function boot(options) {
     querySelector: () => null,
     hasFocus: () => true,
     visibilityState: 'visible',
+    documentElement: { lang: options?.pageLanguage ?? '' },
   }
-  globalThis.localStorage = storage()
+  globalThis.localStorage = options?.localStorage ?? storage()
   globalThis.sessionStorage = storage()
   globalThis.fetch = async (url, init) => {
     assert.equal(url, ROUTE)
@@ -130,6 +132,8 @@ async function boot(options) {
 
   /** @type {{options: object, Component: Function}[]} */
   const registry = []
+  /** Every registration ever made, by slot name (the registry only holds the live ones). */
+  const registered = []
   const dictionaries = {}
   let activePanelId = null
   const panelListeners = new Set()
@@ -147,6 +151,7 @@ async function boot(options) {
       register: (entryOptions, Component) => {
         const entry = { options: entryOptions, Component }
         registry.push(entry)
+        registered.push(entryOptions.name)
         return () => {
           const index = registry.indexOf(entry)
           if (index >= 0) registry.splice(index, 1)
@@ -194,6 +199,9 @@ async function boot(options) {
     render,
     writes,
     api: () => windowStub.__nextMessagePredictor,
+    dictionaries,
+    registrations: (name) => registered.filter((value) => value === name).length,
+    localStorage: globalThis.localStorage,
     hostConfig: () => hostConfig,
     activePanel: () => activePanelId,
     selectPanel,
@@ -222,12 +230,22 @@ test('bundle: registers every contribution and reports its version', async () =>
   }
 })
 
-for (const language of ['zh', 'en']) {
+for (const language of LANGUAGE_IDS) {
   test(`settings page (${language}): renders with version, modes and no untranslated key`, async () => {
-    const app = await boot({ language })
+    // The language is chosen in the plugin; DSH itself stays in Chinese.
+    const app = await boot({ language: 'zh', config: { language } })
     try {
+      assert.equal(app.api().language(), language)
+      assert.equal(app.entry('settings.section').options.label(), NMP_DICTIONARIES[language]['settings.nav'])
       const page = app.render('settings.section')
       const text = textOf(page)
+      assert.ok(text.includes(NMP_DICTIONARIES[language]['settings.title']), 'the title is in the chosen language')
+      assert.ok(text.includes(NMP_DICTIONARIES[language]['preset.saver.name']))
+      // The language list names every language in its own words.
+      const select = find(page, 'data-nmp-setting', 'language')
+      assert.equal(select.props.value, language)
+      const options = select.children.map((option) => [option.props.value, textOf([option])])
+      assert.deepEqual(options, [['auto', NMP_DICTIONARIES[language]['settings.languageAuto']], ...LANGUAGE_IDS.map((id) => [id, NMP_LANGUAGE_NAMES[id]])])
       assert.ok(text.includes(`v${PLUGIN_VERSION}`), 'the version is in the header')
       assert.equal(textOf([find(page, 'data-nmp-setting', 'version')]), `v${PLUGIN_VERSION}`)
       assert.equal(find(page, 'data-nmp-setting', 'versionMismatch'), null)
@@ -250,6 +268,101 @@ for (const language of ['zh', 'en']) {
     }
   })
 }
+
+test('language "auto" follows the language DSH is showing', async () => {
+  for (const language of ['ja', 'de', 'pt', 'zh']) {
+    const app = await boot({ language })
+    try {
+      assert.equal(app.hostConfig().language, 'auto')
+      assert.equal(app.api().language(), language)
+      const page = app.render('settings.section')
+      assert.ok(textOf(page).includes(NMP_DICTIONARIES[language]['settings.title']))
+      assert.equal(find(page, 'data-nmp-setting', 'language').props.value, 'auto')
+      // DSH was handed the languages it offers, zh and en among them.
+      const registered = Object.keys(app.dictionaries['next-message-predictor']).sort()
+      assert.deepEqual(registered, ['de', 'en', 'es', 'fr', 'ja', 'pt', 'ru', 'zh'])
+    } finally {
+      app.dispose()
+    }
+  }
+  // DSH in a language it cannot name: the page language decides, then English.
+  const page = await boot({ language: 'xx', pageLanguage: 'ko-KR' })
+  try {
+    assert.equal(page.api().language(), 'ko')
+  } finally {
+    page.dispose()
+  }
+})
+
+test('one choice in the language list switches the page, and the choice is remembered', async () => {
+  const app = await boot({ language: 'zh' })
+  let memory
+  try {
+    let page = app.render('settings.section')
+    assert.ok(textOf(page).includes('下一条消息预测'))
+    find(page, 'data-nmp-setting', 'language').props.onChange({ target: { value: 'fr' } })
+    await tick(5)
+    assert.deepEqual(app.writes.at(-1), { language: 'fr' })
+    assert.equal(app.api().language(), 'fr')
+    page = app.render('settings.section')
+    assert.ok(textOf(page).includes(NMP_DICTIONARIES.fr['settings.title']))
+    assert.equal(textOf(page).includes('下一条消息预测'), false)
+    assert.equal(app.entry('settings.section').options.label(), NMP_DICTIONARIES.fr['settings.nav'])
+    // Choosing the language already in use writes nothing.
+    const before = app.writes.length
+    find(page, 'data-nmp-setting', 'language').props.onChange({ target: { value: 'fr' } })
+    await tick(5)
+    assert.equal(app.writes.length, before)
+    memory = app.localStorage
+    assert.equal(memory.getItem('dsh-next-message-predictor.language'), 'fr')
+  } finally {
+    app.dispose()
+  }
+
+  // Next page load, Host slow to answer: the page already starts in French.
+  const slow = await boot({ language: 'zh', localStorage: memory, config: { language: 'fr' } })
+  try {
+    const state = slow.api().config()
+    const saved = { ready: state.ready }
+    state.ready = false
+    assert.equal(slow.api().language(), 'fr')
+    state.ready = saved.ready
+  } finally {
+    slow.dispose()
+  }
+})
+
+test('a language learnt after registration renames the Settings and sidebar entries', async () => {
+  // The page remembers Spanish from the last visit, but the Host now says German
+  // (changed from another window, or in the profile file).
+  const memory = (() => {
+    const map = new Map([['dsh-next-message-predictor.language', 'es']])
+    return { getItem: (key) => (map.has(key) ? map.get(key) : null), setItem: (key, value) => map.set(key, String(value)), removeItem: (key) => map.delete(key) }
+  })()
+  const app = await boot({ language: 'zh', localStorage: memory, config: { language: 'de', sidebarEntry: true } })
+  try {
+    assert.equal(app.api().language(), 'de')
+    assert.equal(memory.getItem('dsh-next-message-predictor.language'), 'de')
+    const labels = (name) => app.registry.filter((item) => item.options.name === name).map((item) => item.options.label())
+    assert.deepEqual(labels('settings.section'), [NMP_DICTIONARIES.de['settings.nav']], 'one Settings entry, registered again in German')
+    assert.deepEqual(labels('sidebar.panellist'), [NMP_DICTIONARIES.de['settings.nav']], 'one sidebar entry, registered again in German')
+    assert.equal(app.registrations('settings.section') >= 2, true, 'the Settings entry was registered again')
+    assert.ok(app.entry('main', PANEL_ID))
+  } finally {
+    app.dispose()
+  }
+  assert.equal(app.registry.length, 0, 'unloading still removes every contribution')
+})
+
+test('the composer overlay speaks the chosen language too', async () => {
+  const app = await boot({ language: 'zh', config: { language: 'es' } })
+  try {
+    assert.equal(app.api().language(), 'es')
+    assert.equal(app.entry('conversation.input.overlay').options.locale, 'next-message-predictor')
+  } finally {
+    app.dispose()
+  }
+})
 
 test('settings page: a Host on another version is called out', async () => {
   const app = await boot()

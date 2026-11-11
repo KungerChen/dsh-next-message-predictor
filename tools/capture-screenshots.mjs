@@ -15,6 +15,7 @@
  *   sidebar-entry.png   the entry in the left sidebar
  *   page-header.png     the top of the settings page: title, version, sidebar button, basics
  *   settings.png        the whole settings page
+ *   languages.png       the top of the settings page in four other languages, side by side
  *
  * Usage (scratch profile and mock model already running, see docs/DEVELOPMENT.md):
  *   node tools/capture-screenshots.mjs --url "<scratch URL>" [--out docs/images] [--mock http://127.0.0.1:3091]
@@ -56,6 +57,9 @@ const USER_MESSAGE = '给登录表单加上校验：邮箱格式和密码长度'
 const ASSISTANT_REPLY =
   '已在 LoginForm 里加上校验：邮箱用正则检查格式，密码要求至少 8 位，不通过时在输入框下方给出提示。改动在 src/components/LoginForm.tsx，还没有运行测试。'
 const SUGGESTIONS = ['跑一下测试，确认没有回归', '把改动的代码给我看一下', '再补上对应的单元测试']
+
+/** The languages shown in languages.png (the other images are in Chinese). */
+const LANGUAGE_TILES = ['en', 'ja', 'es', 'ru']
 
 const VIEWPORT = { width: 1280, height: 820 }
 /** Short window for the conversation shots, so the chat reaches down to the input box. */
@@ -220,6 +224,7 @@ try {
 
   // Follow the session model (the mock), predict automatically, three candidates on request.
   await setConfig({
+    language: 'zh',
     enabled: true, manualOnly: false, showPredictButton: true, modelMode: 'session', reasoningEffort: '',
     multiCandidates: true, candidateCount: 3, manualLimit: 3, habitSuggestions: false, sidebarEntry: true, triggerDelayMs: 250,
   })
@@ -303,13 +308,14 @@ try {
   await page.screenshot({ path: path.join(outDir, 'sidebar-entry.png'), clip: entryClip })
 
   // The top of the page it opens: title, version, the sidebar button and the basics card.
-  const headerClip = await page.evaluate(() => {
-    const header = document.querySelector('[data-nmp-panel] [data-nmp-setting="header"]').getBoundingClientRect()
-    const basics = document.querySelector('[data-nmp-panel] [data-nmp-setting="keys"]').parentElement.getBoundingClientRect()
-    const margin = 16
-    return { x: header.left - margin, y: Math.max(0, header.top - margin), width: header.width + margin * 2, height: basics.bottom - Math.max(0, header.top - margin) + margin }
-  })
-  await page.screenshot({ path: path.join(outDir, 'page-header.png'), clip: headerClip })
+  const pageTopClip = () =>
+    page.evaluate(() => {
+      const header = document.querySelector('[data-nmp-panel] [data-nmp-setting="header"]').getBoundingClientRect()
+      const basics = document.querySelector('[data-nmp-panel] [data-nmp-setting="keys"]').parentElement.getBoundingClientRect()
+      const margin = 16
+      return { x: header.left - margin, y: Math.max(0, header.top - margin), width: header.width + margin * 2, height: basics.bottom - Math.max(0, header.top - margin) + margin }
+    })
+  await page.screenshot({ path: path.join(outDir, 'page-header.png'), clip: await pageTopClip() })
 
   await page.locator('[data-nmp-panel] [data-nmp-setting="presets"]').screenshot({ path: path.join(outDir, 'modes.png') })
 
@@ -319,7 +325,32 @@ try {
   await sleep(500)
   await page.locator('[data-nmp-panel] > div').screenshot({ path: path.join(outDir, 'settings.png') })
 
-  for (const name of ['demo.png', 'suggestion.png', 'sidebar-entry.png', 'page-header.png', 'modes.png', 'settings.png']) {
+  // ── the same page top in other languages, as one image ──
+  // The language is chosen in the plugin's own settings; DSH itself stays as it is.
+  await page.setViewportSize(VIEWPORT)
+  const tiles = []
+  for (const language of LANGUAGE_TILES) {
+    await setConfig({ language })
+    await waitFor(`the page in "${language}"`, () => page.evaluate((id) => window.__nextMessagePredictor?.language?.() === id, language))
+    // Saving reloads the plugin; the panel comes back by itself, or is opened again.
+    await page.evaluate(() => window.__nextMessagePredictor.openPanel())
+    await page.waitForSelector('[data-nmp-panel] [data-nmp-setting="keys"]')
+    await page.evaluate(() => document.querySelector('[data-nmp-panel]').scrollTo(0, 0))
+    await sleep(900)
+    tiles.push((await page.screenshot({ clip: await pageTopClip() })).toString('base64'))
+  }
+  const sheet = await context.newPage()
+  await sheet.setViewportSize({ width: 1320, height: 900 })
+  await sheet.setContent(
+    `<body style="margin:0;background:#ffffff"><div id="sheet" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px;width:1288px;background:#eef0f4">${tiles
+      .map((tile) => `<img src="data:image/png;base64,${tile}" style="display:block;width:100%;border-radius:12px;background:#ffffff">`)
+      .join('')}</div></body>`,
+  )
+  await sheet.waitForFunction(() => [...document.images].every((image) => image.complete && image.naturalWidth > 0))
+  await sheet.locator('#sheet').screenshot({ path: path.join(outDir, 'languages.png') })
+  await sheet.close()
+
+  for (const name of ['demo.png', 'suggestion.png', 'sidebar-entry.png', 'page-header.png', 'modes.png', 'settings.png', 'languages.png']) {
     const size = (await readFile(path.join(outDir, name))).length
     console.log(`${name}  ${(size / 1024).toFixed(0)} KB`)
   }
@@ -331,7 +362,7 @@ try {
       for (const key of [
         'enabled', 'manualOnly', 'showPredictButton', 'modelMode', 'provider', 'model', 'reasoningEffort', 'multiCandidates', 'candidateCount',
         'manualLimit', 'habitSuggestions', 'sidebarEntry', 'triggerDelayMs', 'contextMessages', 'targetInputTokens', 'maxContextCodePoints',
-        'maxOutputTokens', 'timeoutMs', 'dailyRequestLimit', 'dailyTokenBudget',
+        'maxOutputTokens', 'timeoutMs', 'dailyRequestLimit', 'dailyTokenBudget', 'language',
       ]) restore[key] = originalConfig[key]
       await rpc({ schemaVersion: 1, operation: 'config.set', patch: restore })
     }

@@ -152,8 +152,14 @@ export function createHostAdapter(ctx) {
         } catch {
           return jsonResponse(400, { ok: false, error: { code: 'bad-json', message: 'request body must be JSON' } })
         }
-        const response = await handle(body, request)
-        return jsonResponse(response.status, response.body)
+        try {
+          const response = await handle(body, request)
+          return jsonResponse(response.status, response.body)
+        } catch {
+          // The service has its own guard; this one covers anything outside it,
+          // so the browser always receives JSON it can read.
+          return jsonResponse(500, { ok: false, error: { code: 'internal-error', message: 'the plugin failed to handle this request' } })
+        }
       },
     })
     return { ok: true, dispose: disposeRoute, route: ROUTE, bodyLimitBytes: bodyLimit }

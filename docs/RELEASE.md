@@ -5,11 +5,11 @@
 | 字段 | 值 |
 |---|---|
 | 包名 | `dsh-next-message-predictor` |
-| 版本 | `0.3.0`（变更见 [CHANGELOG.md](../CHANGELOG.md)） |
+| 版本 | `0.4.0`（变更见 [CHANGELOG.md](../CHANGELOG.md)） |
 | 目标 DSH | `>=0.2.2-rc.1 <0.3.0`（实测 `0.2.2-rc.1`） |
 | 提示词版本 | `nmp-p2-v3`（结果缓存键的一部分） |
 | 构建 | 无打包器：`scripts/build-client.mjs` 由 `src/shared` + `src/client` 生成 `lib/client.js`；`lib/index.js` 是 Host 入口 |
-| 发布文件 | `lib/`、`src/`、`cordis.patch.yml`、`locale/*.json`、`icon.svg`、`README.md`、`CHANGELOG.md`、`LICENSE`、`NOTICE`（`package.json` 的 `files`；不含 `test/`、`tools/`、`eval/`、`docs/`） |
+| 发布文件 | `lib/`、`src/`、`cordis.patch.yml`、`locale/*.json`、`icon.svg`、`README.md`、`README.<语言>.md`、`CHANGELOG.md`、`LICENSE`、`NOTICE`（`package.json` 的 `files`；不含 `test/`、`tools/`、`eval/`、`docs/`） |
 | 分发方式 | 本地目录安装（`package.json` 标记 `private`，不发布到 npm） |
 
 ## 发版步骤
@@ -20,13 +20,13 @@
 4. 在隔离 profile 上跑端到端矩阵（[DEVELOPMENT.md](DEVELOPMENT.md#端到端验证隔离-profile)）。
 5. 提交、打标签 `v<版本>`、推送。
 
-## 0.3.0 的验证
+## 0.4.0 的验证
 
-- `npm test`：199 项全部通过。
+- `npm test`：242 项全部通过。
 - 隔离 profile（`predictor-scratch`，DSH 0.2.2-rc.1，mock 模型）：`p1-e2e.mjs` 13 步、`p2-e2e.mjs` 9 步全部通过。
-- 浏览器手动核对：版本号显示、左侧栏入口的添加与移除、模式切换与撤销、统计修复。
+- 浏览器手动核对：版本号显示、界面语言的切换与撤销、“跟随 DSH”、语言在别处被修改后入口名称的更新。
 
-未做的验证：0.3.0 没有重跑真实模型试用（`p4-real-e2e.mjs`）和质量评测（`eval/`）；提示词与模型调用路径在本版本没有改动（提示词版本仍为 `nmp-p2-v3`）。Desktop 原生窗口未单独验收，端到端验证都在 Web GUI 上进行。
+未做的验证：0.4.0 没有重跑真实模型试用（`p4-real-e2e.mjs`）和质量评测（`eval/`）；提示词版本仍为 `nmp-p2-v3`，但发送前的遮蔽范围、片段裁剪的上限和用户消息中行首标记的改写有变化，mock 模型验证不到它们对建议质量的影响。DSH 自身切换界面语言时的跟随只在测试替身上验证过，隔离 profile 始终是中文界面。Desktop 原生窗口未单独验收，端到端验证都在 Web GUI 上进行。九种语言的文案中，中文和英文之外的七种没有经过母语者校对。
 
 ## 安装到 profile 与更新
 
@@ -65,7 +65,7 @@ $dsh = '<DSH 安装目录>\resources\runtime\cli\bin\dsh.cmd'
 
 卸载移除路由、监听器、界面入口和运行时状态，不修改会话历史。profile 中已写入的配置和 `<DSH_HOME>/next-message-predictor/` 下的文件需要手动删除，见 [PRIVACY.md](PRIVACY.md#数据删除)。
 
-只想退回某个版本：把本目录检出到对应的标签（`git checkout v<版本>`），`npm run build`，重启 DSH。仓库的版本历史从 `v0.3.0` 开始，更早的版本没有提交记录。从更新的版本退回 0.3.0 之前的代码时：0.3.0 新增的配置字段 `sidebarEntry` 在旧版本中会被报告为未知字段（列在诊断的“配置错误”里），不影响预测；介意的话先在 0.3.0 里点“从左侧栏移除”再回退。
+只想退回某个版本：把本目录检出到对应的标签（`git checkout v<版本>`），`npm run build`，重启 DSH。仓库的版本历史从 `v0.3.0` 开始，更早的版本没有提交记录。从更新的版本退回 0.3.0 之前的代码时：0.3.0 新增的配置字段 `sidebarEntry` 在旧版本中会被报告为未知字段（列在诊断的“配置错误”里），不影响预测；介意的话先在 0.3.0 里点“从左侧栏移除”再回退。从 0.4.0 退回 0.3.0 时同理：选过界面语言的话，`language` 字段在 0.3.0 中会被报告为未知字段，不影响预测；先把“界面语言”改回“跟随 DSH”并不会删除这个字段，介意的话在 profile 的配置里手动删掉它。
 
 ## 日常使用时值得留意的事
 

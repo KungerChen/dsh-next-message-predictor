@@ -22,615 +22,55 @@ function createClient(react) {
         return
       }
 
-      const dictionaries = {
-        en: {
-          "ghost.adopt": "Tab accept",
-          "ghost.adoptHint": "Press Tab to put the suggestion into the input box. It is not sent.",
-          "ghost.another": "Another",
-          "ghost.anotherHint": "Switch to the next suggestion ({key}). When the candidates run out, the model is asked again.",
-          "ghost.anotherNone": "No more suggestions for this reply: the manual prediction limit has been reached.",
-          "ghost.predict": "Predict",
-          "ghost.predictHint": "Predict the next message ({key}). Only fills in a suggestion; nothing is sent.",
-          "ghost.predicting": "Predicting…",
-          "ghost.none": "No suggestion this time",
-          "ghost.noneBecause": ": ",
-          "settings.nav": "Prediction",
-          "settings.title": "Next message prediction",
-          "settings.versionLabel": "Plugin version",
-          "settings.versionHostOld": "The backend is still running an older version. Restart DSH to finish updating to v{version}; until then some new options may not save.",
-          "settings.versionHostOther": "The backend is running v{host} but this page is v{version}. Restart DSH so the two match.",
-          "settings.sidebarAdd": "Add to sidebar",
-          "settings.sidebarRemove": "Remove from sidebar",
-          "settings.sidebarAdded": "Added to the left sidebar. Click \"Prediction\" there to open this page.",
-          "settings.sidebarRemoved": "Removed from the left sidebar. This page is still under Settings > Prediction.",
-          "settings.undo": "Undo",
-          "settings.undone": "Undone. The previous settings are back.",
-          "settings.colon": ": ",
-          "settings.saveFailedUnknown": "unknown error",
-          "settings.desc": "After the assistant finishes a reply, a suggestion for the next message is shown as grey text in the empty input box. The suggestion is only filled in, never sent automatically.",
-          "settings.loading": "Loading…",
-          "settings.hostUnavailable": "The plugin backend cannot be reached. The settings shown may be out of date; restarting DSH may help.",
-          "settings.save": "Save",
-          "settings.cancel": "Cancel",
-          "settings.discard": "Discard",
-          "settings.refresh": "Refresh",
-          "settings.saved": "Saved.",
-          "settings.savedOn": "Enabled. Suggestions start after the next finished reply.",
-          "settings.savedOff": "Disabled. No further model calls.",
-          "settings.savedManual": "Automatic prediction is off. Prediction runs only on \"Predict\" or {key}.",
-          "settings.savedAuto": "Automatic prediction is on. One prediction runs after each finished reply.",
-          "settings.saveFailed": "Save failed",
-          "settings.unsaved": "Unsaved changes",
-          "settings.noData": "no data",
-          "settings.rangeError": "Enter a whole number in the range ",
-          "settings.rangeLabel": "Range ",
-          "settings.defaultLabel": ", default ",
-          "settings.stateNow": "Status: ",
-          "settings.enabled": "Enable prediction",
-          "settings.autoPredict": "Predict automatically after each reply",
-          "settings.predictButton": "Show the \"Predict\" button",
-          "settings.shortcut": "Predict shortcut",
-          "settings.shortcutRecording": "Press the new key combination (must include Ctrl, Alt or Win). Esc cancels.",
-          "settings.shortcutPress": "Waiting for keys…",
-          "settings.shortcutReset": "Reset",
-          "settings.shortcutSaved": "Shortcut set to {key}.",
-          "settings.shortcutInvalid": "This combination cannot be used: it must include Ctrl, Alt or Win, and the main key cannot be Tab, Esc, Enter, Backspace, Delete or an arrow key.",
-          "settings.keyAdopt": "accept the suggestion",
-          "settings.keyHide": "hide the suggestion",
-          "settings.keyPredict": "predict / another one",
-          "settings.sourcesTitle": "Suggestion sources",
-          "settings.habits": "Prefer frequently used short messages",
-          "settings.multi": "Return several candidates for manual predictions",
-          "settings.routeTitle": "Prediction model",
-          "settings.routeSession": "Last prediction used: ",
-          "settings.routeDefault": "Next prediction will use: ",
-          "settings.routeFixed": "In use: ",
-          "settings.routeEffortInline": ", reasoning ",
-          "settings.routeFixedTest": "Offline test mode: shows the fixed test suggestion without calling a model.",
-          "settings.routeUnknown": "No prediction has run yet.",
-          "settings.routeError": "The current model setting is not usable: ",
-          "settings.routeModeFixed": "Specific model (a low-cost, low-latency model is recommended)",
-          "settings.routeModeSession": "Follow the session model",
-          "settings.routeProvider": "Provider ID",
-          "settings.routeModel": "Model ID",
-          "settings.routeEffort": "Reasoning effort",
-          "settings.routeEffortAuto": "empty = lowest available",
-          "settings.routeIncomplete": "Provider ID and model ID are both required.",
-          "settings.routeRecommended": "Use the recommended model",
-          "settings.routeRecommendedSaved": "Now using the recommended model.",
-          "settings.resultTitle": "Last 7 days",
-          "settings.resultLoading": "Loading…",
-          "settings.resultUnavailable": "Statistics are not available at the moment.",
-          "settings.resultEmpty": "No predictions in the last 7 days.",
-          "settings.resultRequests": "Prediction requests",
-          "settings.resultShown": "Suggestions shown",
-          "settings.resultAccepted": "Accepted",
-          "settings.resultAcceptedOf": ", acceptance rate ",
-          "settings.resultAbstains": "No suggestion",
-          "settings.resultReasons": ". Main reasons: ",
-          "settings.resultLatency": "Response time",
-          "settings.resultLatencyTypical": "median ",
-          "settings.resultLatencySlow": "95th percentile ",
-          "settings.resultTokens": "Token usage",
-          "settings.tokensIn": "input ",
-          "settings.tokensOut": "output ",
-          "settings.budgetToday": "Daily allowance used",
-          "settings.unitTimes": "",
-          "settings.unitItems": "",
-          "settings.unitSeconds": " s",
-          "settings.listSeparator": ", ",
-          "settings.advanced": "Advanced options",
-          "settings.group.trigger": "Triggering and counts",
-          "settings.group.content": "Content sent",
-          "settings.group.limits": "Output and limits",
-          "settings.group.other": "Other",
-          "settings.group.diagnostics": "Diagnostics",
-          "settings.triggerDelayMs": "Delay before automatic prediction",
-          "settings.autoWindowMinutes": "Automatic prediction window",
-          "settings.manualLimit": "Manual predictions per reply",
-          "settings.candidateCount": "Candidates per prediction",
-          "settings.habitMinCount": "Minimum repeats for a frequent message",
-          "settings.contextMessages": "Context messages",
-          "settings.targetInputTokens": "Context token limit",
-          "settings.includeTurnFacts": "Include last-turn statistics",
-          "settings.redactSecrets": "Mask sensitive information before sending",
-          "settings.maxSuggestionGraphemes": "Maximum suggestion length",
-          "settings.maxOutputTokens": "Maximum output tokens",
-          "settings.timeoutMs": "Request timeout",
-          "settings.dailyRequestLimit": "Daily request limit",
-          "settings.dailyTokenBudget": "Daily token limit",
-          "settings.announce": "Announce suggestions to screen readers",
-          "settings.fakeSuggestion": "Fixed test suggestion",
-          "settings.redactConfirmTitle": "Confirm turning off masking",
-          "settings.redactConfirmBody": "With masking off, the conversation excerpt is sent to the prediction model as is and may contain keys, tokens, email addresses or other sensitive content. Keeping it on is recommended unless the conversation is known to contain nothing sensitive.",
-          "settings.redactConfirmButton": "Turn off",
-          "settings.redactOff": "Masking of sensitive information is off.",
-          "settings.advancedChanged": "Some advanced options differ from their defaults.",
-          "settings.advancedDefault": "All advanced options are at their defaults.",
-          "settings.restoreAdvanced": "Restore defaults",
-          "settings.advancedRestored": "Advanced options restored to defaults.",
-          "settings.diagnosticsHint": "Raw counters since the plugin last started; useful when reporting a problem.",
-          "settings.diagnosticState": "state",
-          "settings.diagnosticRevision": "config revision",
-          "settings.diagnosticMode": "mode / prompt",
-          "settings.diagnosticCounters": "counters",
-          "settings.countRequests": "requests",
-          "settings.countOffers": "offers",
-          "settings.countProviderCalls": "provider calls",
-          "settings.countSendCalls": "send calls",
-          "settings.diagnosticTokens": "tokens",
-          "settings.diagnosticContext": "context",
-          "settings.diagnosticBudget": "daily budget",
-          "settings.diagnosticCapabilities": "capabilities",
-          "settings.diagnosticProvider": "provider",
-          "settings.diagnosticConfigErrors": "config errors",
-          "settings.conflictHint": "Another input-suggestion plugin was detected; this plugin is paused",
-          "unit.triggerDelayMs": "ms",
-          "unit.autoWindowMinutes": "min",
-          "unit.manualLimit": "",
-          "unit.candidateCount": "",
-          "unit.habitMinCount": "",
-          "unit.contextMessages": "",
-          "unit.targetInputTokens": "tok",
-          "unit.maxSuggestionGraphemes": "chars",
-          "unit.maxOutputTokens": "tok",
-          "unit.timeoutMs": "ms",
-          "unit.dailyRequestLimit": "",
-          "unit.dailyTokenBudget": "tok",
-          "preset.title": "Mode",
-          "preset.current": "Current mode: ",
-          "preset.custom": "Custom settings: some options differ from every mode below. Choosing a mode puts back its recommended set in one click.",
-          "preset.inUse": "In use",
-          "preset.recommended": "Recommended",
-          "preset.applied": "Switched to the \"{name}\" mode.",
-          "preset.appliedWhileOff": " Prediction is currently off; it takes effect once \"Enable prediction\" is on.",
-          "preset.balanced.name": "Balanced",
-          "preset.balanced.desc": "Predicts automatically after each reply with a specific low-cost model. For everyday use.",
-          "preset.saver.name": "Saver",
-          "preset.saver.desc": "Predicts only on \"Predict\" or {key}, with a shorter excerpt and a lower daily limit.",
-          "preset.quality.name": "Quality",
-          "preset.quality.desc": "Predicts automatically with the session model and more context. Closer suggestions, higher cost and wait.",
-          "preset.fact.auto": "automatic",
-          "preset.fact.manual": "manual",
-          "preset.fact.fixed": "specific model",
-          "preset.fact.session": "session model",
-          "preset.fact.context": "{n} context messages",
-          "preset.fact.daily": "{n} per day",
-          "preset.fact.separator": " · ",
-          "help.presets": "Switches a recommended set of options in one click: how prediction is triggered, the model strategy, the number of candidates, the context size, the timeout and the daily limits. It does not change the \"Enable prediction\" switch, the shortcut, frequent messages or the privacy options, and a provider ID and model ID already entered are kept. A switch can be undone right away, and every option can still be changed on its own afterwards.",
-          "help.sidebarEntry": "Adds a \"Prediction\" entry to the list at the top of the DSH left sidebar. Clicking it opens this page in the main area, so the status, the mode and the options are one click away without opening Settings. Click the button again to remove the entry.",
-          "help.enabled": "Master switch. When off, no suggestions are shown and no model is called.",
-          "help.autoPredict": "On: one prediction runs automatically after each finished reply. Off: prediction runs only on the \"Predict\" button or {key}, which reduces model calls.",
-          "help.predictButton": "Shows a \"Predict\" button at the right of the input box while it is empty; clicking it predicts immediately. The button hides while text is being typed or a suggestion is showing.",
-          "help.shortcut": "In the empty input box this combination predicts immediately; while a suggestion is showing it switches to the next one. Click the button on the right and press a new combination to change it.",
-          "help.habits": "A short message (one line, 2–20 characters) sent repeatedly in the same session is offered directly. No model call, nothing counted against the allowance, and nothing leaves this machine. The repeat threshold is under Advanced options.",
-          "help.multi": "For manual predictions and \"Another\", one model call returns several candidates that can then be switched instantly. Automatic prediction always returns one. The number of candidates is under Advanced options.",
-          "help.modelMode": "Specific model: prediction cost and speed do not depend on the session model; if that model is unavailable, the session model is used once instead. Follow the session model: prediction cost rises with a high-cost session model.",
-          "help.provider": "The provider identifier, as shown in DSH's model settings, for example deepseek-official.",
-          "help.model": "The model identifier, as shown in DSH's model settings, for example deepseek-flash.",
-          "help.reasoningEffort": "The model's reasoning effort level. \"off\" disables reasoning for the lowest latency and cost; empty uses the lowest level the model supports.",
-          "help.results": "Taken from a local log that stores counts, timing and hashes only, never suggestion or conversation text. Kept for 14 days.",
-          "help.triggerDelayMs": "How long to wait after a reply ends before predicting automatically. With a very small value, suggestions may appear while the reply is still being read.",
-          "help.autoWindowMinutes": "Once this much time has passed since the reply ended, automatic prediction no longer runs (including the retry after the window regains focus). Manual prediction is not limited.",
-          "help.manualLimit": "How many times the model may be called for manual predictions on one reply (the first prediction and each \"Another\" count once). A higher value raises the maximum cost per reply.",
-          "help.candidateCount": "With \"Return several candidates\" on, how many candidates one model call returns. More candidates mean more output tokens.",
-          "help.habitMinCount": "A short message must appear at least this many times in the same session before it is offered as a frequent message.",
-          "help.contextMessages": "The maximum number of recent messages (user messages and assistant replies together) sent to the prediction model.",
-          "help.targetInputTokens": "The size limit of the conversation excerpt sent to the prediction model; anything beyond it is trimmed, keeping the most recent content. A higher value raises the cost per prediction and sends more of the conversation.",
-          "help.includeTurnFacts": "Appends one line of statistics for the last turn to the excerpt: the number of tool calls, file edits and test commands. No tool output or file content is included.",
-          "help.redactSecrets": "Replaces content that looks like keys, tokens or email addresses with placeholders before sending. The mechanism is rule-based and cannot guarantee that all sensitive information is found. When off, the excerpt is sent as is.",
-          "help.maxSuggestionGraphemes": "A suggestion longer than this is discarded; it is never shown truncated.",
-          "help.maxOutputTokens": "The output token limit for one prediction. When several candidates are requested, the effective limit is raised automatically with the number of candidates.",
-          "help.timeoutMs": "The longest time one prediction waits for the model; after that no suggestion is given for this request.",
-          "help.dailyRequestLimit": "The number of prediction requests allowed per day. Once reached, no model is called for the rest of the day.",
-          "help.dailyTokenBudget": "The total tokens (input and output) allowed per day. Once reached, no model is called for the rest of the day.",
-          "help.announce": "Announces each suggestion once through the screen reader when it appears.",
-          "help.fakeSuggestion": "For offline testing only: shown without calling a model when the provider ID is set to fixed-test. One line, at most 160 characters.",
-          "warn.manualLimit": "Above the default: the maximum cost per reply rises accordingly.",
-          "warn.contextMessages": "High value: more of the conversation is sent to the prediction model.",
-          "warn.targetInputTokens": "High value: cost per prediction rises and more of the conversation is sent to the prediction model.",
-          "warn.maxOutputTokens": "High value: the maximum cost per prediction rises; a suggestion normally needs only a few dozen tokens.",
-          "warn.dailyRequestLimit": "High value: the maximum daily cost rises accordingly.",
-          "warn.dailyTokenBudget": "High value: the maximum daily cost rises accordingly.",
-          "warn.redactSecrets": "Off: the conversation excerpt is sent to the prediction model as is and may contain sensitive information.",
-          "state.idle": "waiting for the next reply to finish",
-          "state.closed": "waiting for the next reply to finish",
-          "state.waiting": "reply finished, about to predict",
-          "state.requesting": "predicting",
-          "state.offered": "suggestion showing",
-          "state.accepted": "suggestion accepted",
-          "state.dismissed": "suggestion hidden",
-          "state.abstained": "no suggestion this time",
-          "state.suppressed": "typing detected, no suggestion this time",
-          "state.unavailable": "not available at the moment",
-          "state.failed": "an error occurred",
-          "state.disabled": "disabled",
-          "state.conflict": "paused: another input-suggestion plugin was detected",
-          "state.unsupported": "this page is not supported",
-          "state.manualWaiting": "waiting for a manual trigger (\"Predict\" or {key})",
-          "reason.model-abstained": "the model found no suitable suggestion",
-          "reason.repeated-suggestion": "the model could not produce a different suggestion",
-          "reason.already-dispatched": "this reply has already been predicted",
-          "reason.already-requested": "no predictions left for this reply",
-          "reason.manual-limit": "the manual prediction limit for this reply has been reached",
-          "reason.manual-already-requested": "this reply has already been predicted manually",
-          "reason.turn-closed": "the suggestion for this reply was already accepted",
-          "reason.turn-accepted": "the suggestion for this reply was already accepted",
-          "reason.turn-dismissed": "the suggestion for this reply was hidden",
-          "reason.daily-request-limit": "the daily request limit has been reached",
-          "reason.daily-token-budget": "the daily token limit has been reached",
-          "reason.stale-context": "the conversation has moved on",
-          "reason.stale-view": "the conversation has moved on",
-          "reason.completion-too-old": "the reply ended outside the automatic prediction window",
-          "reason.unverified-completion": "the backend has not yet confirmed that this reply finished; retry shortly",
-          "reason.turn-not-completed": "this reply did not finish normally",
-          "reason.no-completed-turn": "the session has no finished reply yet",
-          "reason.empty-context": "no conversation content is available",
-          "reason.no-final-assistant-text": "the reply contains no text",
-          "reason.context-read-failed": "reading the conversation failed",
-          "reason.context-unavailable": "reading the conversation failed",
-          "reason.output-invalid-json": "the model output did not match the required format",
-          "reason.finish-aborted-aborted": "the request was cancelled",
-          "reason.semantic": "the suggestion did not pass the content check",
-          "reason.window-inactive": "the window is in the background",
-          "reason.draft-not-empty": "the input box already contains text",
-          "reason.prediction-active": "a prediction is running or a suggestion is showing",
-          "reason.busy": "the previous prediction has not finished",
-          "reason.transport": "connection failed",
-          "reason.cancelled": "cancelled",
-          "reason.config-changed": "settings were just changed",
-          "reason.config-loading": "settings are loading",
-          "reason.composing": "an input method is composing",
-          "reason.menu-open": "a menu is open",
-          "reason.turn-running": "the assistant is still replying",
-          "reason.disabled": "disabled",
-          "reason.awaiting-first-turn": "waiting for the first reply to finish",
-          "reason.blank-session": "the session is empty",
-          "reason.no-session": "no session is open",
-          "reason.no-view": "no session is open",
-          "reason.not-editable": "the input box cannot be edited at the moment",
-          "reason.input-frozen": "the input box cannot be edited at the moment",
-          "reason.pending-interaction": "an action is waiting for confirmation",
-          "reason.host-unavailable": "the plugin backend cannot be reached",
-          "reason.host-route-unavailable": "the plugin backend cannot be reached",
-          "reason.llm-service-unavailable": "the model service is unavailable",
-          "reason.provider-threw": "the model call failed",
-          "reason.ledger-write-failed": "the allowance record could not be written, so no model was called",
-          "reason.bad-response": "the backend returned an unexpected answer",
-          "reason.no-route-fixed-route-incomplete": "provider ID or model ID is missing",
-          "reason.no-route-no-session-selection": "the session has no model selected",
-          "reason.no-test-suggestion-configured": "no fixed test suggestion is set",
-          "reason.prepare-failed": "the prediction model could not be called; check the model setting",
-          "reason.fallback-failed": "neither the specific model nor the session model is available",
-          "reason.stream-failed": "the model response was interrupted",
-          "reason.unsupported-reasoning-effort": "the model does not offer the reasoning effort that was entered",
-          "reason.finish": "the model did not finish its output normally",
-          "reason.finish-max-tokens": "the model output exceeded the output token limit",
-          "reason.finish-aborted": "the request timed out or was cancelled",
-          "reason.finish-error": "the model returned an error",
-          "reason.output": "the model output did not match the required format",
-          "reason.output-too-long": "the suggestion was longer than the maximum length",
-          "reason.fixed-suggestion": "the fixed test suggestion does not meet the format rules",
-          "reason.invalid-response": "the backend returned an unexpected answer",
-          "reason.insert-rejected": "the input box changed, so the suggestion was not filled in",
-          "reason.session-removed": "the session was deleted",
-          "reason.unknown-session": "the session cannot be found",
-          "reason.internal-error": "an internal error occurred in the plugin",
-          "reason.config-editor-unavailable": "settings cannot be saved in this environment",
-        },
-        zh: {
-          "ghost.adopt": "Tab 采纳",
-          "ghost.adoptHint": "按 Tab 将建议填入输入框，不会发送。",
-          "ghost.another": "换一条",
-          "ghost.anotherHint": "切换到下一条建议（{key}）。候选用完后重新请求模型。",
-          "ghost.anotherNone": "该回答没有更多建议：手动预测次数已达上限。",
-          "ghost.predict": "预测",
-          "ghost.predictHint": "预测下一条消息（{key}）。仅填入建议，不会发送。",
-          "ghost.predicting": "正在预测…",
-          "ghost.none": "本次没有建议",
-          "ghost.noneBecause": "：",
-          "settings.nav": "消息预测",
-          "settings.title": "下一条消息预测",
-          "settings.versionLabel": "插件版本",
-          "settings.versionHostOld": "后台仍在运行旧版本。重启 DSH 后才会更新到 v{version}，在此之前部分新选项可能无法保存。",
-          "settings.versionHostOther": "后台正在运行 v{host}，与本页面的 v{version} 不一致。请重启 DSH 使两者一致。",
-          "settings.sidebarAdd": "添加到左侧栏",
-          "settings.sidebarRemove": "从左侧栏移除",
-          "settings.sidebarAdded": "已添加到左侧栏。点击左侧栏的“消息预测”即可打开本页面。",
-          "settings.sidebarRemoved": "已从左侧栏移除。仍可在“设置 → 消息预测”中打开本页面。",
-          "settings.undo": "撤销",
-          "settings.undone": "已撤销，恢复为之前的设置。",
-          "settings.colon": "：",
-          "settings.saveFailedUnknown": "未知错误",
-          "settings.desc": "助手回答结束后，在空输入框中以灰色文字给出下一条消息的建议。建议仅填入输入框，不会自动发送。",
-          "settings.loading": "正在加载…",
-          "settings.hostUnavailable": "无法连接插件后台，当前显示的设置可能不是最新状态。可尝试重启 DSH。",
-          "settings.save": "保存",
-          "settings.cancel": "取消",
-          "settings.discard": "放弃修改",
-          "settings.refresh": "刷新",
-          "settings.saved": "已保存。",
-          "settings.savedOn": "已启用。下一次回答结束后开始给出建议。",
-          "settings.savedOff": "已关闭，不再调用模型。",
-          "settings.savedManual": "已关闭自动预测。点击“预测”或按 {key} 时才进行预测。",
-          "settings.savedAuto": "已开启自动预测。每次回答结束后预测一次。",
-          "settings.saveFailed": "保存失败",
-          "settings.unsaved": "有未保存的修改",
-          "settings.noData": "暂无数据",
-          "settings.rangeError": "请输入整数，取值范围：",
-          "settings.rangeLabel": "范围 ",
-          "settings.defaultLabel": "，默认 ",
-          "settings.stateNow": "当前状态：",
-          "settings.enabled": "启用预测",
-          "settings.autoPredict": "回答结束后自动预测",
-          "settings.predictButton": "显示“预测”按钮",
-          "settings.shortcut": "预测快捷键",
-          "settings.shortcutRecording": "请按下新的组合键（需包含 Ctrl、Alt 或 Win）。按 Esc 取消。",
-          "settings.shortcutPress": "等待按键…",
-          "settings.shortcutReset": "恢复默认",
-          "settings.shortcutSaved": "快捷键已设为 {key}。",
-          "settings.shortcutInvalid": "该组合键不可用：需包含 Ctrl、Alt 或 Win，且主键不能是 Tab、Esc、回车、退格、删除或方向键。",
-          "settings.keyAdopt": "采纳建议",
-          "settings.keyHide": "隐藏建议",
-          "settings.keyPredict": "预测 / 换一条",
-          "settings.sourcesTitle": "建议来源",
-          "settings.habits": "优先使用常用短句",
-          "settings.multi": "手动预测返回多条候选",
-          "settings.routeTitle": "预测模型",
-          "settings.routeSession": "最近一次预测使用：",
-          "settings.routeDefault": "下一次预测将使用：",
-          "settings.routeFixed": "当前使用：",
-          "settings.routeEffortInline": "，推理强度 ",
-          "settings.routeFixedTest": "离线测试模式：显示固定测试建议，不调用模型。",
-          "settings.routeUnknown": "尚未进行过预测。",
-          "settings.routeError": "当前模型设置不可用：",
-          "settings.routeModeFixed": "指定模型（推荐使用低成本、低延迟的模型）",
-          "settings.routeModeSession": "跟随会话模型",
-          "settings.routeProvider": "模型服务商 ID",
-          "settings.routeModel": "模型 ID",
-          "settings.routeEffort": "推理强度",
-          "settings.routeEffortAuto": "留空则使用最低档",
-          "settings.routeIncomplete": "模型服务商 ID 与模型 ID 均为必填项。",
-          "settings.routeRecommended": "改用推荐模型",
-          "settings.routeRecommendedSaved": "已改用推荐模型。",
-          "settings.resultTitle": "近 7 天统计",
-          "settings.resultLoading": "正在加载…",
-          "settings.resultUnavailable": "暂时无法读取统计数据。",
-          "settings.resultEmpty": "近 7 天没有预测记录。",
-          "settings.resultRequests": "预测请求",
-          "settings.resultShown": "已显示建议",
-          "settings.resultAccepted": "已采纳",
-          "settings.resultAcceptedOf": "，采纳率 ",
-          "settings.resultAbstains": "未给出建议",
-          "settings.resultReasons": "。主要原因：",
-          "settings.resultLatency": "响应时间",
-          "settings.resultLatencyTypical": "中位数 ",
-          "settings.resultLatencySlow": "95 分位 ",
-          "settings.resultTokens": "token 用量",
-          "settings.tokensIn": "输入 ",
-          "settings.tokensOut": "输出 ",
-          "settings.budgetToday": "今日额度使用",
-          "settings.unitTimes": " 次",
-          "settings.unitItems": " 条",
-          "settings.unitSeconds": " 秒",
-          "settings.listSeparator": "，",
-          "settings.advanced": "高级选项",
-          "settings.group.trigger": "触发与次数",
-          "settings.group.content": "发送内容",
-          "settings.group.limits": "输出与限额",
-          "settings.group.other": "其他",
-          "settings.group.diagnostics": "诊断信息",
-          "settings.triggerDelayMs": "自动预测前的等待时间",
-          "settings.autoWindowMinutes": "自动预测有效时间",
-          "settings.manualLimit": "每次回答的手动预测次数",
-          "settings.candidateCount": "每次返回的候选条数",
-          "settings.habitMinCount": "常用短句的最少出现次数",
-          "settings.contextMessages": "上下文消息条数",
-          "settings.targetInputTokens": "上下文 token 上限",
-          "settings.includeTurnFacts": "附带上一回合的统计信息",
-          "settings.redactSecrets": "发送前遮蔽敏感信息",
-          "settings.maxSuggestionGraphemes": "建议最大长度",
-          "settings.maxOutputTokens": "最大输出 token",
-          "settings.timeoutMs": "请求超时",
-          "settings.dailyRequestLimit": "每日请求上限",
-          "settings.dailyTokenBudget": "每日 token 上限",
-          "settings.announce": "向读屏软件播报建议",
-          "settings.fakeSuggestion": "固定测试建议",
-          "settings.redactConfirmTitle": "确认关闭敏感信息遮蔽",
-          "settings.redactConfirmBody": "关闭后，对话片段将原样发送给预测模型，其中可能包含密钥、令牌、邮箱等敏感内容。除非确认对话内容不含敏感信息，否则建议保持开启。",
-          "settings.redactConfirmButton": "确认关闭",
-          "settings.redactOff": "已关闭敏感信息遮蔽。",
-          "settings.advancedChanged": "部分高级选项已偏离默认值。",
-          "settings.advancedDefault": "高级选项均为默认值。",
-          "settings.restoreAdvanced": "恢复默认值",
-          "settings.advancedRestored": "高级选项已恢复为默认值。",
-          "settings.diagnosticsHint": "插件本次启动以来的原始计数，可在反馈问题时提供。",
-          "settings.diagnosticState": "状态",
-          "settings.diagnosticRevision": "配置版本",
-          "settings.diagnosticMode": "模式 / 提示词",
-          "settings.diagnosticCounters": "计数",
-          "settings.countRequests": "请求",
-          "settings.countOffers": "建议",
-          "settings.countProviderCalls": "模型调用",
-          "settings.countSendCalls": "发送调用",
-          "settings.diagnosticTokens": "token",
-          "settings.diagnosticContext": "上下文",
-          "settings.diagnosticBudget": "每日额度",
-          "settings.diagnosticCapabilities": "能力",
-          "settings.diagnosticProvider": "提供方",
-          "settings.diagnosticConfigErrors": "配置错误",
-          "settings.conflictHint": "检测到其他输入建议插件，本插件已暂停",
-          "unit.triggerDelayMs": "毫秒",
-          "unit.autoWindowMinutes": "分钟",
-          "unit.manualLimit": "次",
-          "unit.candidateCount": "条",
-          "unit.habitMinCount": "次",
-          "unit.contextMessages": "条",
-          "unit.targetInputTokens": "token",
-          "unit.maxSuggestionGraphemes": "字",
-          "unit.maxOutputTokens": "token",
-          "unit.timeoutMs": "毫秒",
-          "unit.dailyRequestLimit": "次",
-          "unit.dailyTokenBudget": "token",
-          "preset.title": "预测模式",
-          "preset.current": "当前模式：",
-          "preset.custom": "当前为自定义设置：有选项与下列模式不一致。选择一种模式可一键恢复为该模式的推荐组合。",
-          "preset.inUse": "使用中",
-          "preset.recommended": "推荐",
-          "preset.applied": "已切换为“{name}”模式。",
-          "preset.appliedWhileOff": "预测目前处于关闭状态，开启“启用预测”后生效。",
-          "preset.balanced.name": "均衡",
-          "preset.balanced.desc": "每次回答结束后自动预测，使用指定的低成本模型。适合日常使用。",
-          "preset.saver.name": "省流",
-          "preset.saver.desc": "仅在点击“预测”或按 {key} 时预测，上下文更短，每日上限更低。",
-          "preset.quality.name": "高质量",
-          "preset.quality.desc": "自动预测并跟随会话模型，发送更多上下文。建议更贴合，费用和等待时间更高。",
-          "preset.fact.auto": "自动预测",
-          "preset.fact.manual": "手动触发",
-          "preset.fact.fixed": "指定模型",
-          "preset.fact.session": "会话模型",
-          "preset.fact.context": "上下文 {n} 条",
-          "preset.fact.daily": "每日 {n} 次",
-          "preset.fact.separator": " · ",
-          "help.presets": "一键切换一组推荐设置：触发方式、模型策略、候选条数、上下文大小、超时和每日上限。不会改变“启用预测”总开关、快捷键、常用短句和隐私选项；已填写的模型服务商 ID 和模型 ID 也会保留。切换后可立即撤销，之后仍可单独调整任一选项。",
-          "help.sidebarEntry": "在 DSH 首页左侧栏顶部的入口列表中添加“消息预测”入口。点击该入口会在主区域打开本页面，无需进入“设置”即可查看状态、切换模式或调整选项。再次点击本按钮即可移除入口。",
-          "help.enabled": "总开关。关闭后不显示建议，也不调用模型。",
-          "help.autoPredict": "开启：每次回答结束后自动预测一次。关闭：仅在点击“预测”按钮或按 {key} 时预测，可减少模型调用。",
-          "help.predictButton": "输入框为空时，在其右侧显示“预测”按钮，点击后立即预测。输入内容或已显示建议时，按钮自动隐藏。",
-          "help.shortcut": "在空输入框中按下该组合键立即预测；已显示建议时用于切换到下一条。点击右侧按钮后按下新的组合键即可修改。",
-          "help.habits": "同一会话中重复发送过的短消息（单行，2–20 字）直接作为建议。不调用模型，不计入额度，内容不离开本机。出现次数的门槛可在高级选项中调整。",
-          "help.multi": "手动预测或“换一条”时，一次模型调用返回多条候选，之后可即时切换，无需等待。自动预测始终只返回一条。候选条数可在高级选项中调整。",
-          "help.modelMode": "指定模型：预测的费用和速度不随会话模型变化；该模型不可用时，临时改用会话模型一次。跟随会话模型：会话使用高成本模型时，预测费用同步升高。",
-          "help.provider": "模型服务商的标识，与 DSH 模型设置中显示的 ID 一致，例如 deepseek-official。",
-          "help.model": "模型的标识，与 DSH 模型设置中显示的 ID 一致，例如 deepseek-flash。",
-          "help.reasoningEffort": "模型的推理强度档位。填 off 表示关闭推理，延迟和费用最低；留空则使用该模型支持的最低档。",
-          "help.results": "来自本机的统计记录，仅包含次数、耗时和哈希值，不包含建议或对话的文字，保留 14 天。",
-          "help.triggerDelayMs": "回答结束后等待多久再自动预测。数值过小时，建议可能在阅读回答期间出现。",
-          "help.autoWindowMinutes": "回答结束后超过该时长，不再自动预测（包括窗口失去焦点后的补发）。手动预测不受此限制。",
-          "help.manualLimit": "同一次回答最多调用模型进行几次手动预测（首次预测与每次“换一条”各计一次）。数值越大，单次回答的最高费用越高。",
-          "help.candidateCount": "开启“手动预测返回多条候选”时，一次模型调用返回的候选条数。条数越多，输出 token 越多。",
-          "help.habitMinCount": "一条短消息在同一会话中至少出现该次数，才会作为常用短句给出。",
-          "help.contextMessages": "发送给预测模型的最近消息条数上限（用户消息与助手回答合计）。",
-          "help.targetInputTokens": "发送给预测模型的对话片段的大小上限，超出部分按“保留最近内容”裁剪。数值越大，单次预测的费用越高，发送的对话内容也越多。",
-          "help.includeTurnFacts": "在对话片段后附加一行上一回合的统计：工具调用、文件修改和测试命令的次数。不包含工具输出或文件内容。",
-          "help.redactSecrets": "发送前将疑似密钥、令牌、邮箱的内容替换为占位符。该机制基于规则匹配，无法保证识别全部敏感信息。关闭后对话片段将原样发送。",
-          "help.maxSuggestionGraphemes": "超过该长度的建议将被丢弃，不会截断显示。",
-          "help.maxOutputTokens": "单次预测允许模型输出的 token 上限。返回多条候选时，实际上限会按候选条数自动提高。",
-          "help.timeoutMs": "单次预测等待模型响应的最长时间，超时后本次不给出建议。",
-          "help.dailyRequestLimit": "每日允许的预测请求次数。达到上限后当日不再调用模型。",
-          "help.dailyTokenBudget": "每日允许消耗的 token 总量（输入与输出合计）。达到上限后当日不再调用模型。",
-          "help.announce": "建议出现时，通过读屏软件播报一次。",
-          "help.fakeSuggestion": "仅用于离线测试：模型服务商 ID 设为 fixed-test 时显示该文本，不调用模型。单行，最多 160 个字符。",
-          "warn.manualLimit": "高于默认值：单次回答的最高费用随之提高。",
-          "warn.contextMessages": "数值较高：发送给预测模型的对话内容增多。",
-          "warn.targetInputTokens": "数值较高：单次预测费用升高，发送给预测模型的对话内容增多。",
-          "warn.maxOutputTokens": "数值较高：单次预测的最高费用升高，建议正常只需几十个 token。",
-          "warn.dailyRequestLimit": "数值较高：单日最高费用随之提高。",
-          "warn.dailyTokenBudget": "数值较高：单日最高费用随之提高。",
-          "warn.redactSecrets": "已关闭：对话片段将原样发送给预测模型，可能包含敏感信息。",
-          "state.idle": "等待下一次回答结束",
-          "state.closed": "等待下一次回答结束",
-          "state.waiting": "回答已结束，即将预测",
-          "state.requesting": "正在预测",
-          "state.offered": "建议已显示",
-          "state.accepted": "建议已采纳",
-          "state.dismissed": "建议已隐藏",
-          "state.abstained": "本次没有建议",
-          "state.suppressed": "检测到输入，本次不再给出建议",
-          "state.unavailable": "暂不可用",
-          "state.failed": "发生错误",
-          "state.disabled": "已关闭",
-          "state.conflict": "已暂停：检测到其他输入建议插件",
-          "state.unsupported": "当前页面不支持",
-          "state.manualWaiting": "等待手动触发（点击“预测”或按 {key}）",
-          "reason.model-abstained": "模型判断没有合适的建议",
-          "reason.repeated-suggestion": "模型未能给出不同的建议",
-          "reason.already-dispatched": "该回答已预测过",
-          "reason.already-requested": "该回答的预测次数已用完",
-          "reason.manual-limit": "该回答的手动预测次数已达上限",
-          "reason.manual-already-requested": "该回答已手动预测过",
-          "reason.turn-closed": "该回答的建议已被采纳",
-          "reason.turn-accepted": "该回答的建议已被采纳",
-          "reason.turn-dismissed": "该回答的建议已被隐藏",
-          "reason.daily-request-limit": "已达到每日请求上限",
-          "reason.daily-token-budget": "已达到每日 token 上限",
-          "reason.stale-context": "对话已继续进行",
-          "reason.stale-view": "对话已继续进行",
-          "reason.completion-too-old": "回答结束时间超出自动预测有效时间",
-          "reason.unverified-completion": "后台尚未确认该回答已结束，请稍后重试",
-          "reason.turn-not-completed": "该回答未正常结束",
-          "reason.no-completed-turn": "当前会话尚无已完成的回答",
-          "reason.empty-context": "没有可用的对话内容",
-          "reason.no-final-assistant-text": "回答中没有文字内容",
-          "reason.context-read-failed": "读取对话内容失败",
-          "reason.context-unavailable": "读取对话内容失败",
-          "reason.output-invalid-json": "模型输出格式不符合要求",
-          "reason.finish-aborted-aborted": "请求已取消",
-          "reason.semantic": "建议未通过内容检查",
-          "reason.window-inactive": "窗口不在前台",
-          "reason.draft-not-empty": "输入框中已有内容",
-          "reason.prediction-active": "正在预测，或建议已显示",
-          "reason.busy": "上一次预测尚未结束",
-          "reason.transport": "连接失败",
-          "reason.cancelled": "已取消",
-          "reason.config-changed": "设置刚刚发生变更",
-          "reason.config-loading": "设置正在加载",
-          "reason.composing": "输入法正在输入",
-          "reason.menu-open": "有菜单处于打开状态",
-          "reason.turn-running": "助手仍在回答",
-          "reason.disabled": "已关闭",
-          "reason.awaiting-first-turn": "等待首次回答结束",
-          "reason.blank-session": "会话内容为空",
-          "reason.no-session": "尚未打开会话",
-          "reason.no-view": "尚未打开会话",
-          "reason.not-editable": "输入框当前不可编辑",
-          "reason.input-frozen": "输入框当前不可编辑",
-          "reason.pending-interaction": "有操作正在等待确认",
-          "reason.host-unavailable": "无法连接插件后台",
-          "reason.host-route-unavailable": "无法连接插件后台",
-          "reason.llm-service-unavailable": "模型服务不可用",
-          "reason.provider-threw": "模型调用出错",
-          "reason.ledger-write-failed": "额度记录写入失败，未调用模型",
-          "reason.bad-response": "后台返回的内容异常",
-          "reason.no-route-fixed-route-incomplete": "模型服务商 ID 或模型 ID 未填写",
-          "reason.no-route-no-session-selection": "会话尚未选择模型",
-          "reason.no-test-suggestion-configured": "未设置固定测试建议",
-          "reason.prepare-failed": "无法调用预测模型，请检查模型设置",
-          "reason.fallback-failed": "指定模型和会话模型均不可用",
-          "reason.stream-failed": "模型响应中断",
-          "reason.unsupported-reasoning-effort": "模型不支持所填写的推理强度",
-          "reason.finish": "模型未正常完成输出",
-          "reason.finish-max-tokens": "模型输出超过最大输出 token",
-          "reason.finish-aborted": "请求超时或已取消",
-          "reason.finish-error": "模型返回错误",
-          "reason.output": "模型输出格式不符合要求",
-          "reason.output-too-long": "建议超过最大长度",
-          "reason.fixed-suggestion": "固定测试建议不符合格式要求",
-          "reason.invalid-response": "后台返回的内容异常",
-          "reason.insert-rejected": "输入框内容已变化，建议未填入",
-          "reason.session-removed": "会话已删除",
-          "reason.unknown-session": "找不到该会话",
-          "reason.internal-error": "插件内部错误",
-          "reason.config-editor-unavailable": "当前环境无法保存设置",
-        },
-      }
+      // DSH gets the dictionaries of the languages it offers itself. The texts
+      // on screen come from this plugin's own translate function (below), which
+      // also knows the language chosen in this plugin's Settings.
+      ctx.effect(() => locale.register(NS, nmpHostDictionaries()), 'next-message-predictor: locale')
 
-      ctx.effect(() => locale.register(NS, dictionaries), 'next-message-predictor: locale')
+      const runtime = createClientRuntime({ rpc: createRouteRpc() })
 
-      const t = (key) => {
+      /** The language DSH is showing, read back through the probe key; '' when unknown. */
+      const hostLanguage = () => {
         try {
           const translate = typeof locale.bind === 'function' ? locale.bind(NS) : undefined
           if (typeof translate === 'function') {
-            const text = translate(key)
-            if (typeof text === 'string' && text !== key) return text
+            const id = translate(NMP_LANGUAGE_PROBE_KEY)
+            if (nmpIsLanguage(id)) return id
           }
         } catch {
-          /* fall through to the raw key */
+          /* fall through to the page and browser language */
         }
-        return key
+        return ''
       }
+      const pageLanguage = () => {
+        try {
+          return document.documentElement.lang
+        } catch {
+          return ''
+        }
+      }
+      const browserLanguage = () => {
+        try {
+          return navigator.language
+        } catch {
+          return ''
+        }
+      }
+      // Until the Host has answered, the last known choice is used so the page
+      // does not start in one language and switch to another.
+      let languageMemo = nmpReadLanguageMemo()
+      const languageSetting = () => {
+        const state = runtime.configStore.getSnapshot()
+        return state.ready === true && state.hostError === '' ? state.config.language : languageMemo
+      }
+      const currentLanguage = () => {
+        const setting = languageSetting()
+        return setting === LANGUAGE_AUTO
+          ? nmpResolveLanguage(setting, [hostLanguage(), pageLanguage(), browserLanguage()])
+          : nmpResolveLanguage(setting)
+      }
+      const t = nmpCreateTranslator(currentLanguage)
 
-      const runtime = createClientRuntime({ rpc: createRouteRpc() })
       void runtime.loadStatus()
       const GhostOverlay = createOverlayComponent(react, runtime, t)
       const SettingsSection = createSettingsComponent(react, runtime, t)
@@ -652,6 +92,44 @@ function createClient(react) {
           return false
         }
       }
+
+      // Language: `t` reads the language when it is called; this only tells the
+      // components to render again when it changes (the option was saved, or
+      // DSH switched language while the option is "follow DSH").
+      ctx.effect(() => {
+        let shown = ''
+        const check = () => {
+          const state = runtime.configStore.getSnapshot()
+          if (state.ready === true && state.hostError === '' && state.config.language !== languageMemo) {
+            languageMemo = state.config.language
+            nmpWriteLanguageMemo(languageMemo)
+          }
+          const language = currentLanguage()
+          if (language === shown) return
+          shown = language
+          runtime.shellStore.set({ language })
+        }
+        check()
+        const unsubscribe = runtime.configStore.subscribe(check)
+        let observer
+        try {
+          // DSH keeps <html lang> in step with its language.
+          observer = new MutationObserver(check)
+          observer.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] })
+        } catch {
+          observer = undefined
+        }
+        const timer = setInterval(check, 2000)
+        return () => {
+          unsubscribe()
+          clearInterval(timer)
+          try {
+            observer?.disconnect()
+          } catch {
+            /* ignore */
+          }
+        }
+      }, 'next-message-predictor: language')
 
       // O07: 运行时冲突检测（另一幽灵文字插件存在时让位，设置页显示原因）。
       ctx.effect(() => {
@@ -700,8 +178,22 @@ function createClient(react) {
         'next-message-predictor: overlay',
       )
 
-      ctx.effect(
-        () =>
+      // DSH may read a label once, when the entry is registered. When the
+      // interface language turns out to be another one afterwards (the Host
+      // answered with a different choice, or DSH switched language while the
+      // option is "follow DSH"), the entry is registered again.
+      const onLanguageChange = (listener) => {
+        let shown = t.language()
+        return runtime.shellStore.subscribe(() => {
+          const next = runtime.shellStore.getSnapshot().language
+          if (next === '' || next === shown) return
+          shown = next
+          listener()
+        })
+      }
+
+      ctx.effect(() => {
+        const register = () =>
           slots.inject('settings.section', () =>
             slots.register(
               {
@@ -713,9 +205,25 @@ function createClient(react) {
               },
               SettingsSection,
             ),
-          ),
-        'next-message-predictor: settings',
-      )
+          )
+        let dispose = register()
+        const unsubscribe = onLanguageChange(() => {
+          try {
+            dispose()
+          } catch {
+            /* already released with the plugin */
+          }
+          dispose = register()
+        })
+        return () => {
+          unsubscribe()
+          try {
+            dispose()
+          } catch {
+            /* already released with the plugin */
+          }
+        }
+      }, 'next-message-predictor: settings')
       // Nav icon: DSH renders `settings.section.icon` for a row with `only: <section id>`
       // and falls back to its gear when a plugin registers nothing.
       ctx.effect(
@@ -833,8 +341,21 @@ function createClient(react) {
         }
         sync()
         const unsubscribe = runtime.configStore.subscribe(sync)
+        // Same entry, new label: take it out and put it back.
+        const unsubscribeLanguage = onLanguageChange(() => {
+          if (disposeEntry === undefined) return
+          const dispose = disposeEntry
+          disposeEntry = undefined
+          try {
+            dispose()
+          } catch {
+            /* already released with the plugin */
+          }
+          sync()
+        })
         return () => {
           unsubscribe()
+          unsubscribeLanguage()
           if (disposeEntry !== undefined) {
             const dispose = disposeEntry
             disposeEntry = undefined
@@ -864,6 +385,8 @@ function createClient(react) {
           ...runtime.debugApi(),
           version: PLUGIN_VERSION,
           viewId: runtime.getViewId(),
+          /** The interface language in use right now (a language id). */
+          language: () => t.language(),
           /** Open this plugin's panel in the main area (same as clicking the sidebar entry). */
           openPanel() {
             if (layout === null) return false

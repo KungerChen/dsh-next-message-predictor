@@ -19,6 +19,16 @@ const INPUTS = [
   'src/shared/presets.js',
   'src/shared/protocol.js',
   'src/shared/output-validation.js',
+  'src/client/locales/zh.js',
+  'src/client/locales/en.js',
+  'src/client/locales/ja.js',
+  'src/client/locales/ko.js',
+  'src/client/locales/es.js',
+  'src/client/locales/fr.js',
+  'src/client/locales/de.js',
+  'src/client/locales/ru.js',
+  'src/client/locales/pt.js',
+  'src/client/i18n.js',
   'src/client/dom.js',
   'src/client/labels.js',
   'src/client/controller.js',
@@ -98,4 +108,4 @@ try {
 
 const out = join(root, 'lib/client.js')
 writeFileSync(out, bundle, 'utf8')
-console.log(`built ${out} (${bundle.length} bytes)`)
+console.log(`built ${out} (${Buffer.byteLength(bundle, 'utf8')} bytes)`)

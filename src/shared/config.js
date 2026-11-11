@@ -23,6 +23,15 @@ export const ENTRY_ID = 'next-message-predictor'
  */
 export const PANEL_ID = 'next-message-predictor'
 
+/**
+ * Interface languages this plugin ships (`src/client/locales/<id>.js`), in the
+ * order the Settings page lists them.
+ */
+export const LANGUAGE_IDS = Object.freeze(['zh', 'en', 'ja', 'ko', 'es', 'fr', 'de', 'ru', 'pt'])
+
+/** `language` value that means "use the language DSH is set to". */
+export const LANGUAGE_AUTO = 'auto'
+
 /** Upper bound for a single user-visible suggestion, in grapheme clusters (O02: 中文 ≤40 字 / 英文 ≤12 词). */
 export const DEFAULT_MAX_SUGGESTION_GRAPHEMES = 60
 
@@ -108,6 +117,11 @@ export const DEFAULT_CONFIG = {
    * 默认关闭：左侧栏是用户自己的空间，由用户在设置页一键添加或移除。
    */
   sidebarEntry: false,
+  /**
+   * Language of this plugin's own texts: `auto` follows DSH, otherwise one of
+   * LANGUAGE_IDS. It never changes the language of the suggestions.
+   */
+  language: LANGUAGE_AUTO,
   // P1 fixed-suggestion provider (no model call, no credentials).
   fakeSuggestion: '',
   fakeSuggestionDelayMs: 0,
@@ -143,7 +157,7 @@ export const SETTING_LIMITS = {
   candidateCount: { min: 2, max: 5, step: 1 },
   habitMinCount: { min: 2, max: 5, step: 1 },
   contextMessages: { min: 2, max: 40, step: 1, warnAbove: 20 },
-  targetInputTokens: { min: 500, max: 16000, step: 100, warnAbove: 4000 },
+  targetInputTokens: { min: 1000, max: 16000, step: 100, warnAbove: 4000 },
   maxSuggestionGraphemes: { min: 20, max: 400, step: 10 },
   maxOutputTokens: { min: 32, max: 2048, step: 16, warnAbove: 512 },
   timeoutMs: { min: 2000, max: 60000, step: 500 },
@@ -159,6 +173,7 @@ const STRING_FIELDS = {
   budgetTimeZone: 80,
   fakeSuggestion: 2000,
   predictShortcut: 40,
+  language: 10,
 }
 
 /** 默认的“立刻预测 / 换一条”快捷键。 */
@@ -167,6 +182,8 @@ export const DEFAULT_PREDICT_SHORTCUT = 'Alt+Backslash'
 const SHORTCUT_MODIFIERS = ['Ctrl', 'Alt', 'Shift', 'Meta']
 /** 这些键已经有固定用途（采纳、隐藏、发送、移动光标），不能当预测快捷键的主键。 */
 const SHORTCUT_RESERVED_CODES = ['Tab', 'Escape', 'Enter', 'NumpadEnter', 'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown']
+/** 与 Ctrl / Cmd 组合时属于编辑器或窗口的键：全选、复制、粘贴、剪切、撤销、重做、查找、保存、打印、刷新、关闭、新建、退出、地址栏。 */
+const SHORTCUT_EDITING_CODES = ['KeyA', 'KeyC', 'KeyV', 'KeyX', 'KeyZ', 'KeyY', 'KeyF', 'KeyS', 'KeyP', 'KeyR', 'KeyW', 'KeyT', 'KeyN', 'KeyQ', 'KeyL']
 const SHORTCUT_KEY_LABELS = {
   Backslash: '\\', Slash: '/', Period: '.', Comma: ',', Semicolon: ';', Quote: "'", BracketLeft: '[', BracketRight: ']',
   Minus: '-', Equal: '=', Backquote: '`', Space: 'Space', IntlBackslash: '\\',
@@ -176,7 +193,8 @@ const SHORTCUT_KEY_LABELS = {
  * 解析快捷键字符串（规范写法 `Ctrl+Alt+Shift+Meta+<KeyboardEvent.code>`，例如
  * `Alt+Backslash`、`Ctrl+Shift+KeyK`）。用 code 而不是 key，换键盘布局或开着
  * 输入法时同一个物理键仍然有效。
- * 规则：必须带 Ctrl、Alt 或 Meta 之一（否则会和正常打字冲突）；主键不能是保留键。
+ * 规则：必须带 Ctrl、Alt 或 Meta 之一（否则会和正常打字冲突）；主键不能是保留键；
+ * Ctrl / Cmd 加编辑键（复制、粘贴、撤销等，见 SHORTCUT_EDITING_CODES）不能用。
  * @returns {{ctrl:boolean, alt:boolean, shift:boolean, meta:boolean, code:string} | null}
  */
 export function parseShortcut(value) {
@@ -193,6 +211,10 @@ export function parseShortcut(value) {
     mods[name] = true
   }
   if (!mods.ctrl && !mods.alt && !mods.meta) return null
+  // Ctrl/Cmd + an editing or window key belongs to the editor and the app. The
+  // composer handler swallows the predict shortcut before anything else sees
+  // it, so recording Ctrl+V here would silently break paste.
+  if ((mods.ctrl || mods.meta) && !mods.alt && SHORTCUT_EDITING_CODES.includes(code)) return null
   return { ...mods, code }
 }
 
@@ -232,6 +254,11 @@ export function formatShortcut(value) {
 
 const BOOLEAN_FIELDS = ['enabled', 'announceSuggestions', 'manualOnly', 'showPredictButton', 'multiCandidates', 'habitSuggestions', 'includeTurnFacts', 'redactSecrets', 'sidebarEntry']
 
+/** Own-property test that also works for objects without a prototype. */
+function hasOwn(object, key) {
+  return Object.prototype.hasOwnProperty.call(object, key)
+}
+
 /** Whether a value is a non-array plain object. */
 export function isPlainObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -264,7 +291,9 @@ export function resolveSystemTimeZone() {
  * @returns {{ok: true, value: unknown} | {ok: false, error: string}}
  */
 export function checkConfigField(key, value) {
-  if (key in NUMBER_FIELDS) {
+  // Own properties only: `toString`, `constructor` or `__proto__` sent as a
+  // field name must be an unknown field, not a lookup on Object.prototype.
+  if (hasOwn(NUMBER_FIELDS, key)) {
     const [min, max, integer] = NUMBER_FIELDS[key]
     if (typeof value !== 'number' || !Number.isFinite(value)) {
       return { ok: false, error: `${key} must be a finite number` }
@@ -273,7 +302,7 @@ export function checkConfigField(key, value) {
     if (value < min || value > max) return { ok: false, error: `${key} must be within [${min}, ${max}]` }
     return { ok: true, value }
   }
-  if (key in STRING_FIELDS) {
+  if (hasOwn(STRING_FIELDS, key)) {
     if (typeof value !== 'string') return { ok: false, error: `${key} must be a string` }
     if (value.length > STRING_FIELDS[key]) return { ok: false, error: `${key} is too long` }
     if (key === 'budgetTimeZone' && value !== '' && !isValidTimeZone(value)) {
@@ -281,6 +310,9 @@ export function checkConfigField(key, value) {
     }
     if (key === 'modelMode' && value !== 'session' && value !== 'fixed') {
       return { ok: false, error: 'modelMode must be "session" or "fixed"' }
+    }
+    if (key === 'language' && value !== LANGUAGE_AUTO && !LANGUAGE_IDS.includes(value)) {
+      return { ok: false, error: `language must be "${LANGUAGE_AUTO}" or one of ${LANGUAGE_IDS.join(', ')}` }
     }
     if (key === 'predictShortcut' && parseShortcut(value) === null) {
       return { ok: false, error: 'predictShortcut must be Ctrl/Alt/Meta plus one key, for example "Alt+Backslash"' }
@@ -311,13 +343,13 @@ export function normalizeConfig(raw) {
     return { config: withResolvedTimeZone(config), errors }
   }
   for (const key of Object.keys(DEFAULT_CONFIG)) {
-    if (!(key in input)) continue
+    if (!hasOwn(input, key)) continue
     const result = checkConfigField(key, input[key])
     if (result.ok) config[key] = result.value
     else errors.push(result.error)
   }
   for (const key of Object.keys(input)) {
-    if (!(key in DEFAULT_CONFIG)) errors.push(`unknown config field "${key}"`)
+    if (!hasOwn(DEFAULT_CONFIG, key)) errors.push(`unknown config field "${key}"`)
   }
   return { config: withResolvedTimeZone(config), errors }
 }

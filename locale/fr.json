@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Prédiction du prochain message",
+    "description": "Lorsque l’assistant a terminé sa réponse, une suggestion pour votre prochain message s’affiche en gris dans la zone de saisie vide. Tab ou → l’accepte, Échap la masque ; la suggestion est seulement insérée, jamais envoyée automatiquement. Chaque prédiction correspond à un appel au modèle."
+  }
+}

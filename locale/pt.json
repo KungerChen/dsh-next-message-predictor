@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Previsão da próxima mensagem",
+    "description": "Quando o assistente termina uma resposta, uma sugestão para a sua próxima mensagem aparece em cinza na caixa de entrada vazia. Tab ou → aceita e Esc oculta; a sugestão só é inserida, nunca enviada automaticamente. Cada previsão é uma chamada ao modelo."
+  }
+}

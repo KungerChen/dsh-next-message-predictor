@@ -145,7 +145,8 @@ export function createPredictorService(options) {
   let effective = normalizeConfig(options.config)
   let revision = configRevision(effective.config)
   let lastRoute = null
-  const configErrors = [...(Array.isArray(options.configErrors) ? options.configErrors : []), ...effective.errors]
+  // 调用方传入的是同一份配置的校验结果；合并去重，写入新配置后整体替换。
+  let configErrors = [...new Set([...(Array.isArray(options.configErrors) ? options.configErrors : []), ...effective.errors])]
   if (ledger !== null && typeof ledger.ensureLoaded === 'function') {
     void ledger.ensureLoaded().catch(() => {})
   }
@@ -165,8 +166,12 @@ export function createPredictorService(options) {
    * 把它们告诉模型，避免换来换去还是同一句。
    */
   const offeredTexts = boundedMap(200)
-  /** 最近一次生产结果的计量信息（并发 1，安全）。 */
-  let lastProductionMeta = null
+  /**
+   * 每个生产任务自己的计量信息（路由、耗时、用量），按结果键存放，有界。
+   * 不用一个全局“最近一次”变量：被取消的任务完成时会覆盖它，另一条请求的
+   * 结果记录就会带上别人的模型和耗时。
+   */
+  const productionMeta = boundedMap(100)
   let disposed = false
 
   diagnostics.record('service-ready', {
@@ -275,10 +280,9 @@ export function createPredictorService(options) {
    * 生产任务主体：权威上下文 → 预算/派发账本 → 辅助模型 → 解析。
    * 返回 {kind:'offer',text,meta} | {kind:'abstain',reason} | {kind:'unavailable',reason}。
    */
-  async function runProduction(request, signal, verification, staleReason) {
+  async function runProduction(request, signal, verification, staleReason, setMeta) {
     const config = effective.config
     const dispatchKey = dispatchKeyFor(request)
-    lastProductionMeta = null
     const invalidated = () => signal.aborted ? 'cancelled' : staleReason()
     let reason = invalidated()
     if (reason) return { kind: RESULT_STALE, reason }
@@ -319,7 +323,7 @@ export function createPredictorService(options) {
       if (Array.isArray(habits) && habits.length > 0) {
         diagnostics.count('offers')
         diagnostics.record('habit-offer', { candidates: habits.length })
-        lastProductionMeta = { route: { provider: HABIT_PROVIDER, model: 'local' }, latencyMs: Date.now() - habitStarted }
+        setMeta({ route: { provider: HABIT_PROVIDER, model: 'local' }, latencyMs: Date.now() - habitStarted })
         return { kind: 'offer', text: habits[0], alternatives: habits.slice(1, candidateLimit(config)), meta: { provider: HABIT_PROVIDER } }
       }
     }
@@ -329,7 +333,7 @@ export function createPredictorService(options) {
       const fixed = await produceFixedSuggestion({ config, now: now(), signal })
       if (fixed.kind === 'offer') {
         diagnostics.count('offers')
-        lastProductionMeta = { route: { provider: FIXED_TEST_PROVIDER }, latencyMs: Date.now() - fixedStarted }
+        setMeta({ route: { provider: FIXED_TEST_PROVIDER }, latencyMs: Date.now() - fixedStarted })
         return { kind: 'offer', text: fixed.text, meta: { provider: FIXED_TEST_PROVIDER } }
       }
       diagnostics.count('abstains')
@@ -343,7 +347,7 @@ export function createPredictorService(options) {
     if (reason) return { kind: RESULT_STALE, reason }
     if (context.ok !== true) {
       diagnostics.count('contextFailures')
-      diagnostics.record('context-abstain', { reason: context.reason, sessionId: request.anchor.sessionId })
+      diagnostics.record('context-abstain', { reason: context.reason })
       return { kind: 'abstain', reason: context.reason }
     }
     diagnostics.count('contextBuilds')
@@ -353,13 +357,15 @@ export function createPredictorService(options) {
       codePoints: context.codePoints,
       estimatedTokens: context.estimatedTokens,
       truncated: context.truncated,
+      hardCapped: context.hardCapped === true ? true : undefined,
+      overBudget: context.overBudget === true ? true : undefined,
       redactions: context.redactions,
     })
     // 2) 路由 + 预算预留（先写盘再调用模型）。
     const route = modelProvider.resolveRoute(config, context.modelSelection)
     if (route.ok !== true) {
       diagnostics.count('unavailable')
-      return { kind: 'unavailable', reason: route.reason }
+      return { kind: 'unavailable', reason: route.reason, refundCredit: true }
     }
     // 多条候选：一次调用要最多 3 条，输出预算相应放宽（三条各 40 字约 150 token）。
     // 只用于手动触发（第一次手动和“换一条”）。自动预测保持单条：真实模型对照里，
@@ -390,7 +396,8 @@ export function createPredictorService(options) {
         if (reserve.reason === 'daily-request-limit' || reserve.reason === 'daily-token-budget') {
           return { kind: 'unavailable', reason: reserve.reason, retryAfterMs: 60000 }
         }
-        return { kind: 'unavailable', reason: reserve.reason }
+        // 账本没写成（磁盘满、文件被占用）：没有调用模型，这次机会不该算用掉。
+        return { kind: 'unavailable', reason: reserve.reason, refundCredit: true }
       }
       diagnostics.count('reservations')
       reservation = reserve
@@ -425,24 +432,27 @@ export function createPredictorService(options) {
     } catch {
       outcome = { kind: 'unavailable', reason: 'provider-threw' }
     }
+    // 流开始之前就失败（服务不可用、路由准备失败、已取消）：什么都没发给服务商，
+    // 预留整笔退回、派发标记撤销，这次机会也还给本回合。其余情况照旧保守结算：
+    // 用量未知时保留预留，不当作零成本。
+    const neverDispatched = outcome.dispatched === false
     if (reservation) {
-      await ledger.settle({
-        ...reservation,
-        usage: outcome.usage,
-        markUnknown: outcome.usage == null,
-      }).catch(() => {})
+      await ledger.settle(neverDispatched
+        ? { ...reservation, dispatchKey, notDispatched: true }
+        : { ...reservation, dispatchKey, usage: outcome.usage, markUnknown: outcome.usage == null },
+      ).catch(() => {})
     }
-    countUsage(outcome.usage)
+    if (!neverDispatched) countUsage(outcome.usage)
     reason = invalidated()
     if (reason) return { kind: RESULT_STALE, reason }
     const elapsedMs = Date.now() - started
-    lastProductionMeta = {
+    setMeta({
       route: outcome.route !== undefined && outcome.route !== null
         ? { provider: outcome.route.provider, model: outcome.route.model }
         : undefined,
       usage: outcome.usage ?? null,
       latencyMs: elapsedMs,
-    }
+    })
     if (outcome.kind === 'raw') {
       lastRoute = { ...route, reasoningEffort: outcome.effort }
       diagnostics.record('model-finished', {
@@ -505,7 +515,7 @@ export function createPredictorService(options) {
     }
     diagnostics.count('unavailable')
     diagnostics.record('model-unavailable', { reason: outcome.reason, elapsedMs })
-    return { kind: 'unavailable', reason: outcome.reason }
+    return { kind: 'unavailable', reason: outcome.reason, ...(neverDispatched ? { refundCredit: true } : {}) }
   }
 
   /** 把生产任务结果落成协议 result（offer 需要 suggestionId/expiresAt）。 */
@@ -533,7 +543,7 @@ export function createPredictorService(options) {
   /**
    * O01：每次请求写一行结果记录（不含正文）。失败只影响观测，不影响预测。
    */
-  function recordResult(result, request, dispatchKey, startedAt) {
+  function recordResult(result, request, dispatchKey, startedAt, meta) {
     if (results === null) return
     const isOffer = result.kind === RESULT_OFFER
     const suggestionId = isOffer && typeof result.suggestionId === 'string' ? result.suggestionId : ''
@@ -549,9 +559,9 @@ export function createPredictorService(options) {
         reason: typeof result.reason === 'string' ? result.reason : '',
         text: isOffer ? result.text : undefined,
         alternatives: isOffer && Array.isArray(result.alternatives) ? result.alternatives : undefined,
-        route: lastProductionMeta?.route,
-        latencyMs: lastProductionMeta?.latencyMs ?? Math.max(0, Date.now() - startedAt),
-        usage: lastProductionMeta?.usage ?? undefined,
+        route: meta?.route,
+        latencyMs: meta?.latencyMs ?? Math.max(0, Date.now() - startedAt),
+        usage: meta?.usage ?? undefined,
         suggestionGraphemes: isOffer && typeof result.text === 'string' ? Array.from(result.text).length : undefined,
       })
     } catch {
@@ -582,11 +592,12 @@ export function createPredictorService(options) {
       }
     }
     const requestStartedAt = Date.now()
-    lastProductionMeta = null
     diagnostics.count('requestsReceived')
     const dispatchKey = dispatchKeyFor(request)
+    /** 这条请求实际等到的那个生产任务的计量信息；没有经过生产任务时为空。 */
+    let meta
     const respond = (result) => {
-      recordResult(result, request, dispatchKey, requestStartedAt)
+      recordResult(result, request, dispatchKey, requestStartedAt, meta)
       const response = predictResponse(request, result)
       if (result.reason !== 'cancelled') remember(request.requestId, response)
       return { status: 200, body: response }
@@ -655,12 +666,13 @@ export function createPredictorService(options) {
       diagnostics.count('productionTasks')
       diagnostics.record('production-start', {
         trigger: request.trigger,
-        sessionId: request.anchor.sessionId,
         turnId: request.anchor.turnId,
         completedEventSeq: request.anchor.completedEventSeq,
       })
       production = registry.startProduction(cacheKey, async (productionSignal) => {
-        const outcome = await runProduction(request, productionSignal, verification, staleReason)
+        const outcome = await runProduction(request, productionSignal, verification, staleReason, (value) => productionMeta.set(cacheKey, value))
+        // 没有调用模型就结束的任务不占用本回合的预测机会。
+        if (outcome.refundCredit === true) registry.refundCredit(turnKey, request.trigger)
         const reason = staleReason()
         if (reason) return { kind: RESULT_STALE, reason }
         if (productionSignal.aborted) return { kind: RESULT_UNAVAILABLE, reason: 'cancelled' }
@@ -675,6 +687,7 @@ export function createPredictorService(options) {
       })
     }
     const result = await registry.attach(production, request.requestId, signal)
+    meta = productionMeta.get(cacheKey)
     if (isReleased()) return respond({ kind: RESULT_UNAVAILABLE, reason: 'cancelled' })
     const after = staleReason()
     return respond(after ? { kind: RESULT_STALE, reason: after } : result)
@@ -686,6 +699,18 @@ export function createPredictorService(options) {
       return { status: 400, body: { ok: false, error: { code: 'bad-body', message: 'body must be a JSON object' } } }
     }
     const operation = typeof body.operation === 'string' ? body.operation : ''
+    try {
+      return await dispatch(operation, body, signal)
+    } catch (error) {
+      // 任何依赖抛错都回一个可解析的 JSON 错误；不让宿主把它变成“400 + 空响应体”。
+      const message = error instanceof Error ? error.message : String(error)
+      diagnostics.count('requestsRejected')
+      diagnostics.record('internal-error', { operation: operation === '' ? 'unknown' : operation, reason: message.slice(0, 120) })
+      return operationError(operation === '' ? 'unknown' : operation, 'internal-error', 'the plugin failed to handle this request', 500)
+    }
+  }
+
+  async function dispatch(operation, body, signal) {
     switch (operation) {
       case OPERATION_PREDICT:
         return handlePredict(body, signal)
@@ -797,6 +822,7 @@ export function createPredictorService(options) {
     if (nextRevision !== revision) lastRoute = null
     effective = candidate
     revision = nextRevision
+    configErrors = [...candidate.errors]
     // 宿主若没有重启本插件（配置写入通常会重启），预算上限与时区也要跟着新配置走。
     if (typeof options.onConfigChange === 'function') {
       try {

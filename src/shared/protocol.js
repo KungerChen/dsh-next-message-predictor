@@ -45,6 +45,9 @@ function isId(value) {
 export function validateTurnAnchor(anchor) {
   if (!isPlainRecord(anchor)) return 'anchor must be a plain object'
   if (!isId(anchor.sessionId)) return 'anchor.sessionId is required'
+  // The id is handed to the Host's session store: no path separators, no
+  // parent-directory steps, no whitespace or control characters.
+  if (/[\s\/\\\u0000-\u001f\u007f]/u.test(anchor.sessionId) || anchor.sessionId.includes('..')) return 'anchor.sessionId is not a valid id'
   if (typeof anchor.branchEpoch !== 'string' || anchor.branchEpoch.length > MAX_ANCHOR_STRING) {
     return 'anchor.branchEpoch must be a string'
   }

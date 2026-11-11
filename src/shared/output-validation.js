@@ -18,7 +18,7 @@ export function countGraphemes(text) {
   return Array.from(text).length
 }
 
-const CONTROL_RE = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/u
+const CONTROL_RE = /[\u0000-\u0009\u000B\u000C\u000E-\u001F\u007F-\u009F]/u
 const PROTOCOL_MARKER_RE = /<\|[^>]*\|>/u
 const HTML_TAG_RE = /<\/?[A-Za-z][^>]*>/u
 
@@ -114,7 +114,8 @@ export function validateSuggestionText(raw, options) {
   if (typeof raw !== 'string') return { ok: false, reason: 'non-string' }
   const text = raw.trim()
   if (text === '') return { ok: false, reason: 'empty' }
-  if (/[\r\n]/u.test(text)) return { ok: false, reason: 'multiline' }
+  // U+2028 / U+2029 / U+0085 也是换行：只查 \r\n 会放过“看起来一行、实际多行”的输出。
+  if (/[\r\n\u0085\u2028\u2029]/u.test(text)) return { ok: false, reason: 'multiline' }
   if (CONTROL_RE.test(text)) return { ok: false, reason: 'control-character' }
   if (PROTOCOL_MARKER_RE.test(text)) return { ok: false, reason: 'protocol-marker' }
   if (HTML_TAG_RE.test(text)) return { ok: false, reason: 'html-tag' }

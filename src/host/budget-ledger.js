@@ -16,7 +16,7 @@
 // 并发假设：DSH 单 Host 进程、预测服务全局并发 1；本模块串行写。多实例共享
 // DSH_HOME 时没有跨进程锁（P2 已知限制，写入是原子替换，最坏情况是账本被后写者覆盖）。
 
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
+import { copyFile, mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 const DISPATCH_TTL_MS = 24 * 60 * 60 * 1000
@@ -118,14 +118,26 @@ export function createPersistentLedger(options) {
     if (loaded) return
     if (loadPromise !== null) return loadPromise
     loadPromise = (async () => {
+      let text
       try {
-        const text = await readFile(filePath, 'utf8')
-        state = normalizeState(JSON.parse(text))
+        text = await readFile(filePath, 'utf8')
       } catch (error) {
         if (error !== null && typeof error === 'object' && error.code !== 'ENOENT') {
           logger(`[next-message-predictor] ledger load failed: ${String(error.code ?? error.message)}`)
         }
-        state = emptyState()
+        text = undefined
+      }
+      state = emptyState()
+      if (text !== undefined) {
+        try {
+          state = normalizeState(JSON.parse(text))
+        } catch {
+          // 文件损坏（写到一半断电、被别的程序改坏）：账本只能从空开始，但把坏文件
+          // 留一份副本，并明确记一条日志——今天的用量和派发记录从此处重新计数。
+          const backup = `${filePath}.corrupt-${new Date(now()).toISOString().replace(/[:.]/g, '-')}`
+          await copyFile(filePath, backup).catch(() => {})
+          logger(`[next-message-predictor] ledger file is not valid JSON; starting from an empty ledger (damaged file kept as ${backup.slice(homeDir.length + 1)})`)
+        }
       }
       loaded = true
       prune()

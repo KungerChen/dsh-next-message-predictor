@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url'
 import { DEFAULT_CONFIG, PANEL_ID, SETTING_LIMITS, checkConfigField, configRevision, normalizeConfig, sanitizeConfigPatch } from '../src/shared/config.js'
 import { PRESETS, PRESET_IDS, RECOMMENDED_PRESET, RECOMMENDED_ROUTE, isPresetId, matchPreset, presetPatch } from '../src/shared/presets.js'
 import { PLUGIN_VERSION } from '../src/shared/version.js'
+import { NMP_DICTIONARIES } from '../src/client/i18n.js'
 import { nmpCodeLabel, nmpLookupCode } from '../src/client/labels.js'
 import { createClientRuntime } from '../src/client/controller.js'
 import { createModelProvider, pickReasoningEffort } from '../src/host/model-provider.js'
@@ -63,7 +64,7 @@ test('sidebarEntry: a boolean option, off by default, part of the revision', () 
 
 test('shell store: starts with no panel and no sidebar, and can be updated', () => {
   const runtime = createClientRuntime({ rpc: async () => ({}) })
-  assert.deepEqual(runtime.shellStore.getSnapshot(), { panelAvailable: false, sidebarAvailable: false })
+  assert.deepEqual(runtime.shellStore.getSnapshot(), { panelAvailable: false, sidebarAvailable: false, language: '' })
   let notified = 0
   runtime.shellStore.subscribe(() => { notified += 1 })
   runtime.shellStore.set({ sidebarAvailable: true })
@@ -91,9 +92,9 @@ test('modes: every value is a valid config value inside the settings range', () 
   }
 })
 
-test('modes: never touch the master switch, privacy, shortcut or sidebar entry', () => {
+test('modes: never touch the master switch, privacy, shortcut, sidebar entry or language', () => {
   for (const id of PRESET_IDS) {
-    for (const key of ['enabled', 'redactSecrets', 'includeTurnFacts', 'predictShortcut', 'sidebarEntry', 'announceSuggestions', 'habitSuggestions', 'fakeSuggestion']) {
+    for (const key of ['enabled', 'redactSecrets', 'includeTurnFacts', 'predictShortcut', 'sidebarEntry', 'language', 'announceSuggestions', 'habitSuggestions', 'fakeSuggestion']) {
       assert.equal(key in PRESETS[id], false, `${id} must not set ${key}`)
       assert.equal(key in presetPatch(id, { ...DEFAULT_CONFIG, showPredictButton: false, provider: '', model: '' }), false, `${id} patch must not set ${key}`)
     }
@@ -172,26 +173,16 @@ test('reason codes: whole code, detail-less code, then family', () => {
   assert.equal(nmpCodeLabel(t, 'reason', undefined), '')
 })
 
-test('reason codes: every code family the Host can send has zh and en wording', async () => {
-  const source = await readFile(join(root, 'src', 'client', 'index.js'), 'utf8')
-  const dictionaries = { en: {}, zh: {} }
-  let current = null
-  for (const line of source.split('\n')) {
-    const open = /^\s{8}(en|zh): \{$/.exec(line)
-    if (open !== null) current = open[1]
-    const entry = /^\s{10}("(?:[^"\\]|\\.)+"): ("(?:[^"\\]|\\.)*"),$/.exec(line)
-    if (current !== null && entry !== null) dictionaries[current][JSON.parse(entry[1])] = JSON.parse(entry[2])
-  }
-  const enKeys = Object.keys(dictionaries.en).sort()
-  const zhKeys = Object.keys(dictionaries.zh).sort()
-  assert.ok(enKeys.length > 200)
-  assert.deepEqual(enKeys, zhKeys, 'en and zh dictionaries must have the same keys')
-  for (const language of ['en', 'zh']) {
+test('reason codes: every code family the Host can send has wording in every language', () => {
+  const dictionaries = NMP_DICTIONARIES
+  assert.ok(Object.keys(dictionaries.en).length > 200)
+  for (const language of Object.keys(dictionaries)) {
     const t = (key) => dictionaries[language][key] ?? key
     for (const code of [
       'prepare-failed:x', 'fallback-failed:x', 'stream-failed:x', 'finish-max-tokens', 'finish-error:x', 'finish-aborted:timeout',
       'output-invalid-json', 'output-multiline', 'semantic-meta-talk', 'fixed-suggestion-too-long', 'invalid-response:turn mismatch',
       'insert-rejected', 'internal-error', 'unknown-session', 'session-removed', 'manual-limit', 'daily-token-budget',
+      'timeout', 'transport', 'ledger-write-failed', 'host-unavailable',
       'prepare-failed:unsupported-reasoning-effort:off', 'stale:turn-dismissed', 'no-route:no-session-selection',
     ]) {
       assert.notEqual(nmpLookupCode(t, 'reason', code), '', `${language}: no wording for "${code}"`)
@@ -320,8 +311,10 @@ test('results: accepting implies shown, and logs written by 0.2.x are summarised
       { t: clock, kind: 'outcome', g: 'legacy-h', event: 'shown', reason: '' },
       { t: clock, kind: 'outcome', g: 'legacy-h', event: 'closed', reason: '' },
     ]
-    await writeFile(join(dir, 'events.2026-01-01T00-00-00-000Z.jsonl'), `${legacy.map((line) => JSON.stringify(line)).join('\n')}\n`, 'utf8')
-    summary = await log.summary(7)
+    // Named like a file rotated at the test clock's "now", so it falls inside the 7-day window.
+    await writeFile(join(dir, `events.${new Date(clock).toISOString().replace(/[:.]/g, '-')}.jsonl`), `${legacy.map((line) => JSON.stringify(line)).join('\n')}\n`, 'utf8')
+    // A fresh instance, as after a restart: the running one caches its summary for a few seconds.
+    summary = await createResultsLog({ homeDir: home, now: () => clock, getTimeZone: () => 'UTC' }).summary(7)
     assert.equal(summary.offers, 3)
     assert.equal(summary.shown, 3)
     assert.equal(summary.accepted, 2)

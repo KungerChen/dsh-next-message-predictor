@@ -14,21 +14,81 @@
 
 import { estimateEnvelopeTokens, estimateTokens, buildPredictionInput } from '../shared/prompt.js'
 
-/** 常见凭据/秘密模式（保守脱敏；不保证识别所有秘密，设置页需说明发送范围）。 */
+/**
+ * 发送前遮蔽（保守；基于规则，不保证识别所有敏感信息，见 docs/PRIVACY.md）。
+ *
+ * 分四层，按顺序执行：
+ * 1. 格式固定的秘密：PEM 私钥块、JWT、各平台令牌前缀、Bearer；
+ * 2. “名字 = 值”形式的赋值：名字里含 password / secret / token / 密码 等的标识符
+ *    （`aws_secret_access_key`、`DB_PASSWORD`、`我的密码`），分隔符认半角与全角
+ *    的冒号、等号，以及“是 / 为”；
+ * 3. 个人信息：邮箱（含 `[at]` 写法）、身份证号、手机号、主目录路径里的用户名；
+ * 4. 看起来像密钥的高熵长串。
+ *
+ * 每条规则是 [正则, 替换]；替换可以是字符串，也可以是函数（收到与
+ * String.prototype.replace 相同的参数，返回 null 表示“这一处不算，保持原样”）。
+ */
+
+/** 名字里出现这些词的标识符，被当作“存放秘密的名字”。 */
+const SECRET_NAME =
+  '(?:api[_-]?key|apikey|secret|private[_-]?key|access[_-]?key|password|passwd|passphrase|pwd|credential|(?:access|auth|refresh|session|id|bearer)[_-]?token|密码|口令|密钥|秘钥|令牌)'
+/** 赋值的值：到空白、引号、分隔标点或汉字为止，至少 4 个字符。 */
+const SECRET_VALUE = '[^\\s"\'“”‘’`,;，；。、）)\\u3400-\\u9fff]{4,}'
+const ASSIGNMENT_RE = new RegExp(
+  `(?<![A-Za-z0-9])([A-Za-z0-9_.-]*${SECRET_NAME}[A-Za-z0-9_-]*)[ \\t]*(?:[:=：＝]|是|为)[ \\t]*["'“”‘’\`]?(${SECRET_VALUE})`,
+  'giu',
+)
+/** 赋值右边这些写法不是秘密本身：字面量、占位符、对环境变量的引用。 */
+const NOT_A_SECRET_VALUE =
+  /^(?:true|false|null|none|nil|undefined|required|optional|string|text|hidden|empty|yes|no|\*+|x{3,}|<[^>]*>?|\[[^\]]*\]?|\$\{?[A-Za-z_][\w.]*\}?|%[A-Za-z_]\w*%|process\.env\.\w+|os\.environ.*|env\..*)$/iu
+
 const REDACTION_RULES = [
+  // PEM 私钥块（RSA / EC / OPENSSH / PKCS#8 …）。没有 END 行时遮到文本末尾。
+  [/-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----[\s\S]*?(?:-----END [A-Z0-9 ]*PRIVATE KEY-----|$)/gu, '[REDACTED_PRIVATE_KEY]'],
   // 完整 JWT（三段 base64url）；必须排在高熵规则之前，否则只会替换中间一段。
   [/\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}/gu, '[REDACTED_TOKEN]'],
-  // token / cookie 关键词：值要求 ≥8 位且同时含字母和数字，
-  // 因此“输入 token: 1406”这类用量数字不会被替换。
-  [/\b(token|cookie)\b\s*[:=]\s*["']?(?=[^\s"',;]*[A-Za-z])(?=[^\s"',;]*[0-9])[^\s"',;]{8,}/giu, '$1=[REDACTED]'],
+  // 各平台的令牌前缀。
   [/\bsk-[A-Za-z0-9_-]{16,}\b/gu, '[REDACTED_KEY]'],
+  [/\b(?:sk|pk|rk)_(?:live|test)_[A-Za-z0-9]{8,}\b/gu, '[REDACTED_KEY]'],
   [/\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{20,}\b/gu, '[REDACTED_TOKEN]'],
+  [/\bgithub_pat_[A-Za-z0-9_]{20,}\b/gu, '[REDACTED_TOKEN]'],
+  [/\bglpat-[A-Za-z0-9_-]{16,}\b/gu, '[REDACTED_TOKEN]'],
   [/\bxox[baprs]-[A-Za-z0-9-]{10,}\b/gu, '[REDACTED_TOKEN]'],
   [/\bAKIA[0-9A-Z]{16}\b/gu, '[REDACTED_KEY]'],
+  [/\bAIza[0-9A-Za-z_-]{30,}\b/gu, '[REDACTED_KEY]'],
+  [/\bhf_[A-Za-z0-9]{24,}\b/gu, '[REDACTED_TOKEN]'],
+  [/\bnpm_[A-Za-z0-9]{30,}\b/gu, '[REDACTED_TOKEN]'],
   [/\bBearer\s+[A-Za-z0-9._~+/=-]{8,}/giu, 'Bearer [REDACTED]'],
-  [/\b(api[_-]?key|secret|password|passwd|pwd|access[_-]?token|auth[_-]?token)\b\s*[:=]\s*["']?[^\s"',;]{4,}/giu, '$1=[REDACTED]'],
+  // 名字 = 值。保留名字，只遮值。
+  [ASSIGNMENT_RE, (match, name, value) => (NOT_A_SECRET_VALUE.test(value) ? null : `${name}=[REDACTED]`)],
+  // token / cookie：值要么 ≥8 位且同时含字母和数字，要么是 ≥16 位的不透明串。
+  // 因此“输入 token: 1406”这类用量数字和“token=deepseek”这类短词不会被替换。
+  [
+    /\b(token|cookie)\b[ \t]*[:=：＝][ \t]*["']?(?:(?=[^\s"',;]*[A-Za-z])(?=[^\s"',;]*[0-9])[^\s"',;]{8,}|[A-Za-z0-9_+/=.-]{16,})/giu,
+    (match, name) => `${name}=[REDACTED]`,
+  ],
+  // key: 后面跟一长串不透明字符。
+  [/(?<![A-Za-z0-9_])(key)[ \t]*[:=：＝][ \t]*["']?[A-Za-z0-9_+/=.-]{24,}/giu, (match, name) => `${name}=[REDACTED]`],
+  // 邮箱，以及把 @ 写成 [at] / (at) / ＠ 的写法。
   [/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/gu, '[REDACTED_EMAIL]'],
+  [/\b[A-Za-z0-9._%+-]+[ \t]*(?:\[at\]|\(at\)|\{at\}|＠)[ \t]*[A-Za-z0-9-]+(?:[ \t]*(?:\.|\[dot\]|\(dot\))[ \t]*[A-Za-z0-9-]+)+/giu, '[REDACTED_EMAIL]'],
+  // 中国大陆居民身份证号（18 位，含合法的出生日期）与手机号。前后不能紧挨字母数字，
+  // 这样时间戳、哈希和编号里的数字段不会命中。
+  [/(?<![A-Za-z0-9])[1-9]\d{5}(?:19|20)\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])\d{3}[\dXx](?![A-Za-z0-9])/gu, '[REDACTED_ID]'],
+  [/(?<![A-Za-z0-9.])1[3-9]\d{9}(?![A-Za-z0-9])/gu, '[REDACTED_PHONE]'],
+  // 主目录路径里的用户名：路径本身对预测有用，用户名没有。
+  [
+    /\b([A-Za-z]:[\\/]+(?:Users|Documents and Settings)[\\/]+)([^\\/\s:*?"<>|]+)/gu,
+    (match, prefix, user) => (isPlaceholderUser(user) ? null : `${prefix}[USER]`),
+  ],
+  [/((?:^|[\s"'`=(:,，：])\/(?:home|Users)\/)([^/\s"'`]+)/gu, (match, prefix, user) => (isPlaceholderUser(user) ? null : `${prefix}[USER]`)],
 ]
+
+/** 路径里的这一段已经是占位符或公共目录，不需要遮。 */
+function isPlaceholderUser(user) {
+  return /^(?:\[USER\]|<[^>]*>|\$\{?\w+\}?|%\w+%|~|Public|Shared|Default|All Users)$/iu.test(user)
+}
+
 /**
  * 高熵不透明串（B03）：只把“看起来像 base64/API token”的长串当秘密。
  * - 不含路径分隔符、连字符、下划线，因此路径、会话号、UUID、提交号、
@@ -74,9 +134,13 @@ export function redactSecrets(text) {
   let output = text
   let redactions = 0
   for (const [pattern, replacement] of REDACTION_RULES) {
-    output = output.replace(pattern, (match) => {
+    output = output.replace(pattern, (...args) => {
+      const match = args[0]
+      // 函数形式自己决定替换成什么；返回 null 表示这一处不是秘密。
+      const next = typeof replacement === 'function' ? replacement(...args) : replacement
+      if (typeof next !== 'string') return match
       redactions += 1
-      return typeof replacement === 'string' ? replacement : match
+      return next
     })
   }
   output = output.replace(BASE64_LIKE_RE, (match) => {
@@ -189,6 +253,8 @@ export function extractHumanAndAssistant(entries, options) {
     if (entry !== null) entry.users.push(...pendingUsers)
     pendingUsers = []
   }
+  /** 没有回合号的旧数据各占一个键（排在所有真实回合之前，保持先后顺序）。 */
+  let legacyIndex = 0
   for (const entry of Array.isArray(entries) ? entries : []) {
     if (entry === null || typeof entry !== 'object') continue
     const type = entry.type
@@ -224,7 +290,8 @@ export function extractHumanAndAssistant(entries, options) {
         currentTurn = turn
       } else {
         // 没有回合信息的旧数据：退化为顺序列表。
-        turns.set(Number.NEGATIVE_INFINITY + turns.size, { users: [], assistant: text })
+        turns.set(Number.MIN_SAFE_INTEGER + legacyIndex, { users: [], assistant: text })
+        legacyIndex += 1
       }
     }
   }
@@ -442,8 +509,38 @@ export function trimMessages(messages, limits) {
     result = assemble(plan)
     if (result.estimatedTokens <= targetTokens && result.codePoints <= maxCodePoints) break
   }
-  return result
+  if (result.estimatedTokens <= targetTokens && result.codePoints <= maxCodePoints) return result
+
+  // 逐步收紧仍然超限（最近一条消息很长，或上限设得很低）：只留最近用户消息和
+  // 最终助手回答，并按上限硬截断。字符上限一定守住；token 上限在扣掉固定开销
+  // （系统提示词 + 框架文字）后还有余量时也守住，没有余量时发送最小片段并标记。
+  const marker = Array.from(TRUNCATION_MARKER).length
+  const overheadTokens = estimateEnvelopeTokens(buildPredictionInput([], { turnFacts: limits?.turnFacts })) + 8
+  const roomChars = Math.floor(Math.max(0, targetTokens - overheadTokens) / 1.05)
+  const budget = Math.max(MIN_EXCERPT_CHARS, Math.min(maxCodePoints, roomChars))
+  const recentUser = recentUserTurn >= 0 ? turns[recentUserTurn].user : null
+  const userBudget = recentUser === null ? 0 : Math.floor(budget * 0.4)
+  const minimal = []
+  if (recentUser !== null) minimal.push({ role: 'user', text: truncateText(recentUser, Math.max(20, userBudget - marker), 0.4).text })
+  minimal.push({ role: 'assistant', text: truncateText(finalTurn.assistant, Math.max(20, budget - userBudget - marker), finalHeadRatio).text })
+  const input = buildPredictionInput(minimal, { turnFacts: limits?.turnFacts })
+  const estimatedTokens = estimateEnvelopeTokens(input)
+  return {
+    messages: minimal,
+    input,
+    truncated: true,
+    codePoints: minimal.reduce((sum, message) => sum + Array.from(message.text).length, 0),
+    estimatedTokens,
+    messageTokens: estimateTokens(input),
+    userMessages: minimal.filter((message) => message.role === 'user').length,
+    hardCapped: true,
+    // 上限比固定开销还低：最小片段也超限。调用方据此在诊断里说明。
+    overBudget: estimatedTokens > targetTokens,
+  }
 }
+
+/** 硬截断时至少保留这么多字符（最近用户消息 + 最终助手回答合计）。 */
+const MIN_EXCERPT_CHARS = 160
 
 const COMPLETION_RESEND_WINDOW_MS = 30 * 60 * 1000
 
@@ -641,12 +738,12 @@ export function createSessionContextReader(options) {
     if (!verified.isCurrent() || snapshot?.capturedThroughSeq < anchor.completedEventSeq) {
       return { ok: false, reason: 'stale-context' }
     }
-    const events = Array.isArray(snapshot.events) ? snapshot.events : []
+    const events = Array.isArray(snapshot?.events) ? snapshot.events : []
     const final = events.findLast((event) => event?.type === 'assistant/message')
     const finalMessage = final?.data?.message
     if (
-      final?.seq !== verified.assistantSeq || final.data.turn !== verified.turn || final.data.interrupted === true ||
-      finalMessage?.source?.kind !== 'model' || textOfContent(finalMessage.content).trim() === ''
+      final?.seq !== verified.assistantSeq || final?.data?.turn !== verified.turn || final?.data?.interrupted === true ||
+      finalMessage?.source?.kind !== 'model' || textOfContent(finalMessage?.content).trim() === ''
     ) {
       return { ok: false, reason: 'no-final-assistant-text' }
     }
@@ -691,7 +788,7 @@ export function createSessionContextReader(options) {
       ok: true,
       messages: trimmed.messages,
       input: trimmed.input,
-      modelSelection: { provider: finalMessage.source.provider, model: finalMessage.source.model },
+      modelSelection: { provider: finalMessage?.source?.provider, model: finalMessage?.source?.model },
       truncated: trimmed.truncated,
       codePoints: trimmed.codePoints,
       estimatedTokens: trimmed.estimatedTokens,

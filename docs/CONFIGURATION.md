@@ -1,6 +1,6 @@
 # 配置参考
 
-适用版本：0.3.0。配置的唯一来源是 `src/shared/config.js`（`DEFAULT_CONFIG`、取值范围）和 `src/shared/presets.js`（模式）。
+适用版本：0.4.0。配置的唯一来源是 `src/shared/config.js`（`DEFAULT_CONFIG`、取值范围）和 `src/shared/presets.js`（模式）。
 
 配置保存在 DSH profile 中本插件的 loader 条目（id `next-message-predictor`）下。通常在设置页修改；也可以在 profile 的 `cordis.patch.yml` 里写：
 
@@ -25,8 +25,9 @@
 | `enabled` | 布尔 | `false` | 总开关。关闭时不显示建议、不调用模型。 |
 | `manualOnly` | 布尔 | `false` | `true` 时回答结束后不自动预测。设置页以反义显示为“回答结束后自动预测”。 |
 | `showPredictButton` | 布尔 | `true` | 输入框为空时在右侧显示“预测”按钮。 |
-| `predictShortcut` | 字符串 | `Alt+Backslash` | 写法 `Ctrl+Alt+Shift+Meta+<KeyboardEvent.code>`。必须含 Ctrl、Alt 或 Meta；主键不能是 Tab、Escape、Enter、Backspace、Delete 或方向键。 |
+| `predictShortcut` | 字符串 | `Alt+Backslash` | 写法 `Ctrl+Alt+Shift+Meta+<KeyboardEvent.code>`。必须含 Ctrl、Alt 或 Meta；主键不能是 Tab、Escape、Enter、Backspace、Delete 或方向键；Ctrl 或 Meta（不带 Alt）加编辑键（A、C、V、X、Z、Y、F、S、P、R、W、T、N、Q、L）不可用。 |
 | `sidebarEntry` | 布尔 | `false` | 在 DSH 左侧栏的入口列表中显示“消息预测”入口。 |
+| `language` | 字符串 | `auto` | 插件自身文字的语言。`auto` 跟随 DSH 的界面语言；也可以是 `zh`、`en`、`ja`、`ko`、`es`、`fr`、`de`、`ru`、`pt` 之一。不影响建议本身的语言。 |
 
 ### 建议来源
 
@@ -61,10 +62,10 @@
 | 字段 | 类型 | 默认 | 设置页范围 | 说明 |
 |---|---|---|---|---|
 | `contextMessages` | 整数 | `12` | 2–40 | 发送的最近消息条数上限。高于 20 时提示。 |
-| `targetInputTokens` | 整数 | `2000` | 500–16,000 | 对话片段的估算 token 上限，超出时保留最近内容。高于 4,000 时提示。 |
+| `targetInputTokens` | 整数 | `2000` | 1,000–16,000 | 单次预测输入的估算 token 上限，包含固定的任务说明（约 700 token）和对话片段。超出时保留最近内容并截断，片段不会超过这个上限。高于 4,000 时提示。 |
 | `maxContextCodePoints` | 整数 | `6000` | （不单独显示） | 对话片段的字符上限。设置页修改 token 上限时自动设为其 3 倍（最多 60,000）。 |
 | `includeTurnFacts` | 布尔 | `true` | | 附带一行上一回合的统计（工具调用、文件修改、测试命令的次数），不含正文。 |
-| `redactSecrets` | 布尔 | `true` | | 发送前遮蔽疑似密钥、令牌和邮箱。关闭需在设置页二次确认。 |
+| `redactSecrets` | 布尔 | `true` | | 发送前遮蔽疑似私钥、密钥、令牌、密码、邮箱、手机号、身份证号和个人文件夹路径中的用户名，范围见 [PRIVACY.md](PRIVACY.md#发送前的遮蔽)。关闭需在设置页二次确认。 |
 
 ### 输出与限额
 
@@ -98,8 +99,8 @@
 | `candidateCount` | 3 | 3 | 3 |
 | `manualLimit` | 3 | 2 | 3 |
 | `contextMessages` | 12 | 6 | 20 |
-| `targetInputTokens` | 2,000 | 1,000 | 4,000 |
-| `maxContextCodePoints` | 6,000 | 3,000 | 12,000 |
+| `targetInputTokens` | 2,000 | 1,200 | 4,000 |
+| `maxContextCodePoints` | 6,000 | 3,600 | 12,000 |
 | `maxOutputTokens` | 96 | 96 | 160 |
 | `timeoutMs` | 8,000 | 8,000 | 15,000 |
 | `dailyRequestLimit` | 200 | 60 | 200 |
@@ -112,7 +113,7 @@
 1. 目标模式是指定模型（均衡、省流），而当前 `provider` 或 `model` 为空，或 `provider` 是 `fixed-test`：同时写入推荐路由 `deepseek-official / deepseek-flash` 和 `reasoningEffort: off`。已有路由时不动。
 2. 目标模式是仅手动（省流），而 `showPredictButton` 为 `false`：同时写入 `showPredictButton: true`，保证有一个看得见的触发方式。
 
-模式从不写入 `enabled`、`predictShortcut`、`sidebarEntry`、`habitSuggestions`、`redactSecrets`、`includeTurnFacts`、`announceSuggestions`、`fakeSuggestion`。这些约束由 `test/v030.test.mjs` 检查。
+模式从不写入 `enabled`、`predictShortcut`、`sidebarEntry`、`language`、`habitSuggestions`、`redactSecrets`、`includeTurnFacts`、`announceSuggestions`、`fakeSuggestion`。这些约束由 `test/v030.test.mjs` 和 `test/i18n.test.mjs` 检查。
 
 ## 配置版本
 

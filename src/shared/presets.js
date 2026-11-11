@@ -7,7 +7,8 @@
 // Rules a mode follows:
 // - It never turns prediction on or off (`enabled` stays the user's switch).
 // - It never touches privacy options (`redactSecrets`, `includeTurnFacts`),
-//   the shortcut, the sidebar entry or the screen-reader option.
+//   the shortcut, the sidebar entry, the interface language or the
+//   screen-reader option.
 // - It sets the model *strategy* (`modelMode`), not the model: a provider and
 //   model the user already entered are kept. Only an empty or offline-test
 //   route is replaced by the recommended one.
@@ -60,8 +61,8 @@ export const PRESETS = Object.freeze({
     candidateCount: 3,
     manualLimit: 2,
     contextMessages: 6,
-    targetInputTokens: 1000,
-    maxContextCodePoints: 3000,
+    targetInputTokens: 1200,
+    maxContextCodePoints: 3600,
     maxOutputTokens: 96,
     timeoutMs: 8000,
     dailyRequestLimit: 60,

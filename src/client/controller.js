@@ -14,6 +14,8 @@ import {
   OFFER_TTL_MS,
   ROUTE,
   SCHEMA_VERSION,
+  checkConfigField,
+  isPlainObject,
 } from '../shared/config.js'
 import {
   OPERATION_ACCEPTED,
@@ -49,6 +51,30 @@ export function createStore(initial) {
 }
 
 const EMPTY_CONFIG = { ...DEFAULT_CONFIG }
+
+/**
+ * The config the Host sent, field by field: a value of the wrong type (a Host
+ * from another version, a hand-edited profile) falls back to the default
+ * instead of reaching the page, where `.trim()` on a number would blank it.
+ */
+function coerceConfig(raw) {
+  const config = { ...EMPTY_CONFIG }
+  if (!isPlainObject(raw)) return config
+  for (const key of Object.keys(EMPTY_CONFIG)) {
+    if (Object.prototype.hasOwnProperty.call(raw, key) && checkConfigField(key, raw[key]).ok) config[key] = raw[key]
+  }
+  return config
+}
+
+/** How long each kind of request may take before the page stops waiting (ms). */
+const RPC_TIMEOUT_STATUS_MS = 10000
+/** A config write restarts the Host half of the plugin, so it gets longer. */
+const RPC_TIMEOUT_SAVE_MS = 30000
+const RPC_TIMEOUT_RESULTS_MS = 20000
+/** On top of the model timeout the Host applies itself. */
+const RPC_TIMEOUT_PREDICT_MARGIN_MS = 15000
+/** After a failed status read: try again after these delays, then keep to the last one. */
+const STATUS_RETRY_DELAYS_MS = [2000, 5000, 15000, 30000]
 
 const NO_CANDIDATES = Object.freeze([])
 
@@ -97,10 +123,11 @@ const INITIAL_CONFIG_STATE = {
 
 /**
  * What the DSH shell offers this page: whether the global panel is registered
- * and whether there is a left sidebar to add the entry to. Written by the
- * client entry, read by Settings.
+ * and whether there is a left sidebar to add the entry to, plus the interface
+ * language in use (components subscribe to render again when it changes).
+ * Written by the client entry, read by Settings and the composer overlay.
  */
-const INITIAL_SHELL_STATE = { panelAvailable: false, sidebarAvailable: false }
+const INITIAL_SHELL_STATE = { panelAvailable: false, sidebarAvailable: false, language: '' }
 
 /**
  * @param {object} options
@@ -141,6 +168,8 @@ export function createClientRuntime(options) {
   let sequence = 0
   let timer
   let activeRequest = null
+  /** "Another one" in flight: the suggestion it was pressed on, kept in case nothing new comes back. */
+  let manualFallback = null
   /** @type {Set<string>} turn keys auto-served this session */
   const servedAuto = new Set()
   /** @type {Map<string, number>} turn key -> manual predictions asked on it (first + "another one") */
@@ -201,10 +230,9 @@ export function createClientRuntime(options) {
     while (pendingBySession.size > SESSION_CACHE_LIMIT) pendingBySession.delete(pendingBySession.keys().next().value)
   }
 
-  /** B06：把当前建议按会话保存，切回时恢复（不再请求 Host）。 */
-  function rememberOffer(state, env) {
-    if (state === null || env === null || state.status !== 'offered' || state.suggestionId === '') return
-    const record = {
+  /** The parts of a visible offer needed to show it again later. */
+  function offerRecord(state) {
+    return {
       text: state.text,
       candidates: state.candidates,
       candidateIndex: state.candidateIndex,
@@ -216,9 +244,16 @@ export function createClientRuntime(options) {
       completedEventSeq: state.completedEventSeq,
       contextRevision: state.contextRevision,
     }
+  }
+
+  /** B06：把当前建议按会话保存，切回时恢复（不再请求 Host）。 */
+  function rememberOffer(state, env) {
+    if (state === null || env === null || state.status !== 'offered' || state.suggestionId === '') return false
+    const record = offerRecord(state)
     offersBySession.delete(state.sessionId)
     offersBySession.set(state.sessionId, { record, at: now() })
     while (offersBySession.size > SESSION_CACHE_LIMIT) offersBySession.delete(offersBySession.keys().next().value)
+    return true
   }
 
   /** B06：切回会话时恢复缓存中的建议（草稿为空、回合未变、未终结、未过期）。 */
@@ -241,11 +276,15 @@ export function createClientRuntime(options) {
     return true
   }
 
-  /** O01：把建议的展示/被覆盖/过期/关闭上报给 Host（不含正文）。 */
+  /** O01：把当前建议的展示/被覆盖/过期/关闭上报给 Host（不含正文）。 */
   function noteOutcome(event) {
     const state = assistStore.getSnapshot()
-    const suggestionId = state.suggestionId
-    if (suggestionId === '' || suggestionId.startsWith('debug-')) return
+    reportOutcome(state.suggestionId, state.sessionId, event)
+  }
+
+  /** 上报某一条建议的去向；同一条建议的同一种去向只报一次。 */
+  function reportOutcome(suggestionId, sessionId, event) {
+    if (typeof suggestionId !== 'string' || suggestionId === '' || suggestionId.startsWith('debug-')) return
     const seen = reportedOutcomes.get(suggestionId)
     if (seen !== undefined && seen.has(event)) return
     const set = seen ?? new Set()
@@ -260,7 +299,7 @@ export function createClientRuntime(options) {
       schemaVersion: SCHEMA_VERSION,
       operation: OPERATION_OUTCOME,
       suggestionId,
-      sessionId: state.sessionId,
+      sessionId,
       event,
     }).catch(() => {})
   }
@@ -275,7 +314,7 @@ export function createClientRuntime(options) {
   /** O01: read the Host's 7-day result summary for the settings page. */
   async function loadResults() {
     try {
-      const body = await rpc(OPERATION_RESULTS, {})
+      const body = await rpc(OPERATION_RESULTS, {}, undefined, RPC_TIMEOUT_RESULTS_MS)
       return body !== null && typeof body === 'object' && body.ok === true && body.value !== null ? body.value : { available: false, summary: null }
     } catch {
       return { available: false, summary: null }
@@ -389,20 +428,48 @@ export function createClientRuntime(options) {
     timer?.unref?.()
   }
 
+  let statusRetryTimer
+  let statusRetryAttempt = 0
+  function cancelStatusRetry() {
+    if (statusRetryTimer !== undefined) {
+      clearTimeout(statusRetryTimer)
+      statusRetryTimer = undefined
+    }
+  }
+  /** The Host did not answer: ask again later, less and less often. */
+  function scheduleStatusRetry() {
+    if (disposed || statusRetryTimer !== undefined) return
+    const delay = STATUS_RETRY_DELAYS_MS[Math.min(statusRetryAttempt, STATUS_RETRY_DELAYS_MS.length - 1)]
+    statusRetryAttempt += 1
+    statusRetryTimer = setTimeout(() => {
+      statusRetryTimer = undefined
+      void loadStatus()
+    }, delay)
+    statusRetryTimer?.unref?.()
+  }
+  /** Record a failed status read. What was known before stays on screen, marked as possibly stale. */
+  function statusFailed(message) {
+    const previous = configStore.getSnapshot()
+    configStore.set(previous.ready === true ? { ...previous, hostError: message } : { ...INITIAL_CONFIG_STATE, ready: true, hostError: message })
+    scheduleStatusRetry()
+    return { ok: false, error: message }
+  }
+
   /** Fetch effective config + diagnostics from the Host. */
   async function loadStatus() {
     try {
-      const body = await rpc(OPERATION_STATUS, {})
+      const body = await rpc(OPERATION_STATUS, {}, undefined, RPC_TIMEOUT_STATUS_MS)
       if (disposed) return { ok: false, error: 'disposed' }
       if (!body || body.ok !== true || body.value === null || typeof body.value !== 'object') {
         const message = body && body.error && body.error.message ? body.error.message : 'status unavailable'
-        configStore.set({ ...INITIAL_CONFIG_STATE, ready: true, hostError: String(message) })
-        return { ok: false, error: String(message) }
+        return statusFailed(String(message))
       }
       const value = body.value
+      cancelStatusRetry()
+      statusRetryAttempt = 0
       configStore.set({
         ready: true,
-        config: { ...EMPTY_CONFIG, ...(value.config ?? {}) },
+        config: coerceConfig(value.config),
         revision: typeof value.configRevision === 'number' ? value.configRevision : 0,
         configErrors: Array.isArray(value.configErrors) ? value.configErrors : [],
         capabilities: value.capabilities ?? {},
@@ -417,16 +484,15 @@ export function createClientRuntime(options) {
       })
       return { ok: true, value }
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
-      configStore.set({ ...INITIAL_CONFIG_STATE, ready: true, hostError: message })
-      return { ok: false, error: message }
+      if (disposed) return { ok: false, error: 'disposed' }
+      return statusFailed(error instanceof Error ? error.message : String(error))
     }
   }
 
   /** Persist a partial config through the Host config editor. */
   async function saveConfig(patch) {
     try {
-      const body = await rpc(OPERATION_CONFIG_SET, { patch })
+      const body = await rpc(OPERATION_CONFIG_SET, { patch }, undefined, RPC_TIMEOUT_SAVE_MS)
       if (!body || body.ok !== true) {
         const message = body && body.error && typeof body.error.message === 'string' ? body.error.message : ''
         return { ok: false, error: message }
@@ -435,7 +501,7 @@ export function createClientRuntime(options) {
       configStore.set({
         ...configStore.getSnapshot(),
         ready: true,
-        config: { ...EMPTY_CONFIG, ...(value.config ?? {}) },
+        config: coerceConfig(value.config),
         revision: typeof value.configRevision === 'number' ? value.configRevision : 0,
         configErrors: Array.isArray(value.configErrors) ? value.configErrors : [],
         hostError: '',
@@ -565,7 +631,7 @@ export function createClientRuntime(options) {
         expectedConfigRevision: requestedRevision,
         trigger,
         ...(trigger === 'manual' && attempt > 0 ? { attempt } : {}),
-      }, abort.signal)
+      }, abort.signal, (Number(configStore.getSnapshot().config.timeoutMs) || DEFAULT_CONFIG.timeoutMs) + RPC_TIMEOUT_PREDICT_MARGIN_MS)
     } catch (error) {
       if (mySequence !== sequence || disposed) return
       activeRequest = null
@@ -579,18 +645,18 @@ export function createClientRuntime(options) {
         timer?.unref?.()
         return
       }
-      setAssist({ ...INITIAL_ASSIST, status: 'failed', reason: 'transport', error: textOf(error), sessionId: env.sessionId })
+      endWithoutOffer({ ...INITIAL_ASSIST, status: 'failed', reason: 'transport', error: textOf(error), sessionId: env.sessionId })
       return
     }
     if (disposed || mySequence !== sequence) return
     activeRequest = null
     if (body === null || body === undefined || typeof body !== 'object') {
-      setAssist({ ...INITIAL_ASSIST, status: 'failed', reason: 'bad-response', sessionId: env.sessionId })
+      endWithoutOffer({ ...INITIAL_ASSIST, status: 'failed', reason: 'bad-response', sessionId: env.sessionId })
       return
     }
     const validation = validateResponseForClient(body, { requestId: id, anchor })
     if (!validation.ok) {
-      setAssist({ ...INITIAL_ASSIST, status: 'failed', reason: `invalid-response:${validation.error}`, sessionId: env.sessionId })
+      endWithoutOffer({ ...INITIAL_ASSIST, status: 'failed', reason: `invalid-response:${validation.error}`, sessionId: env.sessionId })
       return
     }
     const current = latestEnv
@@ -609,16 +675,22 @@ export function createClientRuntime(options) {
         if (body.configRevision !== requestedRevision) void loadStatus()
         return
       }
+      // The new suggestion replaces the one "another one" was pressed on: only now is that one closed.
+      const replaced = manualFallback
+      manualFallback = null
+      if (replaced !== null && replaced.record.suggestionId !== result.suggestionId) {
+        reportOutcome(replaced.record.suggestionId, replaced.record.sessionId, 'closed')
+      }
       showOffer(current, result)
       return
     }
     if (result.kind === 'stale') {
       if (result.reason === 'config-changed') void loadStatus()
-      setAssist({ ...INITIAL_ASSIST, status: 'abstained', reason: `stale:${result.reason}`, sessionId: env.sessionId })
+      endWithoutOffer({ ...INITIAL_ASSIST, status: 'abstained', reason: `stale:${result.reason}`, sessionId: env.sessionId })
       return
     }
     if (result.kind === 'abstain') {
-      setAssist({ ...INITIAL_ASSIST, status: 'abstained', reason: result.reason, sessionId: env.sessionId })
+      endWithoutOffer({ ...INITIAL_ASSIST, status: 'abstained', reason: result.reason, sessionId: env.sessionId })
       return
     }
     // B07: Host 并发忙时按 retryAfterMs 自动重试一次；模型失败不重试。
@@ -632,13 +704,35 @@ export function createClientRuntime(options) {
       timer?.unref?.()
       return
     }
-    setAssist({
+    endWithoutOffer({
       ...INITIAL_ASSIST,
       status: 'unavailable',
       reason: result.reason,
       hintMs: result.retryAfterMs,
       sessionId: env.sessionId,
     })
+  }
+
+  /**
+   * A request ended without a suggestion. If it was "another one", the
+   * suggestion that was on screen comes back: asking for a different one and
+   * getting none should not cost the one the user already had.
+   */
+  function endWithoutOffer(patch) {
+    setAssist(patch)
+    const fallback = manualFallback
+    manualFallback = null
+    if (fallback === null) return
+    const current = latestEnv
+    if (
+      current === null || turnKeyOf(current) !== fallback.record.turnKey || fallback.record.expiresAt <= now() ||
+      fallback.record.completedEventSeq !== current.completedEventSeq || fallback.record.contextRevision !== current.contextRevision ||
+      acceptedTurns.has(fallback.record.turnKey) || !eligibility(current).ok
+    ) {
+      reportOutcome(fallback.record.suggestionId, fallback.record.sessionId, 'closed')
+      return
+    }
+    showOffer(current, { ...fallback.record, offerDraftRev: current.draftRev })
   }
 
   /**
@@ -683,13 +777,15 @@ export function createClientRuntime(options) {
     }
     if (env.sessionId !== boundSessionId) {
       const previousState = assistStore.getSnapshot()
+      let remembered = false
       if (previous !== null && previous.sessionId !== env.sessionId) {
         // B06/B01：离开会话前保存建议与未请求的完成回合，切回时可恢复。
-        if (previousState.status === 'offered') rememberOffer(previousState, previous)
+        if (previousState.status === 'offered') remembered = rememberOffer(previousState, previous)
         if (previousState.status === 'waiting') rememberPending(previousState)
       }
       boundSessionId = env.sessionId
-      clearWork('closed', 'closed')
+      // 记下来等着恢复的建议还没有结束，不上报“已关闭”。
+      clearWork('closed', remembered ? undefined : 'closed')
       completionArm = null
       suppressedTurns.clear()
       dismissedTurns.clear()
@@ -754,7 +850,10 @@ export function createClientRuntime(options) {
       const suspended = suspendedOffers.get(tkey)
       if (suspended !== undefined) {
         const active = assistStore.getSnapshot()
-        if (suspended.record.expiresAt <= now() || suspended.record.turnId !== env.turnId) {
+        if (
+          suspended.record.expiresAt <= now() || suspended.record.turnId !== env.turnId ||
+          suspended.record.completedEventSeq !== env.completedEventSeq || suspended.record.contextRevision !== env.contextRevision
+        ) {
           suspendedOffers.delete(tkey)
         } else if (
           active.status !== 'offered' && active.status !== 'requesting' && active.status !== 'accepted' && active.status !== 'dismissed' &&
@@ -877,8 +976,14 @@ export function createClientRuntime(options) {
     }
     if (used >= MANUAL_LIMIT) return refuse('manual-limit')
     if (acceptedTurns.has(tkey)) return refuse('turn-closed')
-    // Asking for another one replaces the suggestion on screen.
-    if (status === 'offered') clearOffer('idle', 'closed')
+    // Asking for another one: the suggestion on screen steps aside while the
+    // model is asked, and is kept in case nothing new comes back.
+    manualFallback = null
+    if (status === 'offered') {
+      const state = assistStore.getSnapshot()
+      if (state.suggestionId !== '') manualFallback = { record: offerRecord(state) }
+      clearOffer('idle')
+    }
     suppressedTurns.delete(tkey)
     dismissedTurns.delete(tkey)
     suspendedOffers.delete(tkey)
@@ -1042,14 +1147,26 @@ export function createClientRuntime(options) {
   function dispose() {
     disposed = true
     clearTimer()
+    cancelStatusRetry()
     abortInflight()
   }
 
+  /**
+   * The composer of this session is going away: the user switched session, or
+   * opened a panel over the conversation. The overlay calls this from its
+   * effect cleanup, which runs BEFORE the next view's first sync — so whatever
+   * should survive the switch has to be saved here, while the view is still known.
+   */
   function detachView(sessionId) {
     if (latestEnv?.sessionId !== sessionId) return
+    const state = assistStore.getSnapshot()
+    let remembered = false
+    if (state.status === 'offered') remembered = rememberOffer(state, latestEnv)
+    else if (state.status === 'waiting') rememberPending(state)
     latestEnv = null
     completionArm = null
-    clearWork('closed', 'closed')
+    manualFallback = null
+    clearWork('closed', remembered ? undefined : 'closed')
   }
 
   return {
@@ -1086,24 +1203,49 @@ export function createClientRuntime(options) {
 }
 
 /** One HTTP RPC over the authenticated plugin route. */
+/** Deadline for a request whose caller named none. */
+const RPC_TIMEOUT_DEFAULT_MS = 10000
+
+/**
+ * One HTTP RPC over the authenticated plugin route.
+ * @returns {(operation: string, payload?: object, signal?: AbortSignal, timeoutMs?: number) => Promise<any>}
+ *   Rejects with `Error('timeout')` when the Host has not answered in time, so a
+ *   Host that hangs can never leave the page waiting forever.
+ */
 export function createRouteRpc() {
-  return async function rpc(operation, payload, signal) {
+  return async function rpc(operation, payload, signal, timeoutMs) {
     const body = { schemaVersion: SCHEMA_VERSION, operation, ...(payload === undefined ? {} : payload) }
-    const response = await fetch(ROUTE, {
-      method: 'POST',
-      credentials: 'same-origin',
-      signal,
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(body),
-    })
-    if (response.status === 404) throw new Error('route-missing')
-    let json
-    try {
-      json = await response.json()
-    } catch {
-      throw new Error(`invalid-json (HTTP ${response.status})`)
+    const limit = Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : RPC_TIMEOUT_DEFAULT_MS
+    const deadline = new AbortController()
+    const timer = setTimeout(() => deadline.abort(), limit)
+    const onAbort = () => deadline.abort()
+    if (signal !== undefined && signal !== null) {
+      if (signal.aborted) deadline.abort()
+      else signal.addEventListener('abort', onAbort, { once: true })
     }
-    return json
+    try {
+      const response = await fetch(ROUTE, {
+        method: 'POST',
+        credentials: 'same-origin',
+        signal: deadline.signal,
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      if (response.status === 404) throw new Error('route-missing')
+      try {
+        return await response.json()
+      } catch (error) {
+        if (deadline.signal.aborted) throw error
+        throw new Error(`invalid-json (HTTP ${response.status})`)
+      }
+    } catch (error) {
+      // Our own deadline, not the caller's cancellation.
+      if (deadline.signal.aborted && !(signal !== undefined && signal !== null && signal.aborted)) throw new Error('timeout')
+      throw error
+    } finally {
+      clearTimeout(timer)
+      if (signal !== undefined && signal !== null) signal.removeEventListener('abort', onAbort)
+    }
   }
 }
 

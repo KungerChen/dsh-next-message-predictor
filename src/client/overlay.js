@@ -11,6 +11,7 @@
 // This file is concatenated into the browser bundle: plain declarations only.
 
 import {
+  GHOST_MARKER,
   editorHasFocus,
   eventInsideCard,
   findCard,
@@ -86,6 +87,8 @@ export function createOverlayComponent(react, runtime, t) {
     const configState = useStore(react, runtime.configStore)
     const signals = useStore(react, runtime.signalsStore)
     const notice = useStore(react, runtime.noticeStore)
+    // Subscribed for the interface language: render again when it changes.
+    useStore(react, runtime.shellStore)
     // Strings name the predict shortcut as `{key}`; show whatever the user set.
     const keyLabel = formatShortcut(configState.config.predictShortcut)
     const tk = (key) => t(key).split('{key}').join(keyLabel)

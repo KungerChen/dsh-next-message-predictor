@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Vorhersage der nächsten Nachricht",
+    "description": "Sobald der Assistent eine Antwort beendet hat, erscheint im leeren Eingabefeld ein Vorschlag für die nächste Nachricht in grauer Schrift. Tab oder → übernimmt ihn, Esc blendet ihn aus; der Vorschlag wird nur eingefügt und nie automatisch gesendet. Jede Vorhersage ist ein Modellaufruf."
+  }
+}

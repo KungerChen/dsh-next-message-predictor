@@ -11,9 +11,10 @@
 // config editor, so there is one authoritative config document.
 // This file is concatenated into the browser bundle: plain declarations only.
 
-import { DEFAULT_CONFIG, DEFAULT_PREDICT_SHORTCUT, PANEL_ID, SETTING_LIMITS, formatShortcut, parseShortcut, shortcutFromEvent } from '../shared/config.js'
+import { DEFAULT_CONFIG, DEFAULT_PREDICT_SHORTCUT, LANGUAGE_AUTO, LANGUAGE_IDS, PANEL_ID, SETTING_LIMITS, formatShortcut, parseShortcut, shortcutFromEvent } from '../shared/config.js'
 import { PRESETS, PRESET_IDS, RECOMMENDED_PRESET, RECOMMENDED_ROUTE, matchPreset, presetPatch } from '../shared/presets.js'
 import { PLUGIN_VERSION } from '../shared/version.js'
+import { NMP_LANGUAGE_NAMES, nmpBracket } from './i18n.js'
 import { nmpCodeLabel } from './labels.js'
 
 /** Subscribe to a tiny store with the current snapshot. */
@@ -112,6 +113,29 @@ function nmpWriteAdvancedOpen(open) {
     globalThis.sessionStorage?.setItem(NMP_ADVANCED_OPEN_KEY, open ? '1' : '0')
   } catch {
     /* storage unavailable: the block simply starts folded */
+  }
+}
+
+/**
+ * What the advanced block last opened itself for. It opens once per problem
+ * (a config error, masking switched off); after the user folds it again it
+ * stays folded across the page remounts every save causes, until the problem
+ * changes.
+ */
+const NMP_ADVANCED_ATTENTION_KEY = 'dsh-next-message-predictor.settings.advancedAttention'
+function nmpReadAdvancedAttention() {
+  try {
+    return globalThis.sessionStorage?.getItem(NMP_ADVANCED_ATTENTION_KEY) ?? ''
+  } catch {
+    return ''
+  }
+}
+function nmpWriteAdvancedAttention(signature) {
+  try {
+    if (signature === '') globalThis.sessionStorage?.removeItem(NMP_ADVANCED_ATTENTION_KEY)
+    else globalThis.sessionStorage?.setItem(NMP_ADVANCED_ATTENTION_KEY, signature)
+  } catch {
+    /* storage unavailable: the block opens again after a remount */
   }
 }
 
@@ -265,10 +289,19 @@ export function createSettingsComponent(react, runtime, t) {
 
     // Something in the folded block needs attention (a config error, masking
     // switched off): open it once. The user can still fold it again.
-    const needsAttention = (Array.isArray(configState.configErrors) && configState.configErrors.length > 0) || config.redactSecrets === false
+    const attention = configState.ready !== true
+      ? ''
+      : [...(Array.isArray(configState.configErrors) ? configState.configErrors : []), config.redactSecrets === false ? 'redact-off' : ''].filter((part) => part !== '').join('|')
     useEffect(() => {
-      if (needsAttention) setAdvancedOpen(true)
-    }, [needsAttention])
+      if (configState.ready !== true) return
+      if (attention === nmpReadAdvancedAttention()) return
+      nmpWriteAdvancedAttention(attention)
+      if (attention !== '') {
+        nmpWriteAdvancedOpen(true)
+        setAdvancedOpen(true)
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [attention, configState.ready])
 
     // Shortcut recorder: the next key combination becomes the predict shortcut.
     useEffect(() => {
@@ -404,6 +437,14 @@ export function createSettingsComponent(react, runtime, t) {
     const toggleSidebarEntry = () => {
       if (busy) return
       void save({ sidebarEntry: !sidebarOn }, sidebarOn ? 'settings.sidebarRemoved' : 'settings.sidebarAdded')
+    }
+
+    /** Interface language: applies at once, like the switches. */
+    const languageSetting = config.language === LANGUAGE_AUTO || LANGUAGE_IDS.includes(config.language) ? config.language : LANGUAGE_AUTO
+    const changeLanguage = (value) => {
+      if (busy || value === languageSetting) return
+      // The note is worded after the save, so it is already in the new language.
+      void save({ language: value }, 'settings.languageSaved', { undo: { language: languageSetting } })
     }
 
     /** The recommended route is complete and known: one click applies it, with undo. */
@@ -579,7 +620,7 @@ export function createSettingsComponent(react, runtime, t) {
           'div',
           { style: { ...CARD_STYLE, gap: '4px', borderColor: NMP_DANGER, fontSize: '13px', color: NMP_DANGER } },
           h('div', null, t('settings.hostUnavailable')),
-          h('div', { style: { fontSize: '12px' } }, configState.hostError),
+          h('div', { 'data-nmp-setting': 'hostError', style: { fontSize: '12px' } }, nmpCodeLabel(t, 'reason', configState.hostError)),
         ),
       )
     }
@@ -632,7 +673,7 @@ export function createSettingsComponent(react, runtime, t) {
       : assist.status === 'conflict'
         ? assist.reason.replace(/^conflict:/, '')
         : nmpCodeLabel(t, 'reason', assist.reason)
-    const stateLine = `${t('settings.stateNow')}${stateText}${stateReason !== '' && stateReason !== stateText ? `（${stateReason}）` : ''}`
+    const stateLine = `${t('settings.stateNow')}${stateText}${stateReason !== '' && stateReason !== stateText ? nmpBracket(t.language(), stateReason) : ''}`
     const stateBad = enabled && (assist.status === 'conflict' || assist.status === 'failed')
     const isDefaultShortcut = (parseShortcut(config.predictShortcut) === null ? DEFAULT_PREDICT_SHORTCUT : config.predictShortcut) === DEFAULT_PREDICT_SHORTCUT
 
@@ -698,6 +739,24 @@ export function createSettingsComponent(react, runtime, t) {
             ),
           ),
           { dim: !enabled, note: recording ? t('settings.shortcutRecording') : '', noteColor: NMP_ACCENT },
+        ),
+        row(
+          'language',
+          t('settings.language'),
+          h(
+            'select',
+            {
+              'data-nmp-setting': 'language',
+              'aria-label': t('settings.language'),
+              style: { ...FIELD_STYLE, width: '168px', flex: 'none' },
+              value: languageSetting,
+              disabled: busy,
+              onChange: (event) => changeLanguage(event.target.value),
+            },
+            h('option', { value: LANGUAGE_AUTO }, t('settings.languageAuto')),
+            // Each language under its own name, whatever language the page is in.
+            LANGUAGE_IDS.map((id) => h('option', { key: id, value: id, lang: id }, NMP_LANGUAGE_NAMES[id])),
+          ),
         ),
         // Key legend: everything the keyboard does, in one line.
         h(
@@ -949,10 +1008,13 @@ export function createSettingsComponent(react, runtime, t) {
     }
     const budget = configState.budget
     if (budget !== null && budget !== undefined) {
-      const usedTokens = (Number(budget.inputTokens) || 0) + (Number(budget.outputTokens) || 0) + (Number(budget.reasoningTokens) || 0)
+      // The daily limit counts tokens held back for calls whose real usage never
+      // arrived, so the figure shown includes them and says how many they are.
+      const reservedTokens = Math.max(0, Number(budget.reservedTokens) || 0)
+      const usedTokens = (Number(budget.inputTokens) || 0) + (Number(budget.outputTokens) || 0) + (Number(budget.reasoningTokens) || 0) + reservedTokens
       resultRows.push([
         t('settings.budgetToday'),
-        `${nmpNumber(budget.requests)} / ${nmpNumber(budget.dailyRequestLimit)}${t('settings.unitTimes')}${t('settings.listSeparator')}${nmpNumber(usedTokens)} / ${nmpNumber(budget.dailyTokenBudget)} token`,
+        `${nmpNumber(budget.requests)} / ${nmpNumber(budget.dailyRequestLimit)}${t('settings.unitTimes')}${t('settings.listSeparator')}${nmpNumber(usedTokens)} / ${nmpNumber(budget.dailyTokenBudget)} token${reservedTokens > 0 ? t('settings.budgetReserved').split('{n}').join(nmpNumber(reservedTokens)) : ''}`,
       ])
     }
     rows.push(
@@ -1269,7 +1331,7 @@ function nmpSwitch(h, options) {
 
 /** The Host's error text for a failed save, or a readable stand-in. */
 function nmpSaveError(t, error) {
-  return typeof error === 'string' && error !== '' ? error : t('settings.saveFailedUnknown')
+  return typeof error === 'string' && error !== '' ? nmpCodeLabel(t, 'reason', error) : t('settings.saveFailedUnknown')
 }
 
 /** 14 px "sidebar" glyph: a plus while off, the entry rows drawn in once added. */

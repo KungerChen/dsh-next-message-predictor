@@ -53,6 +53,19 @@ export function createRequestRegistry() {
     else entry.manualCount += 1
   }
 
+  /**
+   * Give back a credit that bought nothing: the production ended before any
+   * model call was made (the budget ledger could not be written, the model
+   * route could not be prepared). Without this a transient failure would use
+   * up the turn's only automatic prediction.
+   */
+  function refundCredit(turnKey, trigger) {
+    const entry = turnLedger.get(turnKey)
+    if (entry === undefined) return
+    if (trigger === 'auto') entry.autoUsed = false
+    else entry.manualCount = Math.max(0, entry.manualCount - 1)
+  }
+
   /** Existing production for one result key, if any. */
   function findProduction(cacheKey) {
     const production = productions.get(cacheKey)
@@ -151,6 +164,7 @@ export function createRequestRegistry() {
   return {
     hasCredit,
     consumeCredit,
+    refundCredit,
     findProduction,
     startProduction,
     attach,

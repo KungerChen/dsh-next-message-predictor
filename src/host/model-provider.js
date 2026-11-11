@@ -94,12 +94,14 @@ export function createModelProvider(deps) {
   async function produce(call) {
     const started = Date.now()
     const llm = getLlm()
-    if (llm === undefined || llm === null) return { kind: 'unavailable', reason: 'llm-service-unavailable' }
+    // `dispatched: false` on every return before the stream starts: nothing was
+    // sent to the provider, so the caller may release the budget reservation.
+    if (llm === undefined || llm === null) return { kind: 'unavailable', reason: 'llm-service-unavailable', dispatched: false }
     let route = call.route
-    if (!route.ok) return { kind: 'unavailable', reason: route.reason }
+    if (!route.ok) return { kind: 'unavailable', reason: route.reason, dispatched: false }
     const maxTokens = Math.max(1, Number(call.config.maxOutputTokens) || 256)
     const signal = call.signal
-    if (signal?.aborted) return { kind: 'unavailable', reason: 'cancelled' }
+    if (signal?.aborted) return { kind: 'unavailable', reason: 'cancelled', dispatched: false }
     let prepared
     try {
       prepared = await llm.prepareCall({ provider: route.provider, model: route.model, maxTokens }, signal, (controls, model) => {
@@ -134,23 +136,27 @@ export function createModelProvider(deps) {
             route = { ok: true, provider: fallback.provider, model: fallback.model, source: 'fallback-session' }
           } catch (fallbackError) {
             const fallbackMessage = fallbackError instanceof Error ? fallbackError.message : String(fallbackError)
-            return { kind: 'unavailable', reason: `fallback-failed:${fallbackMessage.slice(0, 120)}` }
+            return { kind: 'unavailable', reason: `fallback-failed:${fallbackMessage.slice(0, 120)}`, dispatched: false }
           }
         } else {
-          return { kind: 'unavailable', reason: `prepare-failed:${message.slice(0, 120)}` }
+          return { kind: 'unavailable', reason: `prepare-failed:${message.slice(0, 120)}`, dispatched: false }
         }
       } else {
-        return { kind: 'unavailable', reason: `prepare-failed:${message.slice(0, 120)}` }
+        return { kind: 'unavailable', reason: `prepare-failed:${message.slice(0, 120)}`, dispatched: false }
       }
     }
-    if (signal?.aborted) return { kind: 'unavailable', reason: 'cancelled' }
-    const effort = prepared.config.reasoningEffort
+    if (signal?.aborted) return { kind: 'unavailable', reason: 'cancelled', dispatched: false }
+    if (prepared === null || typeof prepared !== 'object' || typeof prepared.stream !== 'function') {
+      return { kind: 'unavailable', reason: 'prepare-failed:no stream', dispatched: false }
+    }
+    const preparedConfig = prepared.config !== null && typeof prepared.config === 'object' ? prepared.config : {}
+    const effort = preparedConfig.reasoningEffort
     onEvent({
       kind: 'llm-dispatch',
       provider: route.provider,
       model: route.model,
       effort: effort ?? 'default',
-      maxTokens: prepared.config.maxTokens ?? maxTokens,
+      maxTokens: preparedConfig.maxTokens ?? maxTokens,
       routeSource: route.source,
     })
     let text = ''
@@ -159,7 +165,7 @@ export function createModelProvider(deps) {
     let failure
     try {
       for await (const chunk of prepared.stream({
-        ...prepared.config,
+        ...preparedConfig,
         system: call.system,
         messages: [{ role: 'user', content: [{ type: 'text', text: call.input }] }],
         signal,

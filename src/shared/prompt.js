@@ -83,8 +83,10 @@ export function buildPredictionInput(messages, options) {
   for (const message of messages) {
     if (message === null || typeof message !== 'object') continue
     const role = message.role === 'assistant' ? '助手' : '用户'
-    const text = typeof message.text === 'string' ? message.text : ''
-    if (text === '') continue
+    const raw = typeof message.text === 'string' ? message.text : ''
+    if (raw === '') continue
+    // 消息正文里行首的“[用户]”“[助手]”改成全角括号：正文不能冒充另一位说话人。
+    const text = raw.replace(/^([ \t]*)\[(用户|助手)\]/gmu, '$1［$2］')
     lines.push(`[${role}] ${text}`)
     lines.push('')
   }

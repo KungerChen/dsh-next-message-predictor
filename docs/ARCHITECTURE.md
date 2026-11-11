@@ -1,6 +1,6 @@
 # 架构
 
-适用版本：0.3.0。
+适用版本：0.4.0。
 
 插件分两半，各自由 DSH 加载：
 
@@ -14,7 +14,7 @@
 │ overlay.js   输入框覆盖层：幽灵文字、Tab/Esc/快捷键 │      │ index.js            装配、路由注册               │
 │ controller.js 每个视图的状态机、去重、请求生命周期 │ RPC  │ predictor-service.js 协议、资格、去重、缓存      │
 │ settings.js  设置页 / 全局面板                    │─────▶│ context-builder.js  权威上下文、脱敏、裁剪       │
-│ index.js     注册 slot、文案、侧栏入口            │      │ model-provider.js   一次辅助模型调用             │
+│ index.js     注册 slot、语言、侧栏入口            │      │ model-provider.js   一次辅助模型调用             │
 │ labels.js    原因码 → 文字                        │      │ budget-ledger.js    派发账本、每日预算（落盘）   │
 │ dom.js       宿主 DOM 选择器与测量                │      │ results-log.js      结果记录、近 7 天汇总（落盘）│
 └───────────────────────────────────────────────────┘      │ request-registry.js 共享生产任务与等待者         │
@@ -22,6 +22,15 @@
    config · presets · protocol · prompt ·                  │ dsh-adapter.js      宿主能力适配                 │
    output-validation · version                             └──────────────────────────────────────────────────┘
 ```
+
+界面语言由 `src/client/i18n.js` 和 `src/client/locales/` 负责：
+
+- 每种语言一个文件（`locales/<语言>.js`），九个文件的键、顺序和占位符必须一致，`test/i18n.test.mjs` 检查。
+- 插件用自己的翻译函数取文字，而不是 DSH 注入的 `t`：这样语言可以在本插件的设置里单独选择，也能提供 DSH 自己没有的语言。`t(key)` 在调用时读取当前语言，缺失的键退回英文。
+- 当前语言的来源：配置项 `language` 是具体语言时直接使用；是 `auto` 时依次参考 DSH 正在显示的语言、`<html lang>`、浏览器语言，都不在支持范围内则用英文。DSH 的语言通过一个探针键得知：向 DSH 的语言服务注册字典时，每种语言的字典里多放一个值为该语言编号的键，再用 DSH 的翻译函数取这个键。
+- 向 DSH 的语言服务只注册它自己提供的八种语言（中文和英文是它要求的基线）。
+- 页面加载后要等 Host 回答才知道 `language` 的值，所以上一次的选择记在 `localStorage`（键 `dsh-next-message-predictor.language`），回答前先按它显示。
+- 语言变化时，组件通过 `shellStore` 的 `language` 字段重新渲染；设置导航和左侧栏入口的名称由 DSH 在注册时读取，所以语言变化后这两个入口会重新注册一次。
 
 ## 设计原则
 

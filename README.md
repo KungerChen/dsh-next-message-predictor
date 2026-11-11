@@ -1,3 +1,9 @@
+<div align="center">
+
+**简体中文** · [English](README.en.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Русский](README.ru.md) · [Português](README.pt.md)
+
+</div>
+
 <p align="center">
   <img src="icon.svg" width="88" alt="">
 </p>
@@ -11,11 +17,12 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/版本-0.3.0-4d6bfe" alt="版本 0.3.0">
+  <img src="https://img.shields.io/badge/%E7%89%88%E6%9C%AC-0.4.0-4d6bfe" alt="版本 0.4.0">
   <img src="https://img.shields.io/badge/DeepSeek%20Harness-0.2.2--rc.1-1f2937" alt="DeepSeek Harness 0.2.2-rc.1">
-  <img src="https://img.shields.io/badge/第三方依赖-0-2ea44f" alt="第三方依赖 0">
-  <img src="https://img.shields.io/badge/测试-199%20项通过-2ea44f" alt="测试 199 项通过">
-  <img src="https://img.shields.io/badge/许可-MIT-blue" alt="许可 MIT">
+  <img src="https://img.shields.io/badge/%E7%95%8C%E9%9D%A2%E8%AF%AD%E8%A8%80-9%20%E7%A7%8D-8250df" alt="界面语言 9 种">
+  <img src="https://img.shields.io/badge/%E7%AC%AC%E4%B8%89%E6%96%B9%E4%BE%9D%E8%B5%96-0-2ea44f" alt="第三方依赖 0">
+  <img src="https://img.shields.io/badge/%E6%B5%8B%E8%AF%95-242%20%E9%A1%B9%E9%80%9A%E8%BF%87-2ea44f" alt="测试 242 项通过">
+  <img src="https://img.shields.io/badge/%E8%AE%B8%E5%8F%AF-MIT-blue" alt="许可 MIT">
 </p>
 
 <p align="center">
@@ -68,7 +75,7 @@
 
 ### 🔒 注重隐私
 
-发送前遮蔽疑似密钥、令牌和邮箱。浏览器不上传草稿。本机统计只记数字，不记文字。
+发送前遮蔽疑似密钥、令牌、邮箱和手机号。浏览器不上传草稿。本机统计只记数字，不记文字。
 
 </td>
 <td valign="top">
@@ -112,7 +119,15 @@
 | **省流** | 只在你点“预测”或按快捷键时 | 指定的低成本模型 | 6 条 | 60 次 | 严格控制费用 |
 | **高质量** | 每次回答后自动 | 跟随会话模型 | 20 条 | 200 次 | 想要更贴合的建议 |
 
-模式只调整触发方式、模型策略、上下文和上限，不动总开关、快捷键和隐私选项，也不会覆盖你填好的模型。
+模式只调整触发方式、模型策略、上下文和上限，不动总开关、快捷键、界面语言和隐私选项，也不会覆盖你填好的模型。
+
+### 九种界面语言
+
+设置页、输入框里的按钮和它们的提示支持 简体中文、English、日本語、한국어、Español、Français、Deutsch、Русский、Português。默认跟随 DeepSeek Harness 的语言，也可以在 **设置 → 消息预测 → 界面语言** 里单独指定，选中即生效。建议本身使用哪种语言不受这个选项影响，它始终跟随对话的语言。
+
+<p align="center">
+  <img src="docs/images/languages.png" width="720" alt="设置页顶部在英语、日语、西班牙语和俄语下的样子">
+</p>
 
 ### 放进左侧栏，一点即达
 
@@ -192,7 +207,7 @@ dsh plugin --profile desktop remove dsh-next-message-predictor
 每次预测向模型发送一次请求，不自动重试。内容是当前会话最近的**用户消息和助手的最终文字回答**的片段，默认最多 12 条、约 2,000 token。
 
 - 不包含工具调用的参数和输出、推理过程、系统提示。
-- 发送前把疑似密钥、令牌、邮箱替换成占位符（基于规则，不能保证识别全部）。
+- 发送前把疑似私钥、API 密钥、令牌、密码、邮箱、手机号、身份证号，以及个人文件夹路径中的用户名替换成占位符（基于规则，不能保证识别全部）。
 - 浏览器页面只发送会话和回合的编号，不发送草稿、附件或任何对话文字；要发给模型的内容由后台从 DSH 自己的会话记录里读取。
 - “常用短句”只在本机比较你发过的短消息，不调用模型。
 
@@ -245,11 +260,11 @@ dsh plugin --profile desktop remove dsh-next-message-predictor
 
 ```powershell
 npm run build   # 由 src/shared + src/client 生成 lib/client.js
-npm test        # 199 项单元与集成测试
+npm test        # 242 项单元与集成测试
 npm run check   # build + test + 语法检查
 ```
 
-不需要 `npm install`，没有打包器，需要 Node.js 22 或更高版本。
+不需要 `npm install`，没有打包器，需要 Node.js 22 或更高版本。补充或修正某种语言的文案，改 `src/client/locales/<语言>.js` 即可，测试会检查各语言的键是否一致。
 
 <details>
 <summary>目录结构</summary>
@@ -262,7 +277,8 @@ dsh-next-message-predictor/
   lib/client.js         生成的浏览器 bundle（npm run build，勿手改）
   src/shared/           Host 与浏览器共用：配置、模式、协议、提示词、输出校验、版本号
   src/host/             路由、预测服务、上下文、模型调用、预算账本、结果记录
-  src/client/           控制器、输入框覆盖层、设置页与面板、文案
+  src/client/           控制器、输入框覆盖层、设置页与面板、语言切换
+  src/client/locales/   九种语言的界面文案，每种语言一个文件
   test/                 node:test 单元与集成测试（含对 lib/client.js 的冒烟测试）
   tools/                隔离 profile 启停、浏览器驱动、端到端脚本、mock 模型、截图脚本
   eval/                 去标识评测样本、评测脚本与报告
