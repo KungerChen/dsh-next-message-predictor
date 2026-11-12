@@ -1,6 +1,6 @@
 # 配置参考
 
-适用版本：0.4.1。配置的唯一来源是 `src/shared/config.js`（`DEFAULT_CONFIG`、取值范围）和 `src/shared/presets.js`（模式）。
+适用版本：0.5.0。配置的唯一来源是 `src/shared/config.js`（`DEFAULT_CONFIG`、取值范围）和 `src/shared/presets.js`（模式）。
 
 配置保存在 DSH profile 中本插件的 loader 条目（id `next-message-predictor`）下。通常在设置页修改；也可以在 profile 的 `cordis.patch.yml` 里写：
 
@@ -10,9 +10,12 @@
     enabled: true
     manualOnly: false
     sidebarEntry: true
+    pinnedPhrases:
+      - 继续
+      - 跑一下测试
 ```
 
-未写的字段取默认值。类型或范围不合法的字段不会被悄悄替换成别的值：该字段取默认值，问题列在设置页“高级选项 → 诊断信息 → 配置错误”里。未知字段同样会被报告。
+未写的字段取默认值。类型或范围不合法的字段不会被悄悄替换成别的值：该字段取默认值，问题列在设置页“高级选项 → 诊断信息 → 配置错误”里。未知字段同样会被报告。列表类的字段（目前只有 `pinnedPhrases`）整体校验：任何一条不合格，整个字段取默认值（空列表），不会只丢掉那一条。
 
 ## 全部选项
 
@@ -33,8 +36,9 @@
 
 | 字段 | 类型 | 默认 | 设置页范围 | 说明 |
 |---|---|---|---|---|
-| `habitSuggestions` | 布尔 | `true` | | 同一会话里重复发过的短消息直接作为建议，不调用模型。 |
+| `habitSuggestions` | 布尔 | `true` | | 同一会话里重复发过的短消息（常用短句）排在模型建议之后，用“换一条”切换可达。**不再代替模型调用**：第一条建议总是来自模型，自动预测每次都调用模型（0.4.x 及更早，重复的短消息会直接代替模型给出）。常用短句由本机生成，不调用模型、不计额度、不发给模型。设置页的名称是“在模型建议之后附上常用短句”。 |
 | `habitMinCount` | 整数 | `2` | 2–5 | 短消息至少出现几次才算常用短句。 |
+| `pinnedPhrases` | 字符串数组 | `[]` | 最多 10 条 | 固定短语：你自己维护的短语，排在常用短句之后，和它一起构成候选环里模型建议之后的部分（两者合计最多 5 条，先和前面的各条去重）。每条 1–40 字且不超过 160 字节（UTF-8）；已去掉首尾空白，单行，不含控制字符、HTML 或协议标记，不以 `/` 或 `@` 开头；按“忽略空白、结尾标点和大小写”的规则互不重复。只在本机使用，从不发给模型，也不做敏感信息遮蔽。设置页的“固定短语”整张列表编辑后点一次“保存”写入。三种模式和“恢复默认值”都不改它。 |
 | `multiCandidates` | 布尔 | `true` | | 手动预测一次调用返回多条候选。自动预测始终一条。 |
 | `candidateCount` | 整数 | `3` | 2–5 | 多条候选时一次返回几条。 |
 
@@ -85,7 +89,7 @@
 | `announceSuggestions` | 布尔 | `true` | 建议出现时向读屏软件播报一次。 |
 | `fakeSuggestion` | 字符串 | `''` | 离线测试用的固定建议，仅在 `modelMode: fixed` 且 `provider: fixed-test` 时使用。 |
 | `fakeSuggestionDelayMs` | 整数 | `0` | 离线测试时模拟的延迟（0–30,000 毫秒）。 |
-| `requestBodyLimitBytes` | 整数 | `8192` | 插件路由接受的请求体上限（1,024–1,048,576 字节）。 |
+| `requestBodyLimitBytes` | 整数 | `8192` | 插件路由接受的请求体上限（1,024–1,048,576 字节）。保存设置的请求（`config.set`）例外：至少允许 4,096 字节，即使这里设得更低，这样一整张固定短语列表（10 条、每条最多 160 字节，约 2.1 KB）总能保存；其他请求仍按这个上限。 |
 
 ## 模式取值
 
@@ -113,7 +117,7 @@
 1. 目标模式是指定模型（均衡、省流），而当前 `provider` 或 `model` 为空，或 `provider` 是 `fixed-test`：同时写入推荐路由 `deepseek-official / deepseek-flash` 和 `reasoningEffort: off`。已有路由时不动。
 2. 目标模式是仅手动（省流），而 `showPredictButton` 为 `false`：同时写入 `showPredictButton: true`，保证有一个看得见的触发方式。
 
-模式从不写入 `enabled`、`predictShortcut`、`sidebarEntry`、`language`、`habitSuggestions`、`redactSecrets`、`includeTurnFacts`、`announceSuggestions`、`fakeSuggestion`。这些约束由 `test/v030.test.mjs` 和 `test/i18n.test.mjs` 检查。
+模式从不写入 `enabled`、`predictShortcut`、`sidebarEntry`、`language`、`habitSuggestions`、`pinnedPhrases`、`redactSecrets`、`includeTurnFacts`、`announceSuggestions`、`fakeSuggestion`。这些约束由 `test/v030.test.mjs` 和 `test/i18n.test.mjs` 检查。
 
 ## 配置版本
 

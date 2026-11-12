@@ -17,7 +17,7 @@ c2_p: Dès que vous commencez à taper, la suggestion s’efface. Elle n’appar
 c3_h: Jamais d’excès de zèle
 c3_p: Il se contente de placer du texte dans la zone de saisie. Le plugin ne contient aucun code d’« envoi de message » ; envoyer reste toujours votre décision.
 c4_h: Un coût maîtrisé
-c4_p: Un modèle économique par défaut, avec des limites quotidiennes de requêtes et de jetons. Les phrases courtes que vous répétez sont proposées directement, sans appeler le modèle.
+c4_p: Un modèle économique par défaut, avec des limites quotidiennes de requêtes et de jetons. Vos propres phrases (les messages courts que vous répétez et celles que vous épinglez) sont à un clic sur « {ui:ghost.another} », ne coûtent rien et ne quittent jamais votre ordinateur.
 c5_h: La confidentialité d’abord
 c5_p: Avant l’envoi, les clés, jetons, adresses e-mail et numéros de téléphone probables sont masqués. Le navigateur ne transmet jamais votre brouillon. Les statistiques locales enregistrent des chiffres, pas du texte.
 c6_h: Une consommation transparente
@@ -58,6 +58,9 @@ m_fit1: L’usage quotidien
 m_fit2: Un contrôle strict des coûts
 m_fit3: Des suggestions plus justes
 f2_note: Un mode ne modifie que le déclenchement, la stratégie de modèle, la taille du contexte et les limites. Il ne touche ni à l’interrupteur principal, ni au raccourci, ni à la langue, ni aux options de confidentialité, et il conserve le modèle que vous avez saisi.
+fp_h: Vos propres phrases, à portée de main
+fp_p: Ajoutez les phrases que vous envoyez sans cesse (« continue », « lance les tests ») dans **Paramètres → {ui:settings.nav} → {ui:settings.sourcesTitle} → {ui:settings.pinned}**, classez-les dans l’ordre voulu et cliquez une seule fois sur « {ui:settings.save} ». Elles suivent la suggestion du modèle : « {ui:ghost.another} » (ou <kbd>Alt</kbd>+<kbd>\\</kbd>) parcourt la suggestion du modèle, les messages courts que vous avez répétés dans cette conversation, puis vos phrases épinglées, et ne redemande au modèle qu’après la dernière. Une petite marque sur le bouton indique qu’une phrase est la vôtre. Elles ne coûtent rien, ne quittent jamais votre ordinateur et, quand une prédiction manuelle ne donne rien du côté du modèle, elles sont proposées à la place de « {ui:ghost.none} ».
+fp_alt: Une phrase épinglée comme suggestion grise ; le bouton « {ui:ghost.another} » porte une épingle et la position dans la liste
 fl_h: Neuf langues d’interface
 fl_p: La page des paramètres, les boutons de la zone de saisie et leurs infobulles sont disponibles en {langs}. Par défaut, le plugin suit la langue réglée dans DeepSeek Harness ; vous pouvez aussi en choisir une dans **Paramètres → {ui:settings.nav} → {ui:settings.language}**, et elle s’applique aussitôt. Les suggestions, elles, suivent toujours la langue de votre conversation.
 fl_alt: Le haut de la page des paramètres en anglais, japonais, espagnol et russe
@@ -90,7 +93,7 @@ send_p: Chaque prédiction est une seule requête au modèle, sans nouvelle tent
 sb1: Ni arguments ni résultats d’outils, ni raisonnement, ni prompt système.
 sb2: Avant l’envoi, les clés privées, clés d’API, jetons, mots de passe, adresses e-mail, numéros de mobile et d’identité probables, ainsi que le nom d’utilisateur dans les chemins du dossier personnel, sont remplacés par des substituts (fondé sur des règles ; il ne peut pas garantir de tout repérer).
 sb3: La page du navigateur n’envoie que des identifiants de session et de tour, jamais le brouillon, les pièces jointes ni le texte de la conversation ; le contenu destiné au modèle est lu par la partie en arrière-plan dans les enregistrements de session de DSH.
-sb4: « {ui:settings.habits} » compare seulement les messages courts que vous avez envoyés sur cet ordinateur ; aucun modèle n’est appelé.
+sb4: Vos propres phrases (les messages courts que vous répétez dans une conversation et les « {ui:settings.pinned} ») ne sont utilisées que sur cet ordinateur : aucun modèle n’est appelé pour elles et elles ne lui sont jamais envoyées.
 send_more: La description complète, et la manière de supprimer les données locales, se trouvent dans [Confidentialité et périmètre des données](docs/PRIVACY.md).
 faq_h: Questions fréquentes
 q1: Va-t-il envoyer un message à ma place ?

@@ -1,6 +1,6 @@
 # 开发与验证
 
-适用版本：0.4.1。
+适用版本：0.5.0。
 
 ## 环境
 
@@ -38,7 +38,7 @@ npm run readme  # 重新生成各语言 README
 ## 修改代码时的约定
 
 - `src/shared/` 和 `src/client/` 的文件会被拼成一个函数作用域：只写普通的顶层声明；顶层名字在所有文件间唯一（客户端辅助函数习惯加 `nmp` 前缀）；新增文件要加进 `scripts/build-client.mjs` 的 `INPUTS`，顺序即依赖顺序。
-- 新增配置项：在 `src/shared/config.js` 的 `DEFAULT_CONFIG` 加默认值，并登记到 `NUMBER_FIELDS` / `STRING_FIELDS` / `BOOLEAN_FIELDS`；要在设置页显示数值项再加 `SETTING_LIMITS`。同步更新 [CONFIGURATION.md](CONFIGURATION.md)。
+- 新增配置项：在 `src/shared/config.js` 的 `DEFAULT_CONFIG` 加默认值，并登记到 `NUMBER_FIELDS` / `STRING_FIELDS` / `BOOLEAN_FIELDS`（数组类的选项登记到 `LIST_FIELDS`：每个条目是一个整体校验整张列表、返回新副本的函数，目前只有 `pinnedPhrases`）；要在设置页显示数值项再加 `SETTING_LIMITS`。同步更新 [CONFIGURATION.md](CONFIGURATION.md)。
 - 新增界面文字：在 `src/client/locales/` 的九个语言文件里都加上同一个键，位置相同（`test/i18n.test.mjs` 检查键、顺序和 `{key}` 这类占位符）。先写 `zh.js` 和 `en.js`，其余语言照英文翻译。
 - 新增一种语言：加 `src/client/locales/<语言>.js`，登记到 `src/shared/config.js` 的 `LANGUAGE_IDS`、`src/client/i18n.js` 的字典和语言名称、`scripts/build-client.mjs` 的 `INPUTS`，再加 `locale/<语言>.json`，以及 README（见下面的“README 的生成”）。
 - 新增原因码：给它加 `reason.<code>` 文案。带细节的原因码写成 `<code>:<细节>`，文案只需覆盖冒号前的部分（见 `src/client/labels.js`）。
@@ -80,10 +80,11 @@ node tools/build-readmes.mjs --check  # 只检查；有差异时退出码为 1�
 | `results-log.test.mjs` | 结果记录、轮换、汇总 |
 | `request-registry.test.mjs` / `semantic-filter.test.mjs` / `ghost-conflict.test.mjs` | 各自的模块 |
 | `v030.test.mjs` | 版本、模式、左侧栏选项、原因码文案、0.3.0 修复的回归 |
+| `v050.test.mjs` | 固定短语的校验与 `config.set` 请求体下限、候选环的顺序与去重（模型、常用短句、固定短语，合计上限）、本机短语不进入模型输入、手动预测的回退及其对次数和额度的影响、没有调用模型时退回次数、按来源的统计、重启后待匹配的建议仍在、AltGr |
 | `v041.test.mjs` | 用量未知调用的计费（各种结束方式）、实测/估算/预留三类与每日上限、上一进程遗留的预留、0.4.0 账本升级、每回合调用次数落盘与重启后生效、清理、写盘失败不占用次数 |
 | `v040.test.mjs` | 0.4.0 修复的回归：遮蔽范围、配置字段名、快捷键限制、行分隔符、片段上限、次数与额度的退还、切会话恢复、后台无响应 |
 | `i18n.test.mjs` | 九种语言的字典一致性、语言解析、`language` 配置项、打包内容、各语言 README 的语言栏与 CI 徽章、README 生成器的 `--check` |
-| `bundle-smoke.test.mjs` | 对 `lib/client.js` 的冒烟测试，见下 |
+| `bundle-smoke.test.mjs` | 对 `lib/client.js` 的冒烟测试，见下（0.5.0 起包括固定短语列表的操作和统计卡片的新文字） |
 | `no-local-paths.test.mjs` | 已入库的文件里没有本机路径 |
 
 ### bundle 冒烟测试
@@ -95,9 +96,10 @@ node tools/build-readmes.mjs --check  # 只检查；有差异时退出码为 1�
 - “跟随 DSH”随 DSH 的语言变化，在语言列表里选一项后页面和入口名称随之切换；
 - 点“添加到左侧栏”后入口出现，再点一次入口消失而面板仍在；
 - 点模式卡片后配置变成对应模式，改一项后变成“自定义”；
-- 插件卸载时面板开着，会留下重新打开的标记。
+- 插件卸载时面板开着，会留下重新打开的标记；
+- 固定短语：点添加、上移 / 下移、删除、保存（配置只写一次）、撤销和放弃修改，各种不合格的输入给出对应的错误，统计卡片显示“其中 N 条是你自己的短语”。
 
-它用一个极简的 React 替身（只调用组件并遍历返回值），不测真实的 DOM 行为；那部分由下面的端到端脚本覆盖。
+它用一个极简的 React 替身（只调用组件并遍历返回值；0.5.0 起能保存组件的状态，上面点击固定短语列表需要它），不测真实的 DOM 行为；那部分由下面的端到端脚本覆盖。
 
 ## 端到端验证（隔离 profile）
 
@@ -131,6 +133,9 @@ node tools/p2-e2e.mjs --url $u --out scratch/evidence --tag p2
 # 界面语言跟随 DSH（需要先打开一个会话，输入框为空）
 node tools/i18n-e2e.mjs --url $u --out scratch/evidence --tag i18n
 
+# 固定短语、候选环、手动回退、统计（mock 模型；脚本自己设置插件配置，结束时恢复）
+node tools/phrases-e2e.mjs --url $u --out scratch/evidence --tag phrases   # 会读取统计文件：启动实例时如果设置了 NMP_DATA_HOME，运行脚本时也要设成同一个目录
+
 .\tools\mock-llm-control.ps1 -Action stop
 .\tools\stop-scratch-web.ps1
 ```
@@ -138,6 +143,33 @@ node tools/i18n-e2e.mjs --url $u --out scratch/evidence --tag i18n
 启动脚本设置 `NMP_DATA_HOME=scratch\data-home`，测试产生的账本和统计不会混入真实数据。URL 带有本次启动的访问令牌，`scratch/logs/` 和 `scratch/evidence/` 不入库。
 
 `tools/i18n-e2e.mjs` 检查“界面语言：跟随 DSH”是否真的跟随：它在 DSH 自己的设置里把界面语言依次切到英语、日语、俄语再切回中文，每次都在不刷新和刷新后各记录一遍插件的语言、设置导航和左侧栏里的入口名称、页面标题、“预测”按钮的文字以及跟随所用的时间；再确认显式选择的语言（韩语）不受 DSH 影响、改回“跟随 DSH”后重新跟随；最后把 DSH 和插件选项恢复原样。
+
+`tools/phrases-e2e.mjs` 覆盖 0.5.0 的固定短语和候选环，尽量走真实界面。脚本开始时把插件配置设成确定的状态（会话模型、简体中文、每次一条候选、没有固定短语），结束时恢复（`pinnedPhrases: []`，`language`、`sidebarEntry` 等回到开始前的值）。报告里只有计数、开关和快捷键，没有对话文字、建议文字和访问令牌。步骤：
+
+| 步骤 | 检查 |
+|---|---|
+| `settings-edit`、`settings-reload`、`settings-discard` | 设置页添加三条、上移一条、删除一条；有未保存提示和“n / 10”计数；点“保存”只发出一次 `config.set`；刷新页面后列表与保存的一致；“放弃修改”丢掉草稿且不写配置 |
+| `settings-errors` | 空、重复（含结尾标点不同的重复）、以 `/` 或 `@` 开头、41 个字、第 11 条，各自给出对应的错误 |
+| `ring-auto`、`ring-model-calls` | 新会话里同一条短消息发两次成为常用短句；自动预测的第一条来自模型，只调用一次模型；按钮显示 `1/4` |
+| `ring-walk`、`tab-pinned` | `Alt+\` 依次走到常用短句、两条固定短语，各自有标记和悬停提示，环内没有任何模型请求、每日请求数不变；固定短语上按 `Tab` 填入的正是这一条，没有发送 |
+| `stats-own` | “近 7 天统计”的“已采纳”行出现“其中 N 条是你自己的短语” |
+| `habit-session` | 刷新页面后新开会话，重新造出常用短句，供后面的步骤使用 |
+| `auto-unusable` | 模型输出不可用时，自动预测什么都不显示，也没有“本次没有建议” |
+| `manual-fallback` | 同样的输出下按 `Alt+\`：给出常用短句和固定短语；这次手动预测确实调用了模型，所以模型请求数和每日请求数各 +1，`localFallbacks` +1；继续切换仍是本地的 |
+| `manual-exhausted` | 每日请求上限用完：自动预测没有建议，按 `Alt+\` 给出本机短语，没有模型请求、每日请求数不变 |
+| `narrow-marked` | 输入框宽度压到 200 像素，逐条切换整个环（含一条很长的固定短语）：按钮保持一行高、不溢出输入框、不与“Tab 采纳”重叠，宽度不随条目变化 |
+| `save-keeps-stats` | 屏幕上有模型建议时保存一项设置（插件后台重启）：页面随配置版本变化撤回这条建议，后台仍记下它的去向，并给下一条消息打匹配分数 |
+| `no-local` | 没有固定短语、关闭常用短句：环里只有模型候选，没有任何标记；往后切换会再次请求模型（受手动次数上限限制） |
+| `altgr-synthetic` | `getModifierState('AltGraph')` 为真的合成 `keydown` 不触发预测、也不被拦截；去掉 AltGraph 的同一事件则触发。这是合成事件，不是真实的 AltGr 键盘布局 |
+| `events-file` | 本次新增的 `events.jsonl` 行里没有任何短语或建议的文字，并统计新字段 |
+
+0.5.0 的结果（2026-11-11，DSH 0.2.2-rc.1）：
+
+| 脚本 | 结果 |
+|---|---|
+| `p1-e2e.mjs` / `p2-e2e.mjs` | 13 步、9 步全部通过 |
+| `i18n-e2e.mjs` | 15 步全部通过（另有初始化一项 `setup`） |
+| `phrases-e2e.mjs` | 19 项全部通过（含最后的 `restore`）。`save-keeps-stats` 观察到：保存设置后页面撤回屏幕上的那条建议，所以保存之后不能再采纳它；后台对它的去向和匹配分数的记录没有丢 |
 
 0.4.1 的结果（2026-11-11，DSH 0.2.2-rc.1）：
 
@@ -167,7 +199,7 @@ node tools/i18n-e2e.mjs --url $u --out scratch/evidence --tag i18n
 
 ### 重新生成 README 的截图
 
-`docs/images/` 里的图片由 `tools/capture-screenshots.mjs` 从真实界面截取：它在隔离 profile 里用 mock 模型跑一段两轮的演示对话，截下输入框里的建议、动图的各帧、模式卡片、左侧栏入口和完整的设置页，最后把界面语言依次切到英语、日语、西班牙语和俄语，拼成 `languages.png`。界面有变化时重新运行即可。
+`docs/images/` 里的图片由 `tools/capture-screenshots.mjs` 从真实界面截取：它在隔离 profile 里用 mock 模型跑一段两轮的演示对话（只有模型的候选：常用短句关闭、固定短语为空），截下输入框里的建议和动图的各帧；然后保存三条固定短语，截下输入框里一条固定短语作建议的 `phrases.png`，再截模式卡片、左侧栏入口和完整的设置页（设置页里能看到固定短语）；最后把界面语言依次切到英语、日语、西班牙语和俄语，拼成 `languages.png`。界面有变化时重新运行即可。
 
 ```powershell
 # 用一个空的统计目录启动，截图里的“近 7 天统计”才只包含这次演示

@@ -11,7 +11,21 @@
 // config editor, so there is one authoritative config document.
 // This file is concatenated into the browser bundle: plain declarations only.
 
-import { DEFAULT_CONFIG, DEFAULT_PREDICT_SHORTCUT, LANGUAGE_AUTO, LANGUAGE_IDS, PANEL_ID, SETTING_LIMITS, formatShortcut, parseShortcut, shortcutFromEvent } from '../shared/config.js'
+import {
+  DEFAULT_CONFIG,
+  DEFAULT_PREDICT_SHORTCUT,
+  LANGUAGE_AUTO,
+  LANGUAGE_IDS,
+  PANEL_ID,
+  PINNED_PHRASES_MAX,
+  PINNED_PHRASE_MAX_GRAPHEMES,
+  SETTING_LIMITS,
+  formatShortcut,
+  isAltGraphEvent,
+  parseShortcut,
+  pinnedPhraseProblem,
+  shortcutFromEvent,
+} from '../shared/config.js'
 import { PRESETS, PRESET_IDS, RECOMMENDED_PRESET, RECOMMENDED_ROUTE, matchPreset, presetPatch } from '../shared/presets.js'
 import { PLUGIN_VERSION } from '../shared/version.js'
 import { NMP_LANGUAGE_NAMES, nmpBracket } from './i18n.js'
@@ -139,6 +153,22 @@ function nmpWriteAdvancedAttention(signature) {
   }
 }
 
+/**
+ * What one key press means while the shortcut recorder is listening.
+ * A key typed with AltGr is never recorded: on Windows it arrives as Ctrl+Alt,
+ * and a Ctrl+Alt+<key> shortcut would then swallow the character AltGr+<key>
+ * types on that keyboard layout.
+ * @returns {{kind: 'cancel' | 'wait' | 'altgr' | 'invalid' | 'ok', shortcut?: string}}
+ */
+export function nmpShortcutKeyAction(event) {
+  if (event !== null && typeof event === 'object' && event.key === 'Escape') return { kind: 'cancel' }
+  if (isAltGraphEvent(event)) return { kind: 'altgr' }
+  const candidate = shortcutFromEvent(event)
+  if (candidate === '') return { kind: 'wait' }
+  if (parseShortcut(candidate) === null) return { kind: 'invalid' }
+  return { kind: 'ok', shortcut: candidate }
+}
+
 /** "?" icon with a hover/focus tooltip. One per option. */
 function createHelpComponent(react) {
   const { createElement: h, useState } = react
@@ -237,6 +267,11 @@ export function createSettingsComponent(react, runtime, t) {
     const [recording, setRecording] = useState(false)
     const [confirmRedact, setConfirmRedact] = useState(false)
     const [advancedOpen, setAdvancedOpen] = useState(nmpReadAdvancedOpen)
+    // Pinned phrases: edited as a whole and written with one Save (every config
+    // write restarts the plugin and withdraws the suggestion on screen).
+    const [pinnedDraft, setPinnedDraft] = useState(null)
+    const [pinnedText, setPinnedText] = useState('')
+    const [pinnedError, setPinnedError] = useState('')
     const shell = useStoreSettings(react, runtime.shellStore)
     const config = configState.config
     const diagnostics = configState.diagnostics
@@ -309,18 +344,19 @@ export function createSettingsComponent(react, runtime, t) {
       const onKeyDown = (event) => {
         event.preventDefault()
         event.stopPropagation()
-        if (event.key === 'Escape') {
+        const action = nmpShortcutKeyAction(event)
+        if (action.kind === 'cancel') {
           setRecording(false)
           return
         }
-        const candidate = shortcutFromEvent(event)
-        if (candidate === '') return // only modifiers so far
-        if (parseShortcut(candidate) === null) {
-          setMessage({ ok: false, text: t('settings.shortcutInvalid') })
+        if (action.kind === 'wait') return // only modifiers so far
+        if (action.kind === 'altgr' || action.kind === 'invalid') {
+          // Keep listening: the next combination may be a usable one.
+          setMessage({ ok: false, text: t(action.kind === 'altgr' ? 'settings.shortcutAltGr' : 'settings.shortcutInvalid') })
           return
         }
         setRecording(false)
-        if (candidate !== config.predictShortcut) void save({ predictShortcut: candidate }, 'settings.shortcutSaved')
+        if (action.shortcut !== config.predictShortcut) void save({ predictShortcut: action.shortcut }, 'settings.shortcutSaved')
       }
       window.addEventListener('keydown', onKeyDown, true)
       return () => window.removeEventListener('keydown', onKeyDown, true)
@@ -852,6 +888,144 @@ export function createSettingsComponent(react, runtime, t) {
     // ── Card 3: where suggestions come from ─────────────────────────────────
     const multi = config.multiCandidates !== false
     const habits = config.habitSuggestions !== false
+
+    // Pinned phrases: a local draft of the whole list, written with one Save.
+    const savedPinned = Array.isArray(config.pinnedPhrases) ? config.pinnedPhrases : []
+    const pinnedList = pinnedDraft === null ? savedPinned : pinnedDraft
+    const pinnedDirty = pinnedDraft !== null && (pinnedDraft.length !== savedPinned.length || pinnedDraft.some((text, index) => text !== savedPinned[index]))
+    const pinnedProblemText = (problem) => {
+      if (problem === 'empty') return t('settings.pinnedErrorEmpty')
+      if (problem === 'too-long' || problem === 'too-many-bytes') return t('settings.pinnedErrorLong').split('{n}').join(String(PINNED_PHRASE_MAX_GRAPHEMES))
+      if (problem === 'command') return t('settings.pinnedErrorCommand')
+      if (problem === 'duplicate') return t('settings.pinnedErrorDuplicate')
+      return t('settings.pinnedErrorInvalid')
+    }
+    const addPinned = () => {
+      if (busy) return
+      const text = pinnedText.trim()
+      if (pinnedList.length >= PINNED_PHRASES_MAX) {
+        setPinnedError(t('settings.pinnedErrorFull').split('{n}').join(String(PINNED_PHRASES_MAX)))
+        return
+      }
+      const problem = pinnedPhraseProblem(text, pinnedList)
+      if (problem !== '') {
+        setPinnedError(pinnedProblemText(problem))
+        return
+      }
+      setPinnedDraft([...pinnedList, text])
+      setPinnedText('')
+      setPinnedError('')
+    }
+    const movePinned = (index, delta) => {
+      const target = index + delta
+      if (busy || target < 0 || target >= pinnedList.length) return
+      const next = [...pinnedList]
+      const [moved] = next.splice(index, 1)
+      next.splice(target, 0, moved)
+      setPinnedDraft(next)
+    }
+    const removePinned = (index) => {
+      if (busy) return
+      setPinnedDraft(pinnedList.filter((_, position) => position !== index))
+      setPinnedError('')
+    }
+    const discardPinned = () => {
+      setPinnedDraft(null)
+      setPinnedError('')
+    }
+    const savePinned = () => {
+      if (busy || !pinnedDirty) return
+      void save({ pinnedPhrases: [...pinnedList] }, 'settings.pinnedSaved', { undo: { pinnedPhrases: [...savedPinned] } }).then((result) => {
+        if (result.ok === true) {
+          setPinnedDraft(null)
+          setPinnedError('')
+        }
+      })
+    }
+    const pinnedButton = (attribute, index, glyph, label, disabled, onClick) =>
+      h(
+        'button',
+        {
+          type: 'button',
+          [attribute]: String(index),
+          title: label,
+          'aria-label': label,
+          disabled,
+          onClick,
+          style: { ...buttonStyle(disabled), height: '26px', minWidth: '26px', padding: '0 6px', flex: 'none' },
+        },
+        glyph,
+      )
+    const pinnedBlock = h(
+      'div',
+      { key: 'pinned', 'data-nmp-setting': 'pinned', style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
+      row(
+        'pinned',
+        t('settings.pinned'),
+        h('span', { 'data-nmp-setting': 'pinnedCount', style: { ...NMP_HINT_STYLE, flex: 'none' } }, `${pinnedList.length} / ${PINNED_PHRASES_MAX}`),
+        {
+          note: t('settings.pinnedNote').split('{max}').join(String(PINNED_PHRASES_MAX)).split('{n}').join(String(PINNED_PHRASE_MAX_GRAPHEMES)),
+        },
+      ),
+      h(
+        'div',
+        { style: { display: 'flex', gap: '8px' } },
+        h('input', {
+          type: 'text',
+          'data-nmp-setting': 'pinnedInput',
+          'aria-label': t('settings.pinned'),
+          placeholder: t('settings.pinnedPlaceholder'),
+          style: { ...FIELD_STYLE, borderColor: pinnedError !== '' ? NMP_DANGER : FIELD_STYLE.border.split(' ').slice(2).join(' ') },
+          value: pinnedText,
+          maxLength: 200,
+          disabled: busy,
+          onChange: (event) => {
+            setPinnedText(event.target.value)
+            if (pinnedError !== '') setPinnedError('')
+          },
+          onKeyDown: (event) => {
+            // Enter that confirms an input-method composition is not "add".
+            if (event.key === 'Enter' && event.isComposing !== true && event.nativeEvent?.isComposing !== true) addPinned()
+          },
+        }),
+        h(
+          'button',
+          { type: 'button', 'data-nmp-setting': 'pinnedAdd', disabled: busy || pinnedList.length >= PINNED_PHRASES_MAX, onClick: addPinned, style: { ...buttonStyle(busy), height: '34px', flex: 'none' } },
+          t('settings.pinnedAdd'),
+        ),
+      ),
+      pinnedError !== '' ? h('div', { 'data-nmp-setting': 'pinnedError', role: 'alert', style: { ...NMP_HINT_STYLE, color: NMP_DANGER } }, pinnedError) : null,
+      pinnedList.length === 0
+        ? h('div', { 'data-nmp-setting': 'pinnedEmpty', style: NMP_HINT_STYLE }, t('settings.pinnedEmpty'))
+        : h(
+            'div',
+            { 'data-nmp-setting': 'pinnedList', role: 'list', style: { display: 'flex', flexDirection: 'column', gap: '4px' } },
+            pinnedList.map((text, index) =>
+              h(
+                'div',
+                { key: `pinned-${index}-${text}`, role: 'listitem', 'data-nmp-pinned-row': String(index), style: { display: 'flex', alignItems: 'center', gap: '6px' } },
+                h('span', { style: { flex: 1, minWidth: 0, fontSize: '13px', lineHeight: '20px', color: 'var(--dsw-alias-label-primary)', overflowWrap: 'anywhere' } }, text),
+                pinnedButton('data-nmp-pinned-up', index, '↑', t('settings.pinnedUp'), busy || index === 0, () => movePinned(index, -1)),
+                pinnedButton('data-nmp-pinned-down', index, '↓', t('settings.pinnedDown'), busy || index === pinnedList.length - 1, () => movePinned(index, 1)),
+                pinnedButton('data-nmp-pinned-remove', index, '×', t('settings.pinnedRemove'), busy, () => removePinned(index)),
+              ),
+            ),
+          ),
+      pinnedDirty
+        ? h(
+            'div',
+            { style: { display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px', flexWrap: 'wrap' } },
+            h('span', { 'data-nmp-setting': 'pinnedDirty', style: { ...NMP_HINT_STYLE, marginRight: 'auto' } }, t('settings.unsaved')),
+            h('button', { type: 'button', 'data-nmp-setting': 'pinnedDiscard', disabled: busy, onClick: discardPinned, style: buttonStyle(busy) }, t('settings.discard')),
+            h(
+              'button',
+              { type: 'button', 'data-nmp-setting': 'pinnedSave', disabled: busy, onClick: savePinned, style: { ...buttonStyle(busy), borderColor: NMP_ACCENT, color: NMP_ACCENT } },
+              t('settings.save'),
+            ),
+          )
+        : null,
+    )
+
     rows.push(
       h(
         'div',
@@ -863,6 +1037,8 @@ export function createSettingsComponent(react, runtime, t) {
           nmpSwitch(h, { name: 'habitSuggestions', checked: habits, disabled: busy || !enabled, label: t('settings.habits'), onClick: () => toggle('habitSuggestions', !habits, 'settings.saved') }),
           { first: true, dim: !enabled },
         ),
+        // Independent of the switch above: the user's own list.
+        pinnedBlock,
         row(
           'multi',
           t('settings.multi'),
@@ -989,7 +1165,12 @@ export function createSettingsComponent(react, runtime, t) {
       const totalOutput = days.reduce((sum, day) => sum + (Number(day.output) || 0), 0)
       resultRows.push([t('settings.resultRequests'), `${nmpNumber(summary.requests)}${t('settings.unitTimes')}`])
       resultRows.push([t('settings.resultShown'), `${nmpNumber(summary.shown ?? 0)}${t('settings.unitItems')}`])
-      resultRows.push([t('settings.resultAccepted'), `${nmpNumber(summary.accepted ?? 0)}${t('settings.unitItems')}${t('settings.resultAcceptedOf')}${pct(summary.acceptRate)}`])
+      // The rate covers the model's suggestions only; the user's own phrases taken are named apart.
+      const ownAccepted = (Number(summary.acceptedBySource?.habit) || 0) + (Number(summary.acceptedBySource?.pinned) || 0)
+      resultRows.push([
+        t('settings.resultAccepted'),
+        `${nmpNumber(summary.accepted ?? 0)}${t('settings.unitItems')}${ownAccepted > 0 ? t('settings.resultAcceptedOwn').split('{n}').join(nmpNumber(ownAccepted)) : ''}${t('settings.resultAcceptedOf')}${pct(summary.acceptRate)}`,
+      ])
       const reasons = Array.isArray(summary.abstainReasons)
         ? summary.abstainReasons.slice(0, 3).map((entry) => `${nmpCodeLabel(t, 'reason', entry.reason)} ×${entry.count}`).join(t('settings.listSeparator'))
         : ''

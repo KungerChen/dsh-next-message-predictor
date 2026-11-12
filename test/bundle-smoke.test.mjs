@@ -32,6 +32,72 @@ const react = {
   useSyncExternalStore: (subscribe, getSnapshot) => getSnapshot(),
 }
 
+/**
+ * A React stand-in that keeps state between renders, for clicking through a
+ * form: hooks are stored per component function in call order (instances of
+ * the same small component share their slots, which is enough here). Effects
+ * run only when a render asks for them.
+ */
+function createStatefulReact() {
+  const slots = new Map()
+  let current = null
+  let cursor = 0
+  const pendingEffects = []
+  const slotList = () => {
+    let list = slots.get(current)
+    if (list === undefined) {
+      list = []
+      slots.set(current, list)
+    }
+    return list
+  }
+  const stateful = {
+    createElement: react.createElement,
+    useState(initial) {
+      const list = slotList()
+      const index = cursor++
+      if (!(index in list)) list[index] = typeof initial === 'function' ? initial() : initial
+      return [list[index], (value) => { list[index] = typeof value === 'function' ? value(list[index]) : value }]
+    },
+    useEffect(effect, deps) {
+      const list = slotList()
+      const index = cursor++
+      const previous = list[index]
+      if (previous === undefined || deps === undefined || deps.length !== previous.length || deps.some((dep, k) => dep !== previous[k])) {
+        list[index] = deps ?? []
+        pendingEffects.push(effect)
+      }
+    },
+    useLayoutEffect: () => {},
+    useMemo: (factory) => factory(),
+    useRef: (value) => ({ current: value }),
+    useSyncExternalStore: (subscribe, getSnapshot) => getSnapshot(),
+  }
+  function expandStateful(node) {
+    if (node === null || node === undefined || typeof node === 'boolean') return []
+    if (typeof node === 'string' || typeof node === 'number') return [String(node)]
+    if (Array.isArray(node)) return node.flatMap(expandStateful)
+    if (typeof node.type === 'function') {
+      const saved = [current, cursor]
+      current = node.type
+      cursor = 0
+      const output = node.type({ ...node.props, children: node.children })
+      ;[current, cursor] = saved
+      return expandStateful(output)
+    }
+    return [{ type: node.type, props: node.props, children: node.children.flatMap(expandStateful) }]
+  }
+  return {
+    react: stateful,
+    expand: (node, options) => {
+      pendingEffects.length = 0
+      const out = expandStateful(node)
+      if (options?.effects === true) for (const effect of pendingEffects.splice(0)) effect()
+      return out
+    },
+  }
+}
+
 /** Call function components until only host elements and strings are left. */
 function expand(node) {
   if (node === null || node === undefined || typeof node === 'boolean') return []
@@ -92,7 +158,9 @@ async function boot(options) {
         },
       },
       ...(options?.ledger !== undefined ? { ledger: options.ledger } : {}),
+      ...(options?.results !== undefined ? { results: options.results } : {}),
     })
+  const host = options?.stateful === true ? createStatefulReact() : { react, expand }
   const service = makeService()
 
   const listeners = []
@@ -128,7 +196,7 @@ async function boot(options) {
   assert.equal(windowStub.loaded.id, 'dsh-next-message-predictor')
   const client = windowStub.loaded.factory((name) => {
     assert.equal(name, 'react')
-    return react
+    return host.react
   })
 
   /** @type {{options: object, Component: Function}[]} */
@@ -193,7 +261,7 @@ async function boot(options) {
   client.apply(ctx)
   await tick(5) // the status request
   const entry = (name, id) => registry.find((item) => item.options.name === name && (id === undefined || item.options.id === id || item.options.key === id))
-  const render = (name, id) => expand(react.createElement(entry(name, id).Component, null))
+  const render = (name, id, renderOptions) => host.expand(react.createElement(entry(name, id).Component, null), renderOptions)
   return {
     registry,
     entry,
@@ -254,7 +322,7 @@ for (const language of LANGUAGE_IDS) {
       for (const id of ['balanced', 'saver', 'quality']) assert.ok(find(page, 'data-nmp-preset', id), `mode ${id}`)
       assert.equal(find(page, 'data-nmp-preset', 'balanced').props['aria-pressed'], true)
       assert.equal(find(page, 'data-nmp-preset', 'saver').props['aria-pressed'], false)
-      for (const name of ['enabled', 'manualOnly', 'showPredictButton', 'predictShortcut', 'habitSuggestions', 'multiCandidates', 'modelMode', 'advanced', 'restoreAdvanced']) {
+      for (const name of ['enabled', 'manualOnly', 'showPredictButton', 'predictShortcut', 'habitSuggestions', 'pinned', 'pinnedInput', 'pinnedAdd', 'pinnedEmpty', 'multiCandidates', 'modelMode', 'advanced', 'restoreAdvanced']) {
         assert.ok(find(page, 'data-nmp-setting', name), `control ${name}`)
       }
       const leaked = readableStrings(page).filter((value) => RAW_KEY.test(value.trim()))
@@ -523,5 +591,121 @@ test('the model dropdown applies at once when the route is complete', async () =
     assert.equal(empty.writes.length, before)
   } finally {
     empty.dispose()
+  }
+})
+
+test('pinned phrases: add, reorder and remove locally, then one Save writes exactly one config patch', async () => {
+  const app = await boot({ stateful: true, config: { enabled: true, language: 'en' } })
+  const en = NMP_DICTIONARIES.en
+  try {
+    const page = () => app.render('settings.section')
+    const type = (text) => find(page(), 'data-nmp-setting', 'pinnedInput').props.onChange({ target: { value: text } })
+    const add = () => find(page(), 'data-nmp-setting', 'pinnedAdd').props.onClick()
+    const rows = () => {
+      const texts = []
+      walk(page(), (node) => {
+        if (node.props['data-nmp-pinned-row'] !== undefined) texts.push(textOf([node.children[0]]))
+      })
+      return texts
+    }
+    assert.ok(find(page(), 'data-nmp-setting', 'pinnedEmpty'))
+    assert.equal(textOf([find(page(), 'data-nmp-setting', 'pinnedCount')]), '0 / 10')
+
+    for (const text of ['go on', '  Run the tests  ', 'Commit it']) {
+      type(text)
+      add()
+    }
+    assert.deepEqual(rows(), ['go on', 'Run the tests', 'Commit it'], 'trimmed and listed in order')
+    assert.equal(find(page(), 'data-nmp-setting', 'pinnedInput').props.value, '', 'the field is cleared after adding')
+    // Inline validation: nothing is added, the reason is shown.
+    for (const [text, key] of [['Go on!', 'settings.pinnedErrorDuplicate'], ['/compact', 'settings.pinnedErrorCommand'], ['', 'settings.pinnedErrorEmpty'], ['x'.repeat(41), 'settings.pinnedErrorLong'], ['<b>x</b>', 'settings.pinnedErrorInvalid']]) {
+      type(text)
+      add()
+      const error = find(page(), 'data-nmp-setting', 'pinnedError')
+      assert.ok(error, text)
+      assert.equal(textOf([error]), en[key].split('{n}').join('40'), text)
+    }
+    assert.equal(rows().length, 3)
+    type('')
+
+    // Reorder and remove.
+    find(page(), 'data-nmp-pinned-down', '0').props.onClick()
+    assert.deepEqual(rows(), ['Run the tests', 'go on', 'Commit it'])
+    find(page(), 'data-nmp-pinned-up', '2').props.onClick()
+    assert.deepEqual(rows(), ['Run the tests', 'Commit it', 'go on'])
+    assert.equal(find(page(), 'data-nmp-pinned-up', '0').props.disabled, true)
+    assert.equal(find(page(), 'data-nmp-pinned-down', '2').props.disabled, true)
+    find(page(), 'data-nmp-pinned-remove', '0').props.onClick()
+    assert.deepEqual(rows(), ['Commit it', 'go on'])
+
+    // Nothing was written while editing; the page says there are unsaved changes.
+    assert.equal(app.writes.length, 0)
+    assert.equal(textOf([find(page(), 'data-nmp-setting', 'pinnedDirty')]), en['settings.unsaved'])
+    find(page(), 'data-nmp-setting', 'pinnedSave').props.onClick()
+    await tick(5)
+    assert.deepEqual(app.writes, [{ pinnedPhrases: ['Commit it', 'go on'] }], 'exactly one config patch')
+    assert.deepEqual(app.hostConfig().pinnedPhrases, ['Commit it', 'go on'])
+    assert.equal(find(page(), 'data-nmp-setting', 'pinnedDirty'), null, 'saved: no pending changes')
+    assert.deepEqual(rows(), ['Commit it', 'go on'])
+    // The note offers to undo the whole list change.
+    const message = find(page(), 'data-nmp-setting', 'message')
+    assert.ok(textOf([message]).includes(en['settings.pinnedSaved']))
+    find(page(), 'data-nmp-setting', 'undo').props.onClick()
+    await tick(5)
+    assert.deepEqual(app.writes.at(-1), { pinnedPhrases: [] })
+
+    // Discard drops a draft without writing.
+    type('Ship it')
+    add()
+    assert.ok(find(page(), 'data-nmp-setting', 'pinnedDirty'))
+    find(page(), 'data-nmp-setting', 'pinnedDiscard').props.onClick()
+    assert.deepEqual(rows(), [])
+    assert.equal(app.writes.length, 2)
+    // A full list refuses an eleventh phrase.
+    for (let i = 0; i < 10; i += 1) {
+      type(`phrase ${i}`)
+      add()
+    }
+    assert.equal(find(page(), 'data-nmp-setting', 'pinnedAdd').props.disabled, true)
+    type('one more')
+    add()
+    assert.equal(textOf([find(page(), 'data-nmp-setting', 'pinnedError')]), en['settings.pinnedErrorFull'].split('{n}').join('10'))
+    assert.equal(rows().length, 10)
+    // The modes do not write the list.
+    find(page(), 'data-nmp-preset', 'saver').props.onClick()
+    await tick(5)
+    assert.equal('pinnedPhrases' in app.writes.at(-1), false)
+  } finally {
+    app.dispose()
+  }
+})
+
+test('settings page: the results card names how many accepted suggestions were the user\'s own phrases', async () => {
+  const summary = {
+    requests: 6, offers: 5, abstains: 1, shown: 5, accepted: 3, acceptedBySource: { model: 1, habit: 1, pinned: 1 },
+    acceptRate: 25, latencyP50: 1200, latencyP95: 2400, tokenDays: [], abstainReasons: [],
+  }
+  const results = { recordRequest() {}, recordOutcome: async () => {}, summary: async () => summary }
+  for (const [language, expected] of [['en', ', 2 of them your own phrases, acceptance rate of model suggestions 25%'], ['zh', '，其中 2 条是你自己的短语，模型建议的采纳率 25%']]) {
+    const app = await boot({ stateful: true, results, config: { language } })
+    try {
+      app.render('settings.section', undefined, { effects: true })
+      await tick(10)
+      const text = textOf([find(app.render('settings.section'), 'data-nmp-setting', 'results')])
+      assert.ok(text.includes(expected), text)
+    } finally {
+      app.dispose()
+    }
+  }
+  // Only model suggestions accepted: no extra phrase.
+  const plain = { ...summary, accepted: 1, acceptedBySource: { model: 1, habit: 0, pinned: 0 } }
+  const app = await boot({ stateful: true, results: { ...results, summary: async () => plain }, config: { language: 'en' } })
+  try {
+    app.render('settings.section', undefined, { effects: true })
+    await tick(10)
+    const text = textOf([find(app.render('settings.section'), 'data-nmp-setting', 'results')])
+    assert.ok(text.includes('1, acceptance rate of model suggestions 25%'), text)
+  } finally {
+    app.dispose()
   }
 })

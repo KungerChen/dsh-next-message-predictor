@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-0.4.1-4d6bfe" alt="Version 0.4.1">
+  <img src="https://img.shields.io/badge/Version-0.5.0-4d6bfe" alt="Version 0.5.0">
   <img src="https://img.shields.io/badge/DeepSeek%20Harness-0.2.2--rc.1-1f2937" alt="DeepSeek Harness 0.2.2-rc.1">
   <img src="https://img.shields.io/badge/Sprachen-9-8250df" alt="Sprachen 9">
   <img src="https://img.shields.io/badge/Fremdabh%C3%A4ngigkeiten-0-2ea44f" alt="Fremdabhängigkeiten 0">
@@ -68,7 +68,7 @@ Es wird nur Text ins Eingabefeld gesetzt. Im Plugin gibt es keinerlei Code zum S
 
 ### 💰 Kosten im Griff
 
-Standardmäßig ein kostengünstiges Modell, dazu Tageslimits für Anfragen und Tokens. Kurze Sätze, die Sie immer wieder verwenden, werden direkt vorgeschlagen, ohne das Modell aufzurufen.
+Standardmäßig ein kostengünstiges Modell, dazu Tageslimits für Anfragen und Tokens. Ihre eigenen Phrasen (kurze Nachrichten, die Sie wiederholen, und angeheftete) sind einen Klick auf „Anderer“ entfernt, kosten nichts und verlassen Ihren Rechner nie.
 
 </td>
 <td valign="top">
@@ -120,6 +120,14 @@ Keine Lust, jede Option zu studieren? Wählen Sie einen Modus. Rückgängig mach
 | **Qualität** | Automatisch nach jeder Antwort | Das Sitzungsmodell | 20 Nachrichten | 200 Anfragen | Treffendere Vorschläge |
 
 Ein Modus ändert nur den Auslöser, die Modellstrategie, die Kontextgröße und die Limits. Hauptschalter, Tastenkürzel, Sprache und Datenschutzoptionen bleiben unberührt, und das von Ihnen eingetragene Modell bleibt erhalten.
+
+### Ihre eigenen Phrasen, immer griffbereit
+
+Tragen Sie die Sätze, die Sie immer wieder senden („Weiter“, „Tests ausführen“), unter **Einstellungen → Vorhersage → Quellen der Vorschläge → Angeheftete Phrasen** ein, ordnen Sie sie nach Wunsch und klicken Sie einmal auf „Speichern“. Sie folgen auf den Vorschlag des Modells: „Anderer“ (oder <kbd>Alt</kbd>+<kbd>\\</kbd>) geht den Vorschlag des Modells, die kurzen Nachrichten, die Sie in dieser Unterhaltung wiederholt haben, und danach Ihre angehefteten Phrasen durch und fragt das Modell erst nach dem letzten Eintrag erneut. Eine kleine Markierung auf der Schaltfläche zeigt, dass eine Phrase von Ihnen stammt. Sie kosten nichts, verlassen Ihren Rechner nie, und wenn eine manuelle Vorhersage vom Modell nichts erhält, werden sie anstelle von „Diesmal kein Vorschlag“ angeboten.
+
+<p align="center">
+  <img src="docs/images/phrases.png" width="720" alt="Eine angeheftete Phrase als grauer Vorschlag; die Schaltfläche „Anderer“ zeigt eine Pinnnadel und die Position in der Liste">
+</p>
 
 ### Neun Oberflächensprachen
 
@@ -209,7 +217,7 @@ Jede Vorhersage ist genau eine Anfrage an das Modell, ohne automatische Wiederho
 - Keine Argumente oder Ausgaben von Tool-Aufrufen, kein Reasoning, kein Systemprompt.
 - Vor dem Senden werden mutmaßliche private Schlüssel, API-Schlüssel, Tokens, Passwörter, E-Mail-Adressen, Mobil- und Ausweisnummern sowie der Benutzername in Pfaden des Benutzerordners durch Platzhalter ersetzt (regelbasiert; es kann nicht zusichern, alles zu erkennen).
 - Die Browserseite sendet nur Sitzungs- und Turn-Kennungen, niemals den Entwurf, Anhänge oder Gesprächstext; den Inhalt für das Modell liest der Hintergrundteil aus den Sitzungsaufzeichnungen von DSH.
-- „Häufig verwendete kurze Nachrichten bevorzugen“ vergleicht nur die kurzen Nachrichten, die Sie auf diesem Rechner gesendet haben; ein Modell wird dabei nicht aufgerufen.
+- Ihre eigenen Phrasen (kurze Nachrichten, die Sie in einer Unterhaltung wiederholen, und die „Angeheftete Phrasen“) werden nur auf diesem Rechner verwendet: Dafür wird kein Modell aufgerufen, und sie werden nie an das Modell gesendet.
 
 Die vollständige Beschreibung und wie sich die lokalen Daten löschen lassen, steht unter [Datenschutz und Datengrenzen](docs/PRIVACY.md).
 

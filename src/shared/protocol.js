@@ -25,6 +25,19 @@ export const RESULT_ABSTAIN = 'abstain'
 export const RESULT_STALE = 'stale'
 export const RESULT_UNAVAILABLE = 'unavailable'
 
+/**
+ * Where one entry of the candidate ring comes from: the prediction model, a
+ * short message the user repeated in this session, or one of the user's
+ * pinned phrases. The last two are produced on this machine without a model call.
+ */
+export const SOURCE_MODEL = 'model'
+export const SOURCE_HABIT = 'habit'
+export const SOURCE_PINNED = 'pinned'
+export const LOCAL_SOURCES = Object.freeze([SOURCE_HABIT, SOURCE_PINNED])
+export const SUGGESTION_SOURCES = Object.freeze([SOURCE_MODEL, SOURCE_HABIT, SOURCE_PINNED])
+/** Longest candidate ring the page accepts (model candidates + local phrases). */
+export const MAX_RING_ENTRIES = 20
+
 const MAX_ID_LENGTH = 200
 const MAX_ANCHOR_STRING = 200
 
@@ -145,6 +158,21 @@ export function validateResponseForClient(raw, expected) {
           return { ok: false, error: 'alternatives invalid' }
         }
       }
+      // 可选：本机的短语（常说的话、固定短语），排在模型候选之后。
+      if (result.local !== undefined) {
+        if (
+          !Array.isArray(result.local) || result.local.length > MAX_RING_ENTRIES - 1 ||
+          result.local.some((entry) => !isPlainRecord(entry) || typeof entry.text !== 'string' || entry.text === '' || !LOCAL_SOURCES.includes(entry.source))
+        ) {
+          return { ok: false, error: 'local invalid' }
+        }
+      }
+      // 手动预测时模型没有给出建议：整条环都是本机短语，`text` 是其中第一条。
+      if (result.fallback !== undefined) {
+        if (result.fallback !== true || !Array.isArray(result.local) || result.local.length === 0 || result.local[0].text !== result.text || result.alternatives !== undefined) {
+          return { ok: false, error: 'fallback invalid' }
+        }
+      }
       return { ok: true, result }
     case RESULT_ABSTAIN:
     case RESULT_STALE:
@@ -159,6 +187,49 @@ export function validateResponseForClient(raw, expected) {
     default:
       return { ok: false, error: 'unknown result kind' }
   }
+}
+
+/**
+ * The candidate ring of an offer, in the order "another one" walks it: the
+ * model's candidates (`text`, then `alternatives`), then the local phrases.
+ * A fallback offer (no model suggestion) is its local phrases alone. A text
+ * that appears twice keeps its first place. Used by the page to build what it
+ * shows and by the Host to tell which source an accepted index came from.
+ * @returns {{text: string, source: string}[]}
+ */
+export function offerRing(result) {
+  if (!isPlainRecord(result)) return []
+  const entries = []
+  if (result.fallback !== true) {
+    if (typeof result.text === 'string') entries.push({ text: result.text, source: SOURCE_MODEL })
+    for (const text of Array.isArray(result.alternatives) ? result.alternatives : []) entries.push({ text, source: SOURCE_MODEL })
+  }
+  for (const entry of Array.isArray(result.local) ? result.local : []) {
+    if (isPlainRecord(entry) && LOCAL_SOURCES.includes(entry.source)) entries.push({ text: entry.text, source: entry.source })
+  }
+  const seen = new Set()
+  const ring = []
+  for (const entry of entries) {
+    if (typeof entry.text !== 'string' || entry.text === '' || seen.has(entry.text)) continue
+    seen.add(entry.text)
+    ring.push(entry)
+    if (ring.length >= MAX_RING_ENTRIES) break
+  }
+  return ring
+}
+
+/**
+ * The optional part of an `accepted` report: which ring entry was taken.
+ * Returns null when absent or malformed (an older page sends neither field).
+ * @returns {{index: number, source: string} | null}
+ */
+export function acceptedChoice(body) {
+  if (!isPlainRecord(body)) return null
+  const index = body.index
+  const source = body.source
+  if (!Number.isInteger(index) || index < 0 || index >= MAX_RING_ENTRIES) return null
+  if (source !== undefined && !SUGGESTION_SOURCES.includes(source)) return null
+  return { index, source: source ?? '' }
 }
 
 /** True when the last assistant sequence number can identify a finished turn. */

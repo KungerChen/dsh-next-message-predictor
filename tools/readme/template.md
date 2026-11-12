@@ -116,6 +116,14 @@
 
 {{f2_note}}
 
+### {{fp_h}}
+
+{{fp_p}}
+
+<p align="center">
+  <img src="docs/images/phrases.png" width="720" alt="{{fp_alt}}">
+</p>
+
 ### {{fl_h}}
 
 {{fl_p}}

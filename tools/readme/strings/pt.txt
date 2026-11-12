@@ -17,7 +17,7 @@ c2_p: Assim que você começa a digitar, a sugestão sai do caminho. Ela não ap
 c3_h: Nunca passa dos limites
 c3_p: Ele apenas coloca texto na caixa de entrada. Não existe nenhum código de “enviar mensagem” no plugin; enviar é sempre uma decisão sua.
 c4_h: Custo sob controle
-c4_p: Por padrão, um modelo de baixo custo, com limites diários de pedidos e de tokens. Frases curtas que você repete são oferecidas diretamente, sem chamar o modelo.
+c4_p: Por padrão, um modelo de baixo custo, com limites diários de pedidos e de tokens. Suas próprias frases (as mensagens curtas que você repete e as que você fixa) estão a um clique de “{ui:ghost.another}”, não custam nada e nunca saem do seu computador.
 c5_h: Privacidade em primeiro lugar
 c5_p: Antes do envio, possíveis chaves, tokens, endereços de e-mail e números de telefone são ocultados. O navegador nunca envia o seu rascunho. As estatísticas locais guardam números, não texto.
 c6_h: Uso transparente
@@ -58,6 +58,9 @@ m_fit1: O uso diário
 m_fit2: Controle rigoroso de custos
 m_fit3: Sugestões mais certeiras
 f2_note: Um modo só altera o disparo, a estratégia de modelo, o tamanho do contexto e os limites. Ele não mexe no interruptor principal, no atalho, no idioma nem nas opções de privacidade, e mantém o modelo que você informou.
+fp_h: Suas próprias frases, sempre à mão
+fp_p: Adicione as frases que você envia sem parar (“continue”, “rode os testes”) em **Configurações → {ui:settings.nav} → {ui:settings.sourcesTitle} → {ui:settings.pinned}**, coloque-as na ordem que preferir e clique em “{ui:settings.save}” uma única vez. Elas vêm depois da sugestão do modelo: “{ui:ghost.another}” (ou <kbd>Alt</kbd>+<kbd>\\</kbd>) percorre a sugestão do modelo, as mensagens curtas que você repetiu nesta conversa e depois as suas frases fixadas, e só volta a consultar o modelo depois da última. Uma pequena marca no botão mostra que a frase é sua. Elas não custam nada, nunca saem do seu computador e, quando uma previsão manual não obtém nada do modelo, são oferecidas no lugar de “{ui:ghost.none}”.
+fp_alt: Uma frase fixada como sugestão em cinza; o botão “{ui:ghost.another}” mostra um alfinete e a posição na lista
 fl_h: Nove idiomas de interface
 fl_p: A página de configurações, os botões da caixa de entrada e as dicas deles estão disponíveis em {langs}. Por padrão, o plugin segue o idioma definido no DeepSeek Harness; você também pode escolher um em **Configurações → {ui:settings.nav} → {ui:settings.language}**, e ele vale na hora. Já as sugestões seguem sempre o idioma da sua conversa.
 fl_alt: O topo da página de configurações em inglês, japonês, espanhol e russo
@@ -90,7 +93,7 @@ send_p: Cada previsão é um único pedido ao modelo, sem nova tentativa automá
 sb1: Não inclui argumentos nem saída de ferramentas, raciocínio ou o prompt do sistema.
 sb2: Antes do envio, possíveis chaves privadas, chaves de API, tokens, senhas, endereços de e-mail, números de celular e de identidade e o nome de usuário em caminhos da pasta pessoal são trocados por marcadores (baseado em regras; não há garantia de encontrar tudo).
 sb3: A página do navegador envia apenas identificadores de sessão e de turno, nunca o rascunho, anexos ou texto da conversa; o conteúdo destinado ao modelo é lido pela parte em segundo plano nos registros de sessão do próprio DSH.
-sb4: “{ui:settings.habits}” apenas compara as mensagens curtas que você enviou neste computador; nenhum modelo é chamado.
+sb4: Suas próprias frases (as mensagens curtas que você repete em uma conversa e as “{ui:settings.pinned}”) são usadas apenas neste computador: nenhum modelo é chamado para elas e elas nunca são enviadas ao modelo.
 send_more: A descrição completa, e como apagar os dados locais, está em [Privacidade e limites dos dados](docs/PRIVACY.md).
 faq_h: Perguntas frequentes
 q1: Ele vai enviar uma mensagem por mim?

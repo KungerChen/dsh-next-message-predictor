@@ -26,6 +26,8 @@ import {
   OPERATION_RELEASE,
   OPERATION_RESULTS,
   OPERATION_STATUS,
+  SOURCE_MODEL,
+  offerRing,
   validateResponseForClient,
 } from '../shared/protocol.js'
 
@@ -81,8 +83,13 @@ const NO_CANDIDATES = Object.freeze([])
 const INITIAL_ASSIST = {
   status: 'idle',
   text: '',
-  /** All suggestions from this prediction; `text` is candidates[candidateIndex]. */
+  /**
+   * The candidate ring of this prediction; `text` is candidates[candidateIndex].
+   * The model's candidates come first, then the user's own phrases (session
+   * habit phrases, pinned phrases); `sources` says which is which, entry by entry.
+   */
   candidates: NO_CANDIDATES,
+  sources: NO_CANDIDATES,
   candidateIndex: 0,
   suggestionId: '',
   turnKey: '',
@@ -235,6 +242,7 @@ export function createClientRuntime(options) {
     return {
       text: state.text,
       candidates: state.candidates,
+      sources: state.sources,
       candidateIndex: state.candidateIndex,
       suggestionId: state.suggestionId,
       expiresAt: state.expiresAt,
@@ -399,17 +407,29 @@ export function createClientRuntime(options) {
 
   function showOffer(env, result) {
     clearTimer()
-    // A fresh Host result carries `alternatives`; a restored record carries the
-    // full `candidates` list and where the user had got to.
-    const candidates = Array.isArray(result.candidates) && result.candidates.length > 0
-      ? result.candidates
-      : [result.text, ...(Array.isArray(result.alternatives) ? result.alternatives : [])].filter((text, index, list) => typeof text === 'string' && text !== '' && list.indexOf(text) === index)
+    // A fresh Host result carries `alternatives` and `local`; a restored record
+    // carries the full ring (`candidates` + `sources`) and where the user had got to.
+    let candidates
+    let sources
+    if (Array.isArray(result.candidates) && result.candidates.length > 0) {
+      candidates = result.candidates
+      sources = Array.isArray(result.sources) && result.sources.length === candidates.length ? result.sources : candidates.map(() => SOURCE_MODEL)
+    } else {
+      const ring = offerRing(result)
+      candidates = ring.map((entry) => entry.text)
+      sources = ring.map((entry) => entry.source)
+    }
+    if (candidates.length === 0) {
+      candidates = [result.text]
+      sources = [SOURCE_MODEL]
+    }
     const candidateIndex = Number.isInteger(result.candidateIndex) && result.candidateIndex >= 0 && result.candidateIndex < candidates.length ? result.candidateIndex : 0
     setAssist({
       ...INITIAL_ASSIST,
       status: 'offered',
       text: candidates[candidateIndex] ?? result.text,
       candidates,
+      sources,
       candidateIndex,
       suggestionId: result.suggestionId,
       expiresAt: result.expiresAt,
@@ -675,6 +695,17 @@ export function createClientRuntime(options) {
         if (body.configRevision !== requestedRevision) void loadStatus()
         return
       }
+      // "Another one" walked the whole ring before asking, so the user's own
+      // phrases were already in it. If the model had nothing new and the Host
+      // answered with those phrases alone, bring the previous suggestion back instead.
+      if (result.fallback === true && manualFallback !== null) {
+        const previous = new Set(manualFallback.record.candidates)
+        if (offerRing(result).every((entry) => previous.has(entry.text))) {
+          reportOutcome(result.suggestionId, env.sessionId, 'closed')
+          endWithoutOffer({ ...INITIAL_ASSIST, status: 'abstained', reason: typeof result.modelReason === 'string' && result.modelReason !== '' ? result.modelReason : 'model-abstained', sessionId: env.sessionId })
+          return
+        }
+      }
       // The new suggestion replaces the one "another one" was pressed on: only now is that one closed.
       const replaced = manualFallback
       manualFallback = null
@@ -823,21 +854,7 @@ export function createClientRuntime(options) {
       const active = assistStore.getSnapshot()
       if (active.status === 'offered' && active.suggestionId !== '') {
         suspendedOffers.delete(tkey)
-        suspendedOffers.set(tkey, {
-          record: {
-            text: active.text,
-            candidates: active.candidates,
-            candidateIndex: active.candidateIndex,
-            suggestionId: active.suggestionId,
-            expiresAt: active.expiresAt,
-            sessionId: active.sessionId,
-            turnId: active.turnId,
-            turnKey: active.turnKey,
-            completedEventSeq: active.completedEventSeq,
-            contextRevision: active.contextRevision,
-          },
-          at: now(),
-        })
+        suspendedOffers.set(tkey, { record: offerRecord(active), at: now() })
         while (suspendedOffers.size > SESSION_CACHE_LIMIT) suspendedOffers.delete(suspendedOffers.keys().next().value)
       }
       addBounded(suppressedTurns, tkey)
@@ -926,8 +943,11 @@ export function createClientRuntime(options) {
 
   /**
    * Whether "another one" can still do something for the suggestion on screen:
-   * step to another candidate already in hand, or ask the model again. The
-   * composer greys the chip out when it cannot, instead of ignoring the click.
+   * step to another entry of the ring already in hand (a model candidate or one
+   * of the user's own phrases), or ask the model again. The composer greys the
+   * chip out when it cannot, instead of ignoring the click. A ring of two or more
+   * always has somewhere to go: once the manual predictions are used up, the
+   * walk goes round to the first entry again.
    */
   function canOfferAnother() {
     const state = assistStore.getSnapshot()
@@ -960,8 +980,9 @@ export function createClientRuntime(options) {
     const tkey = turnKeyOf(env)
     const used = servedManual.get(tkey) ?? 0
     const MANUAL_LIMIT = manualLimit()
-    // A suggestion is showing and this prediction brought more than one: step
-    // through them locally first. No request, no wait.
+    // A suggestion is showing and its ring has more than one entry (model
+    // candidates, then the user's own phrases): walk it locally first. No
+    // request, no wait, no model credit.
     if (status === 'offered') {
       const state = assistStore.getSnapshot()
       const total = state.candidates.length
@@ -1011,6 +1032,8 @@ export function createClientRuntime(options) {
     if (!offerMatches(state, env) || !eligibility(env).ok || !env.focused) return null
     return {
       text: state.text,
+      index: state.candidateIndex,
+      source: state.sources[state.candidateIndex] ?? SOURCE_MODEL,
       suggestionId: state.suggestionId,
       turnKey: state.turnKey,
       draftRev: state.offerDraftRev,
@@ -1036,6 +1059,9 @@ export function createClientRuntime(options) {
       operation: OPERATION_ACCEPTED,
       suggestionId: offer.suggestionId,
       sessionId: offer.sessionId ?? '',
+      // Which entry of the ring was taken, for the statistics by source.
+      ...(Number.isInteger(offer.index) ? { index: offer.index } : {}),
+      ...(typeof offer.source === 'string' ? { source: offer.source } : {}),
     }).catch(() => {})
   }
 

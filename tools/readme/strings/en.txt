@@ -17,7 +17,7 @@ c2_p: The moment you start typing, the suggestion steps aside. It stays away dur
 c3_h: Never oversteps
 c3_p: It only puts text into the input box. There is no “send message” code anywhere in the plugin; sending is always your decision.
 c4_h: Cost under control
-c4_p: A low-cost model by default, with daily limits on requests and tokens. Short phrases you keep repeating are offered directly, without calling the model.
+c4_p: A low-cost model by default, with daily limits on requests and tokens. Your own phrases (the short messages you repeat and the ones you pin) are one “{ui:ghost.another}” away, cost nothing and never leave your computer.
 c5_h: Privacy first
 c5_p: Likely keys, tokens, e-mail addresses and phone numbers are masked before sending. The browser never uploads your draft. Local statistics store numbers, not text.
 c6_h: Transparent usage
@@ -58,6 +58,9 @@ m_fit1: Everyday use
 m_fit2: Strict cost control
 m_fit3: Closer-fitting suggestions
 f2_note: A mode only changes the trigger, the model strategy, the context size and the limits. It never touches the master switch, the shortcut, the language or the privacy options, and it keeps the model you entered.
+fp_h: Your own phrases, one step away
+fp_p: Add the lines you send again and again (“continue”, “run the tests”) under **Settings → {ui:settings.nav} → {ui:settings.sourcesTitle} → {ui:settings.pinned}**, put them in the order you like, and press “{ui:settings.save}” once. They follow the model’s suggestion: “{ui:ghost.another}” (or <kbd>Alt</kbd>+<kbd>\\</kbd>) steps through the model’s suggestion, the short messages you have repeated in this conversation and then your pinned phrases, and asks the model again only after the last one. A small mark on the button shows that a phrase is your own. They cost nothing, never leave your computer, and when a manual prediction gets nothing from the model they are offered instead of “{ui:ghost.none}”.
+fp_alt: A pinned phrase as the grey suggestion; the “{ui:ghost.another}” button carries a pin mark and the position in the list
 fl_h: Nine interface languages
 fl_p: The settings page, the buttons in the input box and their tooltips are available in {langs}. By default the plugin follows the language DeepSeek Harness is set to; you can also pick one under **Settings → {ui:settings.nav} → {ui:settings.language}**, and it applies at once. The suggestions themselves always follow the language of your conversation.
 fl_alt: The top of the settings page in English, Japanese, Spanish and Russian
@@ -90,7 +93,7 @@ send_p: Each prediction is a single request to the model, with no automatic retr
 sb1: No tool-call arguments or output, no reasoning, no system prompt.
 sb2: Before sending, likely private keys, API keys, tokens, passwords, e-mail addresses, mobile and identity numbers, and the user name in home-folder paths are replaced with placeholders (rule-based; it cannot promise to catch everything).
 sb3: The browser page sends only session and turn identifiers, never the draft, attachments or any conversation text; the content for the model is read by the background half from DSH’s own session records.
-sb4: “{ui:settings.habits}” only compares the short messages you sent on this computer; no model is called.
+sb4: Your own phrases (the short messages you repeat in a session and your pinned phrases, “{ui:settings.pinned}”) stay on this computer: no model is called for them and they are never sent to the model.
 send_more: The full description, and how to delete the local data, is in [Privacy and data boundaries](docs/PRIVACY.md).
 faq_h: FAQ
 q1: Will it send a message for me?

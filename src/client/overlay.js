@@ -276,9 +276,10 @@ export function createOverlayComponent(react, runtime, t) {
       }
     }, [visible, noticeText !== '', wantButton, assist.text, assist.suggestionId, env === null ? '' : env.draft])
 
-    // Only a fully visible suggestion owns Tab. Keep measuring a hidden
-    // suggestion so widening the window can make it available again.
-    // B08：超过两行不再整条隐藏；用两行省略号显示，Tab 仍填入完整建议。
+    // The suggestion owns Tab once it has been measured and painted (`showGhost`).
+    // A long one is not hidden any more: it is clamped to two lines with an
+    // ellipsis and Tab still fills in the complete text (B08). Measuring goes on
+    // while it shows, so resizing the composer repaints it in place.
     useLayoutEffect(() => {
       if (!visible || geometry === null) {
         setFit(null)
@@ -413,11 +414,21 @@ export function createOverlayComponent(react, runtime, t) {
     const announce = configState.config.announceSuggestions !== false
     // Nothing left to switch to and no manual predictions left on this reply.
     const anotherAvailable = runtime.canOfferAnother()
+    // Which source the entry on screen comes from. The user's own phrases (habit,
+    // pinned) are marked on the chip; the mark's slot is kept for the whole ring
+    // so stepping through it never shifts the layout, even in a narrow composer.
+    const sources = Array.isArray(assist.sources) ? assist.sources : []
+    const currentSource = sources[assist.candidateIndex] ?? 'model'
+    const ringHasLocal = sources.some((source) => source !== 'model')
+    const localHint = currentSource === 'habit' ? t('ghost.localHabit') : currentSource === 'pinned' ? t('ghost.localPinned') : ''
+    const anotherTitle = anotherAvailable ? tk('ghost.anotherHint') : t('ghost.anotherNone')
+    const chipTitle = localHint === '' ? anotherTitle : `${localHint} ${anotherTitle}`
     const ghost = visible && geometry !== null
       ? h(
           'div',
           {
             'data-nmp-ghost': showGhost ? '' : undefined,
+            'data-nmp-source': currentSource,
             'data-composer-ghost': showGhost ? GHOST_MARKER : undefined,
             'aria-hidden': !showGhost ? 'true' : undefined,
             role: 'status',
@@ -493,8 +504,8 @@ export function createOverlayComponent(react, runtime, t) {
             {
               type: 'button',
               'data-nmp-another': '',
-              title: anotherAvailable ? tk('ghost.anotherHint') : t('ghost.anotherNone'),
-              'aria-label': anotherAvailable ? tk('ghost.anotherHint') : t('ghost.anotherNone'),
+              title: chipTitle,
+              'aria-label': chipTitle,
               'aria-disabled': anotherAvailable ? undefined : 'true',
               tabIndex: -1,
               onMouseDown: (event) => event.preventDefault(),
@@ -514,8 +525,13 @@ export function createOverlayComponent(react, runtime, t) {
                 padding: '0 6px',
                 cursor: anotherAvailable ? 'pointer' : 'default',
                 opacity: anotherAvailable ? 1 : 0.45,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '3px',
+                whiteSpace: 'nowrap',
               },
             },
+            ringHasLocal ? nmpSourceMark(h, currentSource, localHint) : null,
             // With several candidates in hand, say which one is showing.
             assist.candidates.length > 1 ? `${t('ghost.another')} ${assist.candidateIndex + 1}/${assist.candidates.length}` : t('ghost.another'),
           ),
@@ -602,6 +618,30 @@ export function createOverlayComponent(react, runtime, t) {
         : null,
     )
   }
+}
+
+/**
+ * 11 px mark on the "another" chip for one of the user's own phrases: a pin
+ * for a pinned phrase, a loop arrow for a message repeated in this session.
+ * For a model candidate the slot stays, invisible, so the chip keeps its width.
+ */
+function nmpSourceMark(h, source, label) {
+  const local = source === 'habit' || source === 'pinned'
+  return h(
+    'span',
+    {
+      'data-nmp-source-mark': local ? source : '',
+      title: local ? label : undefined,
+      style: { display: 'inline-flex', width: '11px', height: '11px', flex: 'none', visibility: local ? 'visible' : 'hidden' },
+    },
+    h(
+      'svg',
+      { width: 11, height: 11, viewBox: '0 0 16 16', fill: 'none', stroke: 'currentColor', strokeWidth: 1.6, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': 'true', focusable: 'false' },
+      source === 'pinned'
+        ? h('path', { d: 'M6 2.5h4M7 2.5v4L4.5 9h7L9 6.5v-4M8 9v4.5' })
+        : h('path', { d: 'M3 8a5 5 0 0 1 8.6-3.5M13 8a5 5 0 0 1-8.6 3.5M11.8 2.2v2.5H9.3M4.2 13.8v-2.5h2.5' }),
+    ),
+  )
 }
 
 function sameEnv(previous, next) {

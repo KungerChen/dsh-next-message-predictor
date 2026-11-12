@@ -92,9 +92,9 @@ test('modes: every value is a valid config value inside the settings range', () 
   }
 })
 
-test('modes: never touch the master switch, privacy, shortcut, sidebar entry or language', () => {
+test('modes: never touch the master switch, privacy, shortcut, sidebar entry, language or the user\'s own phrases', () => {
   for (const id of PRESET_IDS) {
-    for (const key of ['enabled', 'redactSecrets', 'includeTurnFacts', 'predictShortcut', 'sidebarEntry', 'language', 'announceSuggestions', 'habitSuggestions', 'fakeSuggestion']) {
+    for (const key of ['enabled', 'redactSecrets', 'includeTurnFacts', 'predictShortcut', 'sidebarEntry', 'language', 'announceSuggestions', 'habitSuggestions', 'pinnedPhrases', 'fakeSuggestion']) {
       assert.equal(key in PRESETS[id], false, `${id} must not set ${key}`)
       assert.equal(key in presetPatch(id, { ...DEFAULT_CONFIG, showPredictButton: false, provider: '', model: '' }), false, `${id} patch must not set ${key}`)
     }
@@ -107,6 +107,7 @@ test('modes: the shipped defaults are the recommended mode; edits make it custom
   assert.equal(matchPreset({ ...DEFAULT_CONFIG, contextMessages: 13 }), '')
   // Options a mode does not own do not make the config "custom".
   assert.equal(matchPreset({ ...DEFAULT_CONFIG, enabled: true, redactSecrets: false, sidebarEntry: true, provider: 'my-provider', model: 'my-model' }), 'balanced')
+  assert.equal(matchPreset({ ...DEFAULT_CONFIG, pinnedPhrases: ['继续'], habitSuggestions: false }), 'balanced')
   assert.equal(matchPreset(null), '')
   for (const id of PRESET_IDS) {
     const applied = { ...DEFAULT_CONFIG, ...presetPatch(id, DEFAULT_CONFIG) }

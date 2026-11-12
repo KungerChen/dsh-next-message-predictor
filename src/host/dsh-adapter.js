@@ -115,35 +115,37 @@ export function createHostAdapter(ctx) {
    * processing. Streaming mode lets this handler bound its own read.
    *
    * @param {(body: unknown, request: Request) => Promise<{status: number, body: unknown}>} handle
-   * @param {{bodyLimitBytes?: number}} [options]
+   * @param {{bodyLimitBytes?: number, configSetMinBytes?: number}} [options] - `configSetMinBytes`:
+   *   a `config.set` request may be this large even when `bodyLimitBytes` is lower (the
+   *   config schema bounds a patch on its own; a whole pinned-phrase list must stay savable).
+   *   Every other operation is held to `bodyLimitBytes`.
    */
   function registerRoute(handle, options) {
     if (connection === undefined || connection.fetch === undefined || typeof connection.fetch.register !== 'function') {
       return { ok: false, error: 'connection.fetch is unavailable' }
     }
     const bodyLimit = normalizeLimit(options === undefined ? undefined : options.bodyLimitBytes)
+    const configSetMin = Number.isFinite(options?.configSetMinBytes) ? Math.min(1024 * 1024, Math.max(0, Math.round(options.configSetMinBytes))) : 0
+    const readLimit = Math.max(bodyLimit, configSetMin)
+    const tooLarge = () => jsonResponse(413, {
+      ok: false,
+      error: { code: 'request-too-large', message: `request body exceeds ${bodyLimit} bytes` },
+    })
     disposeRoute = connection.fetch.register({
       path: ROUTE,
       methods: ['POST'],
       requestBody: 'streaming',
       fetch: async (request) => {
         const declaredLength = contentLengthOf(request)
-        if (declaredLength !== undefined && declaredLength > bodyLimit) {
-          return jsonResponse(413, {
-            ok: false,
-            error: { code: 'request-too-large', message: `request body exceeds ${bodyLimit} bytes` },
-          })
-        }
+        if (declaredLength !== undefined && declaredLength > readLimit) return tooLarge()
         let text
+        let size = 0
         try {
-          text = await readBoundedText(request, bodyLimit)
+          const read = await readBoundedText(request, readLimit)
+          text = read.text
+          size = read.size
         } catch (error) {
-          if (error !== null && typeof error === 'object' && error.code === 'too-large') {
-            return jsonResponse(413, {
-              ok: false,
-              error: { code: 'request-too-large', message: `request body exceeds ${bodyLimit} bytes` },
-            })
-          }
+          if (error !== null && typeof error === 'object' && error.code === 'too-large') return tooLarge()
           return jsonResponse(400, { ok: false, error: { code: 'bad-body', message: 'request body could not be read' } })
         }
         let body
@@ -152,6 +154,8 @@ export function createHostAdapter(ctx) {
         } catch {
           return jsonResponse(400, { ok: false, error: { code: 'bad-json', message: 'request body must be JSON' } })
         }
+        // Only a config write gets the larger allowance.
+        if (size > bodyLimit && !(body !== null && typeof body === 'object' && body.operation === 'config.set')) return tooLarge()
         try {
           const response = await handle(body, request)
           return jsonResponse(response.status, response.body)
@@ -222,9 +226,9 @@ function contentLengthOf(request) {
   }
 }
 
-/** Read the request stream up to `limit` bytes; reject the rest. */
+/** Read the request stream up to `limit` bytes; reject the rest. Returns the text and its size in bytes. */
 async function readBoundedText(request, limit) {
-  if (request.body === null || request.body === undefined) return ''
+  if (request.body === null || request.body === undefined) return { text: '', size: 0 }
   const reader = request.body.getReader()
   const chunks = []
   let size = 0
@@ -254,5 +258,5 @@ async function readBoundedText(request, limit) {
     combined.set(chunk, offset)
     offset += chunk.byteLength
   }
-  return new TextDecoder().decode(combined)
+  return { text: new TextDecoder().decode(combined), size }
 }

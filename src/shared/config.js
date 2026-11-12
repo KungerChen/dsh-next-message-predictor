@@ -5,6 +5,8 @@
 // keywords). Keep it free of Node, DOM and React APIs and use plain
 // declarations only.
 
+import { countGraphemes, normalizePhraseKey, utf8ByteLength, validateSuggestionText } from './output-validation.js'
+
 /** Locale namespace and settings-section identity. */
 export const NS = 'next-message-predictor'
 
@@ -70,10 +72,16 @@ export const DEFAULT_CONFIG = {
   /** 一次模型调用给出最多 3 条候选，“换一条”先在本地切换，切完才再调用模型。 */
   multiCandidates: true,
   /**
-   * 常说的话优先：用户在本次对话里说过两次以上的短句直接作为建议，
-   * 不调用模型、不占预算，内容不离开本机。
+   * 常说的话：用户在本次对话里说过两次以上的短句，排在模型建议之后，
+   * 用“换一条”切换可达。不调用模型、不占预算，内容不离开本机，也不发给模型。
+   * 第一条建议总是来自模型（自动预测每次都调用模型）。
    */
   habitSuggestions: true,
+  /**
+   * 固定短语：用户在设置页维护的列表（最多 PINNED_PHRASES_MAX 条），和常说的话一样
+   * 排在模型建议之后。只在本机使用，从不发给模型。模式切换不改它。
+   */
+  pinnedPhrases: Object.freeze([]),
   /** “立刻预测 / 换一条”的快捷键，写法见 parseShortcut。 */
   predictShortcut: 'Alt+Backslash',
   /** 每次回答最多调用模型做几次手动预测（第一次 + “换一条”）。 */
@@ -221,7 +229,9 @@ export function parseShortcut(value) {
 /** 把一次按键事件写成规范的快捷键字符串；只按了修饰键时返回空串。 */
 export function shortcutFromEvent(event) {
   if (event === null || typeof event !== 'object' || typeof event.code !== 'string' || event.code === '') return ''
-  if (/^(Control|Alt|Shift|Meta|OS)(Left|Right)?$/u.test(event.code)) return ''
+  if (/^(Control|Alt|Shift|Meta|OS|AltGraph)(Left|Right)?$/u.test(event.code)) return ''
+  // AltGr types a character; it is never recorded as Ctrl+Alt (see isAltGraphEvent).
+  if (isAltGraphEvent(event)) return ''
   const parts = []
   if (event.ctrlKey) parts.push('Ctrl')
   if (event.altKey) parts.push('Alt')
@@ -234,6 +244,8 @@ export function shortcutFromEvent(event) {
 /** 按键事件是否正好是这个快捷键（修饰键必须完全一致）。 */
 export function eventMatchesShortcut(event, shortcut) {
   if (shortcut === null || shortcut === undefined || event === null || typeof event !== 'object') return false
+  // A key pressed with AltGr is typing, whatever modifiers Windows reports with it.
+  if (isAltGraphEvent(event)) return false
   return event.code === shortcut.code && Boolean(event.ctrlKey) === shortcut.ctrl && Boolean(event.altKey) === shortcut.alt &&
     Boolean(event.shiftKey) === shortcut.shift && Boolean(event.metaKey) === shortcut.meta
 }
@@ -250,6 +262,78 @@ export function formatShortcut(value) {
   const label = SHORTCUT_KEY_LABELS[code] ?? (/^Key[A-Z]$/u.test(code) ? code.slice(3) : /^Digit[0-9]$/u.test(code) ? code.slice(5) : /^Numpad/u.test(code) ? `Num${code.slice(6)}` : code)
   parts.push(label)
   return parts.join('+')
+}
+
+/**
+ * AltGr on many keyboard layouts (German, French, Polish …) types characters
+ * such as @, \ or €. Windows reports it as Ctrl+Alt, so without this check a
+ * recorded Ctrl+Alt+<key> shortcut would swallow the character typed with
+ * AltGr+<key>. `getModifierState` may be missing (synthetic events in tests).
+ */
+export function isAltGraphEvent(event) {
+  if (event === null || typeof event !== 'object' || typeof event.getModifierState !== 'function') return false
+  try {
+    return event.getModifierState('AltGraph') === true
+  } catch {
+    return false
+  }
+}
+
+/** 至多几条固定短语。 */
+export const PINNED_PHRASES_MAX = 10
+/** 每条固定短语的长度上限（字）。 */
+export const PINNED_PHRASE_MAX_GRAPHEMES = 40
+/**
+ * 每条固定短语的字节上限（UTF-8）。40 个汉字是 120 字节；组合字符可以让一个“字”
+ * 占很多字节，这个上限让整张列表的写入请求有确定的上界（见 CONFIG_SET_MIN_BODY_BYTES）。
+ */
+export const PINNED_PHRASE_MAX_BYTES = 160
+/** 候选环里本地短语（常说的话 + 固定短语）最多几条，跟在模型候选之后。 */
+export const LOCAL_PHRASES_MAX = 5
+/**
+ * `config.set` 请求体至少允许的大小。`requestBodyLimitBytes` 可以低到 1024，
+ * 而一整张固定短语列表（10 条 × 160 字节，加上 JSON 转义和信封）最多约 2.1 KB；
+ * 只对 config.set 放宽到这个值，设置页才不会因为请求体上限而保存失败。
+ * 其他操作仍然按 requestBodyLimitBytes。
+ */
+export const CONFIG_SET_MIN_BODY_BYTES = 4096
+
+/**
+ * Why a phrase cannot be pinned, or '' when it can.
+ * @param {unknown} text - the phrase exactly as it would be stored.
+ * @param {string[]} [others] - phrases already in the list (duplicates are refused).
+ * @returns {'' | 'empty' | 'not-trimmed' | 'too-long' | 'too-many-bytes' | 'command' | 'duplicate' | 'invalid'}
+ */
+export function pinnedPhraseProblem(text, others) {
+  if (typeof text !== 'string') return 'invalid'
+  if (text.trim() === '') return 'empty'
+  if (text !== text.trim()) return 'not-trimmed'
+  // Slash commands and @-mentions mean something else in the composer.
+  if (text.startsWith('/') || text.startsWith('@')) return 'command'
+  // A lone surrogate is not text; JSON would also inflate it to six bytes.
+  if (/[\uD800-\uDFFF]/u.test(text)) return 'invalid'
+  if (countGraphemes(text) > PINNED_PHRASE_MAX_GRAPHEMES) return 'too-long'
+  if (utf8ByteLength(text) > PINNED_PHRASE_MAX_BYTES) return 'too-many-bytes'
+  const validated = validateSuggestionText(text, { maxGraphemes: PINNED_PHRASE_MAX_GRAPHEMES })
+  if (!validated.ok) return validated.reason === 'too-long' ? 'too-long' : 'invalid'
+  const key = normalizePhraseKey(text)
+  if (Array.isArray(others) && others.some((other) => typeof other === 'string' && normalizePhraseKey(other) === key)) return 'duplicate'
+  return ''
+}
+
+/** List fields: each validates the whole array and returns a fresh copy. */
+const LIST_FIELDS = {
+  pinnedPhrases(key, value) {
+    if (!Array.isArray(value)) return { ok: false, error: `${key} must be an array of strings` }
+    if (value.length > PINNED_PHRASES_MAX) return { ok: false, error: `${key} must have at most ${PINNED_PHRASES_MAX} entries` }
+    const accepted = []
+    for (let index = 0; index < value.length; index += 1) {
+      const problem = pinnedPhraseProblem(value[index], accepted)
+      if (problem !== '') return { ok: false, error: `${key}[${index}] is not usable (${problem})` }
+      accepted.push(value[index])
+    }
+    return { ok: true, value: accepted }
+  },
 }
 
 const BOOLEAN_FIELDS = ['enabled', 'announceSuggestions', 'manualOnly', 'showPredictButton', 'multiCandidates', 'habitSuggestions', 'includeTurnFacts', 'redactSecrets', 'sidebarEntry']
@@ -323,6 +407,7 @@ export function checkConfigField(key, value) {
     if (typeof value !== 'boolean') return { ok: false, error: `${key} must be a boolean` }
     return { ok: true, value }
   }
+  if (hasOwn(LIST_FIELDS, key)) return LIST_FIELDS[key](key, value)
   return { ok: false, error: `unknown config field "${key}"` }
 }
 
@@ -380,7 +465,8 @@ export function sanitizeConfigPatch(raw) {
 /**
  * Stable identity for one effective config, used for revision/CAS checks.
  * 32-bit FNV-1a over the sorted normalized JSON; collisions are not treated as
- * security boundaries, only as a change detector.
+ * security boundaries, only as a change detector. List fields (`pinnedPhrases`)
+ * take part in order: reordering the list is a change of configuration.
  */
 export function configRevision(config) {
   const normalized = {}

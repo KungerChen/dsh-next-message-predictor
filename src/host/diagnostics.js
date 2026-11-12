@@ -21,6 +21,8 @@ function emptyCounters() {
     contextFailures: 0,
     providerCalls: 0,
     offers: 0,
+    /** Manual predictions answered with the user's own phrases only (no model suggestion). */
+    localFallbacks: 0,
     abstains: 0,
     outputRejects: 0,
     stale: 0,

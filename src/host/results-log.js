@@ -12,10 +12,19 @@
 //
 // 建议正文只在内存里短暂保留（最多 2 小时、最多 200 条），用于计算用户下一条
 // 消息与建议的匹配度；写出后即丢弃，不落盘。
+//
+// 候选环里每一条都有来源：模型（model）、会话里重复发过的短消息（habit）、固定
+// 短语（pinned）。落盘的只有各来源的条数和采纳的是哪一条；匹配分数只和模型的
+// 候选比较，采纳率和延迟分位数也只统计模型。
+//
+// 保存设置会让插件在同一进程里重启：index.js 用 shareWithinProcess 让新旧实例
+// 共用内存里的待匹配建议，屏幕上那条建议的去向和匹配不因重启而丢失。
 
 import { appendFile, mkdir, readFile, readdir, rename, stat, unlink } from 'node:fs/promises'
 import { createHash } from 'node:crypto'
 import { join } from 'node:path'
+
+import { normalizePhraseKey } from '../shared/output-validation.js'
 
 const HASH_SALT = 'dsh-next-message-predictor/results/v1'
 const MAX_BYTES = 5 * 1024 * 1024
@@ -99,6 +108,58 @@ function dayKey(nowMs, timeZone) {
   }
 }
 
+
+/** 同一进程内按文件路径共用的状态（插件重启 = 同一进程里重新 apply）。 */
+const SHARED_RESULTS_STORES = Symbol.for('dsh-next-message-predictor.results-stores.v1')
+
+/** Where a candidate came from; anything else in a record is read as the model. */
+const SOURCES = ['model', 'habit', 'pinned']
+
+function newResultsStore() {
+  return {
+    /** @type {Map<string, object>} suggestionId -> in-memory pending offer (正文只在内存) */
+    pending: new Map(),
+    bytes: -1,
+    /** 已写入的行数；汇总缓存用它判断“之后有没有新记录”。 */
+    writeCount: 0,
+    summaryCache: null,
+    queue: Promise.resolve(),
+    lastCleanup: 0,
+    initialized: false,
+  }
+}
+
+function sharedResultsStore(filePath) {
+  let stores = globalThis[SHARED_RESULTS_STORES]
+  if (!(stores instanceof Map)) {
+    stores = new Map()
+    globalThis[SHARED_RESULTS_STORES] = stores
+  }
+  let store = stores.get(filePath)
+  if (store === undefined) {
+    store = newResultsStore()
+    stores.set(filePath, store)
+  }
+  return store
+}
+
+/** The candidate ring as recorded: model candidates first, then the user's own phrases. */
+function ringOf(input) {
+  const ring = []
+  const push = (text, source) => {
+    if (typeof text !== 'string' || text === '' || ring.some((entry) => entry.text === text)) return
+    ring.push({ text, source })
+  }
+  if (input.fallback !== true) {
+    push(input.text, 'model')
+    for (const text of Array.isArray(input.alternatives) ? input.alternatives : []) push(text, 'model')
+  }
+  for (const entry of Array.isArray(input.local) ? input.local : []) {
+    if (entry !== null && typeof entry === 'object' && (entry.source === 'habit' || entry.source === 'pinned')) push(entry.text, entry.source)
+  }
+  return ring
+}
+
 /**
  * @param {object} options
  * @param {string} options.homeDir
@@ -106,6 +167,10 @@ function dayKey(nowMs, timeZone) {
  * @param {() => string} [options.getTimeZone]
  * @param {(line: string) => void} [options.logger]
  * @param {number} [options.maxBytes] - 测试可覆盖轮换阈值。
+ * @param {boolean} [options.shareWithinProcess] - 同一进程里对同一文件的实例共用内存状态
+ *   （待匹配的建议、写队列、文件大小）。保存任何设置都会让宿主在同一进程里重新 apply
+ *   本插件；共用之后，屏幕上那条建议的“已显示”、去向和用户下一条消息的匹配不会因为
+ *   重启而丢失，两个实例也不会各自计算文件大小。测试默认不共用，以便模拟进程重启。
  */
 export function createResultsLog(options) {
   const homeDir = options.homeDir
@@ -115,25 +180,18 @@ export function createResultsLog(options) {
   const maxBytes = Math.max(1024, Number(options.maxBytes) || MAX_BYTES)
   const dir = join(homeDir, 'next-message-predictor')
   const filePath = join(dir, 'events.jsonl')
-  /** @type {Map<string, object>} suggestionId -> in-memory pending offer (正文只在内存) */
-  const pending = new Map()
-  let bytes = -1
-  /** 已写入的行数；汇总缓存用它判断“之后有没有新记录”。 */
-  let writeCount = 0
-  let summaryCache = null
-  let queue = Promise.resolve()
-  let lastCleanup = 0
-  let initialized = false
+  const store = options.shareWithinProcess === true ? sharedResultsStore(filePath) : newResultsStore()
+  const pending = store.pending
 
   async function initialize() {
-    if (initialized) return
+    if (store.initialized) return
     try {
       const info = await stat(filePath)
-      bytes = info.size
+      store.bytes = info.size
     } catch {
-      bytes = 0
+      store.bytes = 0
     }
-    initialized = true
+    store.initialized = true
   }
 
   function prunePending() {
@@ -149,8 +207,8 @@ export function createResultsLog(options) {
   }
 
   async function cleanupOldFiles() {
-    if (now() - lastCleanup < 60 * 60 * 1000) return
-    lastCleanup = now()
+    if (now() - store.lastCleanup < 60 * 60 * 1000) return
+    store.lastCleanup = now()
     try {
       const names = await readdir(dir)
       const cutoff = now() - KEEP_DAYS * 24 * 60 * 60 * 1000
@@ -171,36 +229,36 @@ export function createResultsLog(options) {
 
   /** 轮换到 events.<ISO>.jsonl（文件名时间戳只含安全字符）。 */
   async function rotateIfNeeded(lineBytes) {
-    if (bytes < 0) await initialize()
-    if (bytes === 0) return
-    if (bytes + lineBytes <= maxBytes) return
+    if (store.bytes < 0) await initialize()
+    if (store.bytes === 0) return
+    if (store.bytes + lineBytes <= maxBytes) return
     const stamp = new Date(now()).toISOString().replace(/[:.]/g, '-')
     try {
       await rename(filePath, join(dir, `events.${stamp}.jsonl`))
-      bytes = 0
+      store.bytes = 0
     } catch (error) {
       // 没轮换成：文件还在原处继续变大，计数不能清零，下一行会再试一次。
       logger(`[next-message-predictor] results rotate failed: ${error instanceof Error ? error.message : String(error)}`)
     }
   }
 
-  /** 追加一行；串行化、失败只记日志。 */
+  /** 追加一行；串行化（同一进程的实例共用一个队列）、失败只记日志。 */
   function append(record) {
-    queue = queue
+    store.queue = store.queue
       .then(async () => {
         await mkdir(dir, { recursive: true })
         const line = `${JSON.stringify({ t: now(), ...record })}\n`
         const lineBytes = Buffer.byteLength(line)
         await rotateIfNeeded(lineBytes)
         await appendFile(filePath, line, 'utf8')
-        bytes = Math.max(0, bytes) + lineBytes
-        writeCount += 1
+        store.bytes = Math.max(0, store.bytes) + lineBytes
+        store.writeCount += 1
         void cleanupOldFiles()
       })
       .catch((error) => {
         logger(`[next-message-predictor] results append failed: ${error instanceof Error ? error.message : String(error)}`)
       })
-    return queue
+    return store.queue
   }
 
   /**
@@ -212,8 +270,12 @@ export function createResultsLog(options) {
    * @param {string} input.turnKey
    * @param {string} input.trigger
    * @param {string} input.outcome - offer|abstain|unavailable|stale|cancelled
-   * @param {string} [input.reason]
-   * @param {string} [input.text] - 只进内存，不落盘。
+   * @param {string} [input.reason] - 回退 offer 时是模型没有给出建议的原因。
+   * @param {string} [input.text] - 模型的第一条候选，只进内存，不落盘。
+   * @param {string[]} [input.alternatives] - 模型的其他候选，只进内存。
+   * @param {{text: string, source: string}[]} [input.local] - 本机短语，只进内存；落盘的只有条数。
+   * @param {boolean} [input.fallback] - 只含本机短语的 offer（模型没有给出建议）。
+   * @param {boolean} [input.cached] - 结果来自缓存，这次请求没有经过生产任务。
    * @param {object} [input.route]
    * @param {number} [input.latencyMs]
    * @param {object} [input.usage]
@@ -223,6 +285,9 @@ export function createResultsLog(options) {
     if (input === null || typeof input !== 'object') return
     prunePending()
     const suggestionId = typeof input.suggestionId === 'string' ? input.suggestionId : ''
+    const isOffer = input.outcome === 'offer'
+    const ring = isOffer ? ringOf(input) : []
+    const modelCount = ring.filter((entry) => entry.source === 'model').length
     const record = {
       kind: 'request',
       r: hashId(input.requestId ?? ''),
@@ -240,18 +305,29 @@ export function createResultsLog(options) {
       len: Number.isFinite(input.suggestionGraphemes) ? Math.max(0, Math.round(input.suggestionGraphemes)) : null,
       shown: false,
     }
+    if (isOffer) {
+      // How the ring is made up, as counts only: model candidates, habit phrases, pinned phrases.
+      record.nm = modelCount
+      record.nh = ring.filter((entry) => entry.source === 'habit').length
+      record.np = ring.filter((entry) => entry.source === 'pinned').length
+      if (input.fallback === true) record.fb = true
+    }
+    if (input.cached === true) record.cached = true
     if (suggestionId !== '') record.g = hashId(suggestionId)
     const appendPromise = append(record)
-    if (suggestionId !== '' && typeof input.text === 'string' && input.text !== '') {
+    // A second request that receives the same suggestion (another view waiting on
+    // the same production, a cache hit, a retry) must not start its record over:
+    // "shown" and the outcome already reported would be lost, and the page reports
+    // "shown" only once per suggestion.
+    if (suggestionId !== '' && ring.length > 0 && !pending.has(suggestionId)) {
       pending.set(suggestionId, {
         hash: hashId(suggestionId),
-        text: input.text,
-        // 同一次预测的其他候选：用户可能切到其中一条再发出，匹配时一并比较。
-        alternatives: Array.isArray(input.alternatives) ? input.alternatives.filter((value) => typeof value === 'string' && value !== '') : [],
+        ring,
         sessionId: typeof input.sessionId === 'string' ? input.sessionId : '',
         at: now(),
         shown: false,
         disposition: null,
+        accepted: null,
         matched: false,
       })
     }
@@ -260,10 +336,11 @@ export function createResultsLog(options) {
 
   /** 客户端确认建议真正显示在输入框上。 */
   function markShown(suggestionId) {
+    if (typeof suggestionId !== 'string' || suggestionId === '') return Promise.resolve()
     const entry = pending.get(suggestionId)
-    if (entry === undefined || entry.shown) return Promise.resolve()
-    entry.shown = true
-    return append({ kind: 'level', g: entry.hash, event: 'shown' })
+    if (entry !== undefined && entry.shown) return Promise.resolve()
+    if (entry !== undefined) entry.shown = true
+    return append({ kind: 'level', g: entry?.hash ?? hashId(suggestionId), event: 'shown' })
   }
 
   /**
@@ -272,27 +349,46 @@ export function createResultsLog(options) {
    * “shown” 不是去向而是“建议真正显示过”这一事实：交给 markShown。否则它会占掉
    * 这条建议唯一的去向位置，之后的 accepted/dismissed 在汇总里全部被忽略
    * （采纳数恒为 0），用户下一条消息的匹配分数也永远不会写入。
+   *
+   * 采纳时记下采纳的是环里的哪一条（index）以及它的来源（model / habit / pinned）。
+   * 来源以本机记下的环为准；记录已经不在内存里时（超过 2 小时）才用页面报的来源。
+   * 内存里没有这条建议时照样写一行：哈希可以重新算出，汇总只认每条建议的第一个去向。
+   * @param {{index: number, source?: string} | null} [choice]
    */
-  function recordOutcome(suggestionId, event, reason) {
+  function recordOutcome(suggestionId, event, reason, choice) {
     if (typeof suggestionId !== 'string' || suggestionId === '') return Promise.resolve()
     if (event === 'shown') return markShown(suggestionId)
     const entry = pending.get(suggestionId)
-    if (entry === undefined) return Promise.resolve()
-    if (entry.disposition === event) return Promise.resolve()
-    // 采纳和按 Esc 隐藏都只能发生在显示出来的建议上；“已显示”的回报丢了也补记。
-    if ((event === 'accepted' || event === 'dismissed') && !entry.shown) void markShown(suggestionId)
-    entry.disposition = event
-    return append({
+    if (entry !== undefined && entry.disposition === event) return Promise.resolve()
+    const line = {
       kind: 'outcome',
-      g: entry.hash,
+      g: entry?.hash ?? hashId(suggestionId),
       event: typeof event === 'string' ? event.slice(0, 24) : 'unknown',
       reason: typeof reason === 'string' ? reason.slice(0, 60) : '',
-    })
+    }
+    if (event === 'accepted') {
+      const index = Number.isInteger(choice?.index) && choice.index >= 0 ? choice.index : 0
+      const fromRing = entry?.ring?.[index]?.source
+      const source = SOURCES.includes(fromRing) ? fromRing : SOURCES.includes(choice?.source) ? choice.source : entry === undefined ? 'model' : entry.ring[0]?.source ?? 'model'
+      line.source = source
+      line.index = index
+      if (entry !== undefined) entry.accepted = { index, source }
+    }
+    if (entry !== undefined) {
+      // 采纳和按 Esc 隐藏都只能发生在显示出来的建议上；“已显示”的回报丢了也补记。
+      if ((event === 'accepted' || event === 'dismissed') && !entry.shown) void markShown(suggestionId)
+      entry.disposition = event
+    }
+    return append(line)
   }
 
   /**
    * 用户发出下一条消息时计算与最近展示建议的匹配度（只写分数）。
-   * @returns {{matched:boolean, exact?:boolean, prefixChars?:number, editRatio?:number}}
+   *
+   * 分数只和模型的候选比：用户自己的短语不算模型的功劳。采纳的是模型的某一条时
+   * 只和那一条比，否则取模型候选里最接近的一条。消息和某条本机短语相同（按
+   * normalizePhraseKey）时另记它的来源。整条环都是本机短语时（回退）不打模型分数。
+   * @returns {{matched:boolean, exact?:boolean, prefixChars?:number, editRatio?:number, local?:string}}
    */
   function noteUserMessage(sessionId, text) {
     prunePending()
@@ -301,27 +397,35 @@ export function createResultsLog(options) {
     }
     let chosen = null
     for (const [id, entry] of pending) {
-      if (entry.sessionId !== sessionId || entry.matched || !entry.shown || text === '') continue
+      if (entry.sessionId !== sessionId || entry.matched || !entry.shown) continue
       if (chosen === null || entry.at > chosen.entry.at) chosen = { id, entry }
     }
     if (chosen === null) return { matched: false }
-    // 多条候选时取最接近的那一条来打分。
-    let score = matchScore(chosen.entry.text, text)
-    for (const alternative of chosen.entry.alternatives ?? []) {
-      const other = matchScore(alternative, text)
-      if ((other.exact && !score.exact) || (!score.exact && other.editRatio > score.editRatio)) score = other
+    const entry = chosen.entry
+    const modelTexts = entry.ring.filter((candidate) => candidate.source === 'model').map((candidate) => candidate.text)
+    const acceptedModel = entry.accepted !== null && entry.accepted.source === 'model' ? entry.ring[entry.accepted.index]?.text : undefined
+    let score = null
+    for (const candidate of typeof acceptedModel === 'string' ? [acceptedModel] : modelTexts) {
+      const next = matchScore(candidate, text)
+      if (score === null || (next.exact && !score.exact) || (!score.exact && next.editRatio > score.editRatio)) score = next
     }
-    chosen.entry.matched = true
-    void append({
-      kind: 'match',
-      g: chosen.entry.hash,
-      exact: score.exact,
-      prefix: score.prefixChars,
-      edit: Math.round(score.editRatio * 1000) / 1000,
-      ulen: score.userGraphemes,
-      slen: score.suggestionGraphemes,
-    })
-    return { matched: true, ...score }
+    const key = normalizePhraseKey(text)
+    const localHit = entry.ring.find((candidate) => candidate.source !== 'model' && normalizePhraseKey(candidate.text) === key)
+    entry.matched = true
+    const line = { kind: 'match', g: entry.hash }
+    if (score === null) {
+      line.nomodel = true
+      line.ulen = Array.from(text.replace(/\s+/gu, ' ').trim()).length
+    } else {
+      line.exact = score.exact
+      line.prefix = score.prefixChars
+      line.edit = Math.round(score.editRatio * 1000) / 1000
+      line.ulen = score.userGraphemes
+      line.slen = score.suggestionGraphemes
+    }
+    if (localHit !== undefined) line.local = localHit.source
+    void append(line)
+    return { matched: true, ...(score ?? {}), ...(localHit !== undefined ? { local: localHit.source } : {}) }
   }
 
   /**
@@ -383,11 +487,12 @@ export function createResultsLog(options) {
   async function summary(days = 7) {
     const windowDays = Math.max(1, Math.min(30, Number(days) || 7))
     // 设置页每次打开和点“刷新”都会要一次汇总；几秒内重复请求直接用上一次的结果。
-    if (summaryCache !== null && summaryCache.days === windowDays && now() - summaryCache.at < SUMMARY_CACHE_MS && summaryCache.writes === writeCount) {
-      return summaryCache.value
+    const cache = store.summaryCache
+    if (cache !== null && cache.days === windowDays && now() - cache.at < SUMMARY_CACHE_MS && cache.writes === store.writeCount) {
+      return cache.value
     }
     const value = await computeSummary(windowDays)
-    summaryCache = { days: windowDays, at: now(), writes: writeCount, value }
+    store.summaryCache = { days: windowDays, at: now(), writes: store.writeCount, value }
     return value
   }
 
@@ -397,16 +502,20 @@ export function createResultsLog(options) {
     /** @type {Map<string, object>} */
     const offers = new Map()
     const outcomes = { shown: 0, accepted: 0, dismissed: 0, overwritten: 0, expired: 0, closed: 0 }
+    const acceptedBySource = { model: 0, habit: 0, pinned: 0 }
     const abstainReasons = new Map()
     const latencies = []
     const dayTokens = new Map()
+    let shownWithModel = 0
     const markOfferShown = (entry) => {
       if (entry === undefined || entry.shown) return
       entry.shown = true
       outcomes.shown += 1
+      if (entry.modelCount > 0) shownWithModel += 1
     }
     let requests = 0
     let offerRequests = 0
+    let localFallbacks = 0
     let abstainRequests = 0
     let unavailable = 0
     let stale = 0
@@ -415,8 +524,14 @@ export function createResultsLog(options) {
       if (line === null || typeof line !== 'object' || typeof line.t !== 'number' || line.t < windowStart) continue
       if (line.kind === 'request') {
         requests += 1
-        // 只把真正经过上下文/模型的请求计入延迟，早退/禁用请求的 0ms 会污染分位数。
-        if (typeof line.latencyMs === 'number' && line.latencyMs > 0 && (line.outcome === 'offer' || line.outcome === 'abstain')) {
+        // 延迟只统计真正调用了模型的请求：早退、禁用、缓存命中、上下文读取失败
+        // 没有路由（provider 为空）；0.4.x 及更早把“常说的话”记成 provider 'habit'，
+        // 那是本机读取，也不算。
+        const provider = typeof line.provider === 'string' ? line.provider : ''
+        if (
+          typeof line.latencyMs === 'number' && line.latencyMs > 0 && (line.outcome === 'offer' || line.outcome === 'abstain') &&
+          provider !== '' && provider !== 'habit' && line.cached !== true
+        ) {
           latencies.push(line.latencyMs)
         }
         const day = dayKey(line.t, getTimeZone())
@@ -427,14 +542,23 @@ export function createResultsLog(options) {
         dayEntry.reasoning += Number(line.reasoning) || 0
         dayTokens.set(day, dayEntry)
         if (line.outcome === 'offer') {
+          // The same suggestion handed to a second waiter or served from the cache is one offer, not two.
+          if (typeof line.g === 'string' && offers.has(line.g)) continue
           offerRequests += 1
+          if (line.fb === true) localFallbacks += 1
           if (typeof line.g === 'string') {
+            const legacyHabit = provider === 'habit'
             offers.set(line.g, {
               shown: false,
               disposition: null,
+              acceptedSource: null,
+              // Older lines carry no counts: a habit offer of 0.4.x had no model candidate.
+              modelCount: Number.isInteger(line.nm) ? line.nm : legacyHabit ? 0 : 1,
+              defaultSource: legacyHabit ? 'habit' : Number.isInteger(line.nm) && line.nm === 0 ? (line.nh > 0 ? 'habit' : 'pinned') : 'model',
               exact: null,
               prefix: null,
               edit: null,
+              scored: false,
             })
           }
         } else if (line.outcome === 'abstain') {
@@ -452,12 +576,18 @@ export function createResultsLog(options) {
         if (entry !== undefined && entry.disposition === null) {
           entry.disposition = line.event
           if (line.event in outcomes) outcomes[line.event] += 1
+          if (line.event === 'accepted') {
+            const source = SOURCES.includes(line.source) ? line.source : entry.defaultSource
+            entry.acceptedSource = source
+            acceptedBySource[source] += 1
+          }
           // 采纳/隐藏意味着建议显示过，采纳率的分母不能比分子小。
           if (line.event === 'accepted' || line.event === 'dismissed') markOfferShown(entry)
         }
       } else if (line.kind === 'match' && typeof line.g === 'string') {
         const entry = offers.get(line.g)
-        if (entry !== undefined) {
+        if (entry !== undefined && line.nomodel !== true) {
+          entry.scored = true
           entry.exact = line.exact === true
           entry.prefix = Number.isFinite(line.prefix) ? line.prefix : null
           entry.edit = Number.isFinite(line.edit) ? line.edit : null
@@ -470,7 +600,8 @@ export function createResultsLog(options) {
       const index = Math.min(sortedLatencies.length - 1, Math.max(0, Math.ceil((p / 100) * sortedLatencies.length) - 1))
       return sortedLatencies[index]
     }
-    const acceptedWithMatch = [...offers.values()].filter((entry) => entry.disposition === 'accepted' && entry.exact !== null)
+    // Only the model's own suggestions: a phrase of the user's that was accepted says nothing about the model.
+    const acceptedWithMatch = [...offers.values()].filter((entry) => entry.acceptedSource === 'model' && entry.scored)
     const acceptedUnaltered = acceptedWithMatch.filter((entry) => entry.exact === true).length
     const matchedPrefixes = acceptedWithMatch.map((entry) => entry.prefix).filter((value) => typeof value === 'number')
     return {
@@ -479,18 +610,22 @@ export function createResultsLog(options) {
       file: '<DSH_HOME>/next-message-predictor/events.jsonl',
       requests,
       offers: offerRequests,
+      localFallbacks,
       abstains: abstainRequests,
       unavailable,
       stale,
       cancelled,
       shown: outcomes.shown,
+      shownWithModel,
       accepted: outcomes.accepted,
+      acceptedBySource,
       dismissed: outcomes.dismissed,
       overwritten: outcomes.overwritten,
       expired: outcomes.expired,
       closed: outcomes.closed,
       showRate: offerRequests === 0 ? null : Math.round((outcomes.shown / offerRequests) * 1000) / 10,
-      acceptRate: outcomes.shown === 0 ? null : Math.round((outcomes.accepted / outcomes.shown) * 1000) / 10,
+      // Model suggestions only: accepted model candidates over shown offers that had one.
+      acceptRate: shownWithModel === 0 ? null : Math.round((acceptedBySource.model / shownWithModel) * 1000) / 10,
       acceptedUnalteredRate: acceptedWithMatch.length === 0 ? null : Math.round((acceptedUnaltered / acceptedWithMatch.length) * 1000) / 10,
       averagePrefixChars: matchedPrefixes.length === 0
         ? null
@@ -512,7 +647,7 @@ export function createResultsLog(options) {
     noteUserMessage,
     summary,
     filePath,
-    flush: () => queue,
+    flush: () => store.queue,
     _pending: pending,
   }
 }

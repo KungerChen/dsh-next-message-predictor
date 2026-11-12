@@ -108,6 +108,29 @@ export function parseCandidatesJson(raw, options) {
   return { ok: true, suggestions: accepted }
 }
 
+/**
+ * Comparison key for the user's own phrases (session habit phrases and pinned
+ * phrases): surrounding whitespace, runs of spaces, trailing punctuation and
+ * letter case do not make two phrases different. The candidate ring is
+ * de-duplicated with it, and the habit detection counts repeats with it.
+ */
+export function normalizePhraseKey(text) {
+  if (typeof text !== 'string') return ''
+  return text.trim().replace(/[ \t　]+/gu, ' ').replace(/[。．.！!？?～~，,、；;：:\s]+$/u, '').toLowerCase()
+}
+
+/** UTF-8 size of a string in bytes (Node and browsers alike). */
+export function utf8ByteLength(text) {
+  if (typeof text !== 'string' || text === '') return 0
+  if (typeof TextEncoder === 'function') return new TextEncoder().encode(text).length
+  let bytes = 0
+  for (const char of text) {
+    const code = char.codePointAt(0) ?? 0
+    bytes += code < 0x80 ? 1 : code < 0x800 ? 2 : code < 0x10000 ? 3 : 4
+  }
+  return bytes
+}
+
 export function validateSuggestionText(raw, options) {
   const maxGraphemes =
     options !== undefined && typeof options.maxGraphemes === 'number' ? options.maxGraphemes : 160

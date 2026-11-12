@@ -2,6 +2,10 @@
 /**
  * Capture the README images from a running, isolated DSH Web GUI.
  *
+ * The demo animation and suggestion.png show model candidates only (habit phrases
+ * off, no pinned phrases). Pinned phrases are saved afterwards, for phrases.png and
+ * the settings page.
+ *
  * Everything on screen is produced for the capture: the conversation is one
  * scripted turn answered by the local mock model (tools/mock-llm.mjs), and the
  * suggestions are the mock's scripted candidates. Only regions that belong to
@@ -11,6 +15,7 @@
  * Output (default docs/images/):
  *   demo.png            animated PNG: suggestion appears -> another one -> Tab fills it in
  *   suggestion.png      the conversation with a suggestion in the empty input box
+ *   phrases.png         the same input box with one of the user's pinned phrases as the grey suggestion
  *   modes.png           the "mode" card of the settings page
  *   sidebar-entry.png   the entry in the left sidebar
  *   page-header.png     the top of the settings page: title, version, sidebar button, basics
@@ -57,6 +62,11 @@ const USER_MESSAGE = '给登录表单加上校验：邮箱格式和密码长度'
 const ASSISTANT_REPLY =
   '已在 LoginForm 里加上校验：邮箱用正则检查格式，密码要求至少 8 位，不通过时在输入框下方给出提示。改动在 src/components/LoginForm.tsx，还没有运行测试。'
 const SUGGESTIONS = ['跑一下测试，确认没有回归', '把改动的代码给我看一下', '再补上对应的单元测试']
+// Turn 3 (only phrases.png shows it): the suggestion taken in turn 2 is sent.
+const THIRD_REPLY = '已补上单元测试：邮箱格式和密码长度各有通过与不通过两种情况，还没有运行。'
+const THIRD_SUGGESTION = '把测试结果发我看一下'
+/** The pinned phrases saved before phrases.png and the settings shots (never during the demo). */
+const PINNED_PHRASES = ['继续', '跑一下测试', '把改动给我看看']
 
 /** The languages shown in languages.png (the other images are in Chinese). */
 const LANGUAGE_TILES = ['en', 'ja', 'es', 'ru']
@@ -192,7 +202,7 @@ const ghostShows = (text) => async () => {
 }
 
 /** The last exchange plus the input box: from the last user message down to the composer. */
-async function exchangeClip() {
+async function exchangeClip(userMessage = USER_MESSAGE) {
   return page.evaluate((message) => {
     const card = document.querySelector('[data-composer-card]').getBoundingClientRect()
     const bubbles = [...document.querySelectorAll('*')].filter(
@@ -203,7 +213,7 @@ async function exchangeClip() {
     const top = Math.max(0, (last ? last.getBoundingClientRect().top : card.top - 260) - 26)
     // Stop right under the input box: the status line below it is not part of the story.
     return { x: Math.max(0, card.left - margin), y: top, width: card.width + margin * 2, height: Math.min(window.innerHeight, card.bottom + 8) - top }
-  }, USER_MESSAGE)
+  }, userMessage)
 }
 /** Wait until the assistant has answered the message just sent. */
 async function turnFinished(previousTurnId) {
@@ -226,7 +236,7 @@ try {
   await setConfig({
     language: 'zh',
     enabled: true, manualOnly: false, showPredictButton: true, modelMode: 'session', reasoningEffort: '',
-    multiCandidates: true, candidateCount: 3, manualLimit: 3, habitSuggestions: false, sidebarEntry: true, triggerDelayMs: 250,
+    multiCandidates: true, candidateCount: 3, manualLimit: 3, habitSuggestions: false, pinnedPhrases: [], sidebarEntry: true, triggerDelayMs: 250,
   })
   // The scratch profile also loads a marker plugin used by the load test; it is not part of DSH or of this plugin.
   await page.addStyleTag({ content: '[data-testid="predictor-hello-marker"] { display: none !important; }' })
@@ -291,6 +301,31 @@ try {
   await page.keyboard.press('Control+A')
   await page.keyboard.press('Delete')
 
+  // ── phrases.png: a pinned phrase as the suggestion ──
+  // The turn above ended with a suggestion taken, which closes it for the shortcut, so the story goes on
+  // with a third turn: the suggestion just taken is sent. Three pinned phrases are saved first (habit
+  // phrases stay off so the ring is clean). The ring of the automatic prediction is the model's
+  // suggestion followed by the pinned phrases; two presses of the shortcut walk locally (no model
+  // call) to the second pinned phrase.
+  await setConfig({ pinnedPhrases: PINNED_PHRASES, habitSuggestions: false })
+  await mockControl({ reply: THIRD_REPLY, predictReply: JSON.stringify({ suggestion: THIRD_SUGGESTION }) })
+  await ensureComposer()
+  await page.locator('[data-composer-input]').first().click({ force: true })
+  turnBefore = await currentTurnId()
+  await page.keyboard.type(SUGGESTIONS[2], { delay: 6 })
+  await page.keyboard.press('Enter')
+  await turnFinished(turnBefore)
+  await waitFor('the ring with the pinned phrases', async () => (await ghostShows(THIRD_SUGGESTION)()) && (await assist()).candidates.length === 4, 45000)
+  await sleep(500)
+  await page.keyboard.press('Alt+Backslash')
+  await waitFor('the first pinned phrase', ghostShows(PINNED_PHRASES[0]))
+  await page.keyboard.press('Alt+Backslash')
+  await waitFor('the second pinned phrase', ghostShows(PINNED_PHRASES[1]))
+  await sleep(500)
+  await page.screenshot({ path: path.join(outDir, 'phrases.png'), clip: await exchangeClip(SUGGESTIONS[2]) })
+  await page.keyboard.press('Escape')
+  await sleep(300)
+
   // ── settings page, in the recommended mode ──
   await page.setViewportSize(VIEWPORT)
   await setConfig({ ...PRESETS.balanced, provider: RECOMMENDED_ROUTE.provider, model: RECOMMENDED_ROUTE.model, reasoningEffort: RECOMMENDED_ROUTE.reasoningEffort, habitSuggestions: true, sidebarEntry: true })
@@ -350,7 +385,7 @@ try {
   await sheet.locator('#sheet').screenshot({ path: path.join(outDir, 'languages.png') })
   await sheet.close()
 
-  for (const name of ['demo.png', 'suggestion.png', 'sidebar-entry.png', 'page-header.png', 'modes.png', 'settings.png', 'languages.png']) {
+  for (const name of ['demo.png', 'suggestion.png', 'phrases.png', 'sidebar-entry.png', 'page-header.png', 'modes.png', 'settings.png', 'languages.png']) {
     const size = (await readFile(path.join(outDir, name))).length
     console.log(`${name}  ${(size / 1024).toFixed(0)} KB`)
   }
@@ -361,7 +396,7 @@ try {
       const restore = {}
       for (const key of [
         'enabled', 'manualOnly', 'showPredictButton', 'modelMode', 'provider', 'model', 'reasoningEffort', 'multiCandidates', 'candidateCount',
-        'manualLimit', 'habitSuggestions', 'sidebarEntry', 'triggerDelayMs', 'contextMessages', 'targetInputTokens', 'maxContextCodePoints',
+        'manualLimit', 'habitSuggestions', 'pinnedPhrases', 'sidebarEntry', 'triggerDelayMs', 'contextMessages', 'targetInputTokens', 'maxContextCodePoints',
         'maxOutputTokens', 'timeoutMs', 'dailyRequestLimit', 'dailyTokenBudget', 'language',
       ]) restore[key] = originalConfig[key]
       await rpc({ schemaVersion: 1, operation: 'config.set', patch: restore })

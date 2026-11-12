@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/vers%C3%A3o-0.4.1-4d6bfe" alt="versão 0.4.1">
+  <img src="https://img.shields.io/badge/vers%C3%A3o-0.5.0-4d6bfe" alt="versão 0.5.0">
   <img src="https://img.shields.io/badge/DeepSeek%20Harness-0.2.2--rc.1-1f2937" alt="DeepSeek Harness 0.2.2-rc.1">
   <img src="https://img.shields.io/badge/idiomas-9-8250df" alt="idiomas 9">
   <img src="https://img.shields.io/badge/depend%C3%AAncias%20externas-0-2ea44f" alt="dependências externas 0">
@@ -68,7 +68,7 @@ Ele apenas coloca texto na caixa de entrada. Não existe nenhum código de “en
 
 ### 💰 Custo sob controle
 
-Por padrão, um modelo de baixo custo, com limites diários de pedidos e de tokens. Frases curtas que você repete são oferecidas diretamente, sem chamar o modelo.
+Por padrão, um modelo de baixo custo, com limites diários de pedidos e de tokens. Suas próprias frases (as mensagens curtas que você repete e as que você fixa) estão a um clique de “Outra”, não custam nada e nunca saem do seu computador.
 
 </td>
 <td valign="top">
@@ -120,6 +120,14 @@ Não quer estudar cada opção? Escolha um modo. Dá para desfazer ou ajustar de
 | **Qualidade** | Automaticamente após cada resposta | O modelo da sessão | 20 mensagens | 200 pedidos | Sugestões mais certeiras |
 
 Um modo só altera o disparo, a estratégia de modelo, o tamanho do contexto e os limites. Ele não mexe no interruptor principal, no atalho, no idioma nem nas opções de privacidade, e mantém o modelo que você informou.
+
+### Suas próprias frases, sempre à mão
+
+Adicione as frases que você envia sem parar (“continue”, “rode os testes”) em **Configurações → Previsão → Origem das sugestões → Frases fixadas**, coloque-as na ordem que preferir e clique em “Salvar” uma única vez. Elas vêm depois da sugestão do modelo: “Outra” (ou <kbd>Alt</kbd>+<kbd>\\</kbd>) percorre a sugestão do modelo, as mensagens curtas que você repetiu nesta conversa e depois as suas frases fixadas, e só volta a consultar o modelo depois da última. Uma pequena marca no botão mostra que a frase é sua. Elas não custam nada, nunca saem do seu computador e, quando uma previsão manual não obtém nada do modelo, são oferecidas no lugar de “Sem sugestão desta vez”.
+
+<p align="center">
+  <img src="docs/images/phrases.png" width="720" alt="Uma frase fixada como sugestão em cinza; o botão “Outra” mostra um alfinete e a posição na lista">
+</p>
 
 ### Nove idiomas de interface
 
@@ -209,7 +217,7 @@ Cada previsão é um único pedido ao modelo, sem nova tentativa automática. El
 - Não inclui argumentos nem saída de ferramentas, raciocínio ou o prompt do sistema.
 - Antes do envio, possíveis chaves privadas, chaves de API, tokens, senhas, endereços de e-mail, números de celular e de identidade e o nome de usuário em caminhos da pasta pessoal são trocados por marcadores (baseado em regras; não há garantia de encontrar tudo).
 - A página do navegador envia apenas identificadores de sessão e de turno, nunca o rascunho, anexos ou texto da conversa; o conteúdo destinado ao modelo é lido pela parte em segundo plano nos registros de sessão do próprio DSH.
-- “Preferir mensagens curtas que você envia com frequência” apenas compara as mensagens curtas que você enviou neste computador; nenhum modelo é chamado.
+- Suas próprias frases (as mensagens curtas que você repete em uma conversa e as “Frases fixadas”) são usadas apenas neste computador: nenhum modelo é chamado para elas e elas nunca são enviadas ao modelo.
 
 A descrição completa, e como apagar os dados locais, está em [Privacidade e limites dos dados](docs/PRIVACY.md).
 

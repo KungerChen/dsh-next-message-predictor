@@ -554,20 +554,24 @@ test('multiple candidates off: the single prompt and a single suggestion', async
   assert.equal(response.body.result.alternatives, undefined);
 });
 
-test('habit phrases: offered without a model call or a ledger entry, then the model takes over', async () => {
+test('habit phrases: the model is still called first, the phrases follow its suggestion and are never sent to it', async () => {
+  // Formerly a repeated short message replaced the model call. Now the first
+  // suggestion always comes from the model and the habit phrases are local
+  // entries behind it, reachable by switching.
   const contextReader = { ...fakeContext(), async habitPhrases() { return ['继续', '跑一下测试'] } };
   const { service, modelProvider, ledger } = create({ contextReader });
   const first = await service.handle(request());
   assert.equal(first.body.result.kind, 'offer');
-  assert.equal(first.body.result.text, '继续');
-  assert.deepEqual(first.body.result.alternatives, ['跑一下测试']);
-  assert.equal(modelProvider.calls.length, 0);
-  assert.equal(ledger.reserveCalls, 0);
-  // "Another one" on the same reply goes to the model and is told what was already offered.
-  const more = await service.handle(request({ requestId: 'more', trigger: 'manual' }));
+  assert.equal(first.body.result.text, '继续第二项');
+  assert.equal(first.body.result.alternatives, undefined);
+  assert.deepEqual(first.body.result.local, [{ text: '继续', source: 'habit' }, { text: '跑一下测试', source: 'habit' }]);
   assert.equal(modelProvider.calls.length, 1);
-  assert.ok(modelProvider.calls[0].input.includes('- 继续'));
-  assert.ok(modelProvider.calls[0].input.includes('- 跑一下测试'));
+  assert.equal(ledger.reserveCalls, 1);
+  // "Another one" on the same reply is told the model's earlier suggestion, not the user's phrases.
+  const more = await service.handle(request({ requestId: 'more', trigger: 'manual' }));
+  assert.equal(modelProvider.calls.length, 2);
+  assert.ok(modelProvider.calls[1].input.includes('- 继续第二项'));
+  assert.ok(!modelProvider.calls[1].input.includes('- 跑一下测试'));
   assert.equal(more.body.result.kind, 'offer');
 });
 

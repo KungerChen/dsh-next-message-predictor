@@ -13,6 +13,7 @@
 // 上限：条数、码点、估算 token；敏感信息先脱敏。所有截断显式标记。
 
 import { estimateEnvelopeTokens, estimateTokens, buildPredictionInput } from '../shared/prompt.js'
+import { normalizePhraseKey, validateSuggestionText } from '../shared/output-validation.js'
 
 /**
  * 发送前遮蔽（保守；基于规则，不保证识别所有敏感信息，见 docs/PRIVACY.md）。
@@ -165,12 +166,13 @@ export function redactSecrets(text) {
  * 常说的话：用户在这次对话里说过至少两次的短句。
  *
  * 依据：真实会话回放里，建议和用户真实下一条完全一致的唯一一例，就是用户重复
- * 说过的短跟进（真实会话回放，见 docs/OPTIMIZATION-BATCH3.md）。这类句子
- * 不需要模型去猜。
+ * 说过的短跟进（真实会话回放，见 docs/OPTIMIZATION-BATCH3.md）。
+ * 它们不代替模型的建议，而是排在模型建议之后，切换可达（本机生成，不发给模型）。
  *
  * 规则：
  * - 只看单行、2–20 个字的消息；斜杠指令（/xxx）和 @ 开头的不算；
- * - 比较时忽略首尾空白、连续空格、结尾标点和英文大小写；
+ * - 和模型建议一样过 validateSuggestionText（控制字符、标记、行分隔符）；
+ * - 比较时忽略首尾空白、连续空格、结尾标点和英文大小写（normalizePhraseKey）；
  * - 出现次数 ≥ minCount 才算；按“次数多、最近说过”排序；
  * - 显示用最近一次的原话；含疑似密钥（脱敏会改动它）的不要。
  *
@@ -192,7 +194,10 @@ export function findHabitPhrases(userTexts, options) {
     if (text.startsWith('/') || text.startsWith('@')) return
     const length = Array.from(text).length
     if (length < 2 || length > maxGraphemes) return
-    const key = text.replace(/[。．.！!？?～~，,、；;：:\s]+$/u, '').toLowerCase()
+    // The same acceptance rules as a model suggestion (control characters,
+    // markup, protocol markers, line separators); a phrase failing them is never offered.
+    if (!validateSuggestionText(text, { maxGraphemes }).ok) return
+    const key = normalizePhraseKey(text)
     if (Array.from(key).length < 2) return
     const entry = seen.get(key)
     if (entry === undefined) seen.set(key, { count: 1, last: index, text })

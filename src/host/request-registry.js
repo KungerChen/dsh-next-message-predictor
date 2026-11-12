@@ -60,10 +60,13 @@ export function createRequestRegistry() {
   }
 
   /**
-   * Give back a credit that bought nothing: the production ended before any
-   * model call was made (the budget ledger could not be written, the model
-   * route could not be prepared). Without this a transient failure would use
-   * up the turn's only automatic prediction.
+   * Give back a credit that bought nothing: the production ended without a
+   * model call (context read failed, the budget ledger could not be written or
+   * the daily allowance is used up, the model route could not be prepared, the
+   * turn went stale or the request was cancelled before the call, the call
+   * failed before its stream started). The service refunds whenever its
+   * production did not reach the model. Without this a transient failure would
+   * use up the turn's only automatic prediction.
    */
   function refundCredit(turnKey, trigger) {
     const entry = turnLedger.get(turnKey)

@@ -17,7 +17,7 @@ c2_p: Sobald Sie zu tippen beginnen, macht der Vorschlag Platz. Während einer I
 c3_h: Keine Eigenmächtigkeit
 c3_p: Es wird nur Text ins Eingabefeld gesetzt. Im Plugin gibt es keinerlei Code zum Senden einer Nachricht; ob gesendet wird, entscheiden immer Sie.
 c4_h: Kosten im Griff
-c4_p: Standardmäßig ein kostengünstiges Modell, dazu Tageslimits für Anfragen und Tokens. Kurze Sätze, die Sie immer wieder verwenden, werden direkt vorgeschlagen, ohne das Modell aufzurufen.
+c4_p: Standardmäßig ein kostengünstiges Modell, dazu Tageslimits für Anfragen und Tokens. Ihre eigenen Phrasen (kurze Nachrichten, die Sie wiederholen, und angeheftete) sind einen Klick auf „{ui:ghost.another}“ entfernt, kosten nichts und verlassen Ihren Rechner nie.
 c5_h: Datenschutz zuerst
 c5_p: Vor dem Senden werden mutmaßliche Schlüssel, Tokens, E-Mail-Adressen und Telefonnummern maskiert. Der Browser lädt Ihren Entwurf nie hoch. Die lokale Statistik speichert Zahlen, keinen Text.
 c6_h: Transparenter Verbrauch
@@ -58,6 +58,9 @@ m_fit1: Den Alltag
 m_fit2: Strikte Kostenkontrolle
 m_fit3: Treffendere Vorschläge
 f2_note: Ein Modus ändert nur den Auslöser, die Modellstrategie, die Kontextgröße und die Limits. Hauptschalter, Tastenkürzel, Sprache und Datenschutzoptionen bleiben unberührt, und das von Ihnen eingetragene Modell bleibt erhalten.
+fp_h: Ihre eigenen Phrasen, immer griffbereit
+fp_p: Tragen Sie die Sätze, die Sie immer wieder senden („Weiter“, „Tests ausführen“), unter **Einstellungen → {ui:settings.nav} → {ui:settings.sourcesTitle} → {ui:settings.pinned}** ein, ordnen Sie sie nach Wunsch und klicken Sie einmal auf „{ui:settings.save}“. Sie folgen auf den Vorschlag des Modells: „{ui:ghost.another}“ (oder <kbd>Alt</kbd>+<kbd>\\</kbd>) geht den Vorschlag des Modells, die kurzen Nachrichten, die Sie in dieser Unterhaltung wiederholt haben, und danach Ihre angehefteten Phrasen durch und fragt das Modell erst nach dem letzten Eintrag erneut. Eine kleine Markierung auf der Schaltfläche zeigt, dass eine Phrase von Ihnen stammt. Sie kosten nichts, verlassen Ihren Rechner nie, und wenn eine manuelle Vorhersage vom Modell nichts erhält, werden sie anstelle von „{ui:ghost.none}“ angeboten.
+fp_alt: Eine angeheftete Phrase als grauer Vorschlag; die Schaltfläche „{ui:ghost.another}“ zeigt eine Pinnnadel und die Position in der Liste
 fl_h: Neun Oberflächensprachen
 fl_p: Die Einstellungsseite, die Schaltflächen im Eingabefeld und ihre Tooltips gibt es in {langs}. Standardmäßig folgt das Plugin der in DeepSeek Harness eingestellten Sprache; unter **Einstellungen → {ui:settings.nav} → {ui:settings.language}** können Sie auch eine eigene wählen, die sofort gilt. Die Vorschläge selbst richten sich immer nach der Sprache Ihrer Unterhaltung.
 fl_alt: Der obere Teil der Einstellungsseite auf Englisch, Japanisch, Spanisch und Russisch
@@ -90,7 +93,7 @@ send_p: Jede Vorhersage ist genau eine Anfrage an das Modell, ohne automatische 
 sb1: Keine Argumente oder Ausgaben von Tool-Aufrufen, kein Reasoning, kein Systemprompt.
 sb2: Vor dem Senden werden mutmaßliche private Schlüssel, API-Schlüssel, Tokens, Passwörter, E-Mail-Adressen, Mobil- und Ausweisnummern sowie der Benutzername in Pfaden des Benutzerordners durch Platzhalter ersetzt (regelbasiert; es kann nicht zusichern, alles zu erkennen).
 sb3: Die Browserseite sendet nur Sitzungs- und Turn-Kennungen, niemals den Entwurf, Anhänge oder Gesprächstext; den Inhalt für das Modell liest der Hintergrundteil aus den Sitzungsaufzeichnungen von DSH.
-sb4: „{ui:settings.habits}“ vergleicht nur die kurzen Nachrichten, die Sie auf diesem Rechner gesendet haben; ein Modell wird dabei nicht aufgerufen.
+sb4: Ihre eigenen Phrasen (kurze Nachrichten, die Sie in einer Unterhaltung wiederholen, und die „{ui:settings.pinned}“) werden nur auf diesem Rechner verwendet: Dafür wird kein Modell aufgerufen, und sie werden nie an das Modell gesendet.
 send_more: Die vollständige Beschreibung und wie sich die lokalen Daten löschen lassen, steht unter [Datenschutz und Datengrenzen](docs/PRIVACY.md).
 faq_h: Häufige Fragen
 q1: Sendet es eine Nachricht für mich?

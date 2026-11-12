@@ -14,7 +14,7 @@
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 
-import { normalizeConfig } from '../shared/config.js'
+import { CONFIG_SET_MIN_BODY_BYTES, normalizeConfig } from '../shared/config.js'
 import { PLUGIN_VERSION } from '../shared/version.js'
 import { createHostAdapter } from './dsh-adapter.js'
 import { createSessionContextReader, textOfContent } from './context-builder.js'
@@ -77,7 +77,12 @@ export function apply(ctx, rawConfig) {
     homeDir: resolveHomeDir(),
     getTimeZone: () => liveConfig.budgetTimeZone,
     logger: (line) => console.warn(line),
+    // 保存设置会让宿主在同一进程里重新 apply 本插件：新旧实例共用待匹配的建议，
+    // 屏幕上那条建议的“已显示”、去向和用户下一条消息的匹配分数不会丢失。
+    shareWithinProcess: true,
   })
+  // 用户发出下一条消息（会话日志里 source.kind 为 user 的 user/message）时，只把匹配
+  // 分数写盘。事件的 data 就是消息本身（与 dsh-session-title 读取的形状相同）。
   ctx.on('session/event', (session, event) => {
     try {
       if (event === null || typeof event !== 'object' || event.type !== 'user/message') return
@@ -143,6 +148,8 @@ export function apply(ctx, rawConfig) {
 
   const route = adapter.registerRoute((body, request) => service.handle(body, request.signal), {
     bodyLimitBytes: normalized.config.requestBodyLimitBytes,
+    // A whole pinned-phrase list must always be savable, even at the smallest body limit.
+    configSetMinBytes: CONFIG_SET_MIN_BODY_BYTES,
   })
   if (route.ok) {
     ctx.effect(() => route.dispose, 'next-message-predictor: rpc route')

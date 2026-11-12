@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.4.1-4d6bfe" alt="version 0.4.1">
+  <img src="https://img.shields.io/badge/version-0.5.0-4d6bfe" alt="version 0.5.0">
   <img src="https://img.shields.io/badge/DeepSeek%20Harness-0.2.2--rc.1-1f2937" alt="DeepSeek Harness 0.2.2-rc.1">
   <img src="https://img.shields.io/badge/languages-9-8250df" alt="languages 9">
   <img src="https://img.shields.io/badge/third--party%20deps-0-2ea44f" alt="third-party deps 0">
@@ -68,7 +68,7 @@ It only puts text into the input box. There is no “send message” code anywhe
 
 ### 💰 Cost under control
 
-A low-cost model by default, with daily limits on requests and tokens. Short phrases you keep repeating are offered directly, without calling the model.
+A low-cost model by default, with daily limits on requests and tokens. Your own phrases (the short messages you repeat and the ones you pin) are one “Another” away, cost nothing and never leave your computer.
 
 </td>
 <td valign="top">
@@ -120,6 +120,14 @@ Do not want to study every option? Pick a mode. You can undo it or fine-tune it 
 | **Quality** | Automatically after every reply | The session model | 20 messages | 200 requests | Closer-fitting suggestions |
 
 A mode only changes the trigger, the model strategy, the context size and the limits. It never touches the master switch, the shortcut, the language or the privacy options, and it keeps the model you entered.
+
+### Your own phrases, one step away
+
+Add the lines you send again and again (“continue”, “run the tests”) under **Settings → Prediction → Suggestion sources → Pinned phrases**, put them in the order you like, and press “Save” once. They follow the model’s suggestion: “Another” (or <kbd>Alt</kbd>+<kbd>\\</kbd>) steps through the model’s suggestion, the short messages you have repeated in this conversation and then your pinned phrases, and asks the model again only after the last one. A small mark on the button shows that a phrase is your own. They cost nothing, never leave your computer, and when a manual prediction gets nothing from the model they are offered instead of “No suggestion this time”.
+
+<p align="center">
+  <img src="docs/images/phrases.png" width="720" alt="A pinned phrase as the grey suggestion; the “Another” button carries a pin mark and the position in the list">
+</p>
 
 ### Nine interface languages
 
@@ -209,7 +217,7 @@ Each prediction is a single request to the model, with no automatic retry. It co
 - No tool-call arguments or output, no reasoning, no system prompt.
 - Before sending, likely private keys, API keys, tokens, passwords, e-mail addresses, mobile and identity numbers, and the user name in home-folder paths are replaced with placeholders (rule-based; it cannot promise to catch everything).
 - The browser page sends only session and turn identifiers, never the draft, attachments or any conversation text; the content for the model is read by the background half from DSH’s own session records.
-- “Prefer frequently used short messages” only compares the short messages you sent on this computer; no model is called.
+- Your own phrases (the short messages you repeat in a session and your pinned phrases, “Pinned phrases”) stay on this computer: no model is called for them and they are never sent to the model.
 
 The full description, and how to delete the local data, is in [Privacy and data boundaries](docs/PRIVACY.md).
 

@@ -9,6 +9,7 @@
 // 硬规则：本模块不调用任何会话提交/发送 API；不向会话 append；不传 sessionId 给模型。
 
 import {
+  LOCAL_PHRASES_MAX,
   OFFER_TTL_MS,
   isPlainObject,
   normalizeConfig,
@@ -29,9 +30,12 @@ import {
   RESULT_OFFER,
   RESULT_STALE,
   RESULT_UNAVAILABLE,
+  SOURCE_HABIT,
+  SOURCE_PINNED,
+  acceptedChoice,
   validatePredictRequest,
 } from '../shared/protocol.js'
-import { parseCandidatesJson } from '../shared/output-validation.js'
+import { normalizePhraseKey, parseCandidatesJson, validateSuggestionText } from '../shared/output-validation.js'
 import { buildManualSuffix, buildSystemPrompt, estimateTokens, PROMPT_VERSION } from '../shared/prompt.js'
 import { PLUGIN_VERSION } from '../shared/version.js'
 import { NO_REASONING_EFFORTS } from './budget-ledger.js'
@@ -58,8 +62,18 @@ function candidateLimit(config) {
   const value = Number(config?.candidateCount)
   return Number.isInteger(value) && value >= 2 && value <= 5 ? value : MAX_CANDIDATES
 }
-/** “常说的话”不经过模型时，结果记录里用这个名字标来源。 */
-const HABIT_PROVIDER = 'habit'
+/**
+ * 手动预测时模型没有给出建议，哪些结果可以改为给出本机短语。会话已经往前走、
+ * 请求被取消、后台忙（页面会自己重试）或功能关闭时不给。
+ */
+const NO_FALLBACK_REASONS = new Set(['stale-context', 'stale-view', 'cancelled', 'busy', 'disabled', 'config-changed', 'turn-accepted', 'turn-dismissed'])
+function fallbackEligible(result) {
+  if (result === null || typeof result !== 'object') return false
+  if (NO_FALLBACK_REASONS.has(result.reason)) return false
+  if (result.kind === RESULT_ABSTAIN || result.kind === RESULT_UNAVAILABLE) return true
+  // 本回合的手动次数已经用完：模型不会再被调用，但用户的短语照样可以给。
+  return result.kind === RESULT_STALE && result.reason === 'already-requested'
+}
 /** O01：客户端可回报的建议终态。 */
 const OUTCOME_EVENTS = new Set(['shown', 'overwritten', 'expired', 'closed'])
 export const FIXED_TEST_PROVIDER = 'fixed-test'
@@ -278,10 +292,74 @@ export function createPredictorService(options) {
   }
 
   /**
+   * 本机短语：会话里重复发过的短消息（habitSuggestions）和固定短语（pinnedPhrases），
+   * 按这个顺序，跟在模型候选之后。和模型候选、彼此之间按 normalizePhraseKey 去重，
+   * 最多 LOCAL_PHRASES_MAX 条。每一条都过 validateSuggestionText。只读本机会话，
+   * 从不发给模型，也不进入 offeredTexts（那份列表会告诉模型“已经给过什么”）。
+   * @param {object} request
+   * @param {string[]} modelTexts - 同一条结果里模型给出的候选。
+   * @returns {Promise<{text: string, source: string}[]>}
+   */
+  async function localPhrases(request, modelTexts) {
+    const config = effective.config
+    const taken = new Set(modelTexts.map((text) => normalizePhraseKey(text)))
+    const out = []
+    const add = (text, source) => {
+      if (out.length >= LOCAL_PHRASES_MAX || typeof text !== 'string') return
+      const validated = validateSuggestionText(text, { maxGraphemes: config.maxSuggestionGraphemes })
+      if (!validated.ok) return
+      const key = normalizePhraseKey(validated.text)
+      if (key === '' || taken.has(key)) return
+      taken.add(key)
+      out.push({ text: validated.text, source })
+    }
+    if (config.habitSuggestions === true && typeof contextReader.habitPhrases === 'function') {
+      let habits = []
+      try {
+        habits = await contextReader.habitPhrases(request.anchor, {
+          maxGraphemes: config.maxSuggestionGraphemes,
+          minCount: config.habitMinCount,
+          maxPhrases: LOCAL_PHRASES_MAX,
+        })
+      } catch {
+        habits = []
+      }
+      for (const text of Array.isArray(habits) ? habits : []) add(text, SOURCE_HABIT)
+    }
+    for (const text of Array.isArray(config.pinnedPhrases) ? config.pinnedPhrases : []) add(text, SOURCE_PINNED)
+    return out
+  }
+
+  /**
+   * 手动预测、模型没有给出建议时的回退：只含本机短语的 offer（`fallback: true`，
+   * `text` 是第一条短语）。没有短语时返回 null，照原样回答“没有建议”。
+   * 这里不调用模型、不碰账本，所以不占用次数也不计入每日额度。
+   */
+  async function localFallback(request, result, staleReason) {
+    if (request.trigger !== 'manual' || !fallbackEligible(result)) return null
+    const local = await localPhrases(request, [])
+    if (local.length === 0 || staleReason() !== '') return null
+    diagnostics.count('localFallbacks')
+    diagnostics.record('local-fallback', { phrases: local.length, modelResult: result.kind, reason: result.reason })
+    return {
+      kind: RESULT_OFFER,
+      suggestionId: randomId(),
+      text: local[0].text,
+      expiresAt: now() + OFFER_TTL_MS,
+      local,
+      fallback: true,
+      // Why the model gave nothing (for the results log; the page may ignore it).
+      modelReason: typeof result.reason === 'string' ? result.reason : '',
+    }
+  }
+
+  /**
    * 生产任务主体：权威上下文 → 预算/派发账本 → 辅助模型 → 解析。
    * 返回 {kind:'offer',text,meta} | {kind:'abstain',reason} | {kind:'unavailable',reason}。
+   * `spend.called` 在真正向模型（或离线测试建议）发出调用时置为 true；调用没有发出
+   * （流开始前就失败）时再置回 false。调用方据此决定这一次是否占用本回合的预测机会。
    */
-  async function runProduction(request, signal, verification, staleReason, setMeta) {
+  async function runProduction(request, signal, verification, staleReason, setMeta, spend) {
     const config = effective.config
     const dispatchKey = dispatchKeyFor(request)
     const invalidated = () => signal.aborted ? 'cancelled' : staleReason()
@@ -305,30 +383,11 @@ export function createPredictorService(options) {
         return { kind: 'abstain', reason: 'already-dispatched' }
       }
     }
-    // 常说的话优先：这一回合还没给过任何建议时，先看用户在本次对话里有没有
-    // 说过两次以上的短句。有就直接给，不调用模型、不占预算、内容不出本机。
-    // “换一条”（已经给过建议）不走这里，直接交给模型。
-    if (
-      config.habitSuggestions === true && request.attempt === 0 &&
-      (offeredTexts.get(turnKeyFor(request)) ?? []).length === 0 && typeof contextReader.habitPhrases === 'function'
-    ) {
-      const habitStarted = Date.now()
-      let habits = []
-      try {
-        habits = await contextReader.habitPhrases(request.anchor, { maxGraphemes: config.maxSuggestionGraphemes, minCount: config.habitMinCount })
-      } catch {
-        habits = []
-      }
-      reason = invalidated()
-      if (reason) return { kind: RESULT_STALE, reason }
-      if (Array.isArray(habits) && habits.length > 0) {
-        diagnostics.count('offers')
-        diagnostics.record('habit-offer', { candidates: habits.length })
-        setMeta({ route: { provider: HABIT_PROVIDER, model: 'local' }, latencyMs: Date.now() - habitStarted })
-        return { kind: 'offer', text: habits[0], alternatives: habits.slice(1, candidateLimit(config)), meta: { provider: HABIT_PROVIDER } }
-      }
-    }
+    // 第一条建议总是来自模型：常说的话和固定短语不再代替模型调用，而是在结果
+    // 出来之后作为本机短语接在模型候选后面（见 localPhrases / localFallback）。
     if (isFixedTestMode(config)) {
+      // 离线测试建议代替模型：按一次调用计，和真实模型路径一样占用本回合的次数。
+      spend.called = true
       diagnostics.count('providerCalls')
       const fixedStarted = Date.now()
       const fixed = await produceFixedSuggestion({ config, now: now(), signal })
@@ -366,7 +425,7 @@ export function createPredictorService(options) {
     const route = modelProvider.resolveRoute(config, context.modelSelection)
     if (route.ok !== true) {
       diagnostics.count('unavailable')
-      return { kind: 'unavailable', reason: route.reason, refundCredit: true }
+      return { kind: 'unavailable', reason: route.reason }
     }
     // 多条候选：一次调用要最多 3 条，输出预算相应放宽（三条各 40 字约 150 token）。
     // 只用于手动触发（第一次手动和“换一条”）。自动预测保持单条：真实模型对照里，
@@ -412,8 +471,8 @@ export function createPredictorService(options) {
         if (reserve.reason === 'daily-request-limit' || reserve.reason === 'daily-token-budget') {
           return { kind: 'unavailable', reason: reserve.reason, retryAfterMs: 60000 }
         }
-        // 账本没写成（磁盘满、文件被占用）：没有调用模型，这次机会不该算用掉。
-        return { kind: 'unavailable', reason: reserve.reason, refundCredit: true }
+        // 账本没写成（磁盘满、文件被占用）：没有调用模型，这次机会不算用掉（spend.called 仍为 false）。
+        return { kind: 'unavailable', reason: reserve.reason }
       }
       diagnostics.count('reservations')
       reservation = reserve
@@ -432,6 +491,7 @@ export function createPredictorService(options) {
         : AbortSignal.any([signal, timeoutSignal])
     diagnostics.count('providerCalls')
     lastRoute = route
+    spend.called = true
     let outcome
     try {
       outcome = await modelProvider.produce({
@@ -448,6 +508,7 @@ export function createPredictorService(options) {
     // 预留整笔退回、派发标记撤销，这次机会也还给本回合。其余情况按已知的用量结算，
     // 缺的部分估算（budget-ledger 的 chargeForCall），不当作零成本。
     const neverDispatched = outcome.dispatched === false
+    if (neverDispatched) spend.called = false
     if (reservation) {
       await ledger.settle(neverDispatched
         ? { ...reservation, dispatchKey, notDispatched: true }
@@ -470,9 +531,11 @@ export function createPredictorService(options) {
     if (reason) return { kind: RESULT_STALE, reason }
     const elapsedMs = Date.now() - started
     setMeta({
+      // A call that ended without naming its route (timeout, error) still went to
+      // the resolved one; the results log needs it to count the call's latency.
       route: outcome.route !== undefined && outcome.route !== null
         ? { provider: outcome.route.provider, model: outcome.route.model }
-        : undefined,
+        : neverDispatched ? undefined : { provider: route.provider, model: route.model },
       usage: outcome.usage ?? null,
       latencyMs: elapsedMs,
     })
@@ -538,7 +601,7 @@ export function createPredictorService(options) {
     }
     diagnostics.count('unavailable')
     diagnostics.record('model-unavailable', { reason: outcome.reason, elapsedMs })
-    return { kind: 'unavailable', reason: outcome.reason, ...(neverDispatched ? { refundCredit: true } : {}) }
+    return { kind: 'unavailable', reason: outcome.reason }
   }
 
   /** 把生产任务结果落成协议 result（offer 需要 suggestionId/expiresAt）。 */
@@ -565,12 +628,14 @@ export function createPredictorService(options) {
 
   /**
    * O01：每次请求写一行结果记录（不含正文）。失败只影响观测，不影响预测。
+   * @param {{cached?: boolean}} [extra] - cached：结果来自缓存，这次请求没有经过生产任务。
    */
-  function recordResult(result, request, dispatchKey, startedAt, meta) {
+  function recordResult(result, request, dispatchKey, startedAt, meta, extra) {
     if (results === null) return
     const isOffer = result.kind === RESULT_OFFER
+    const fallback = isOffer && result.fallback === true
     const suggestionId = isOffer && typeof result.suggestionId === 'string' ? result.suggestionId : ''
-    if (suggestionId !== '') suggestionDispatches.set(suggestionId, dispatchKey)
+    if (suggestionId !== '' && !fallback) suggestionDispatches.set(suggestionId, dispatchKey)
     try {
       void results.recordRequest({
         requestId: request.requestId,
@@ -579,13 +644,18 @@ export function createPredictorService(options) {
         turnKey: turnKeyFor(request),
         trigger: request.trigger,
         outcome: isOffer ? 'offer' : result.kind,
-        reason: typeof result.reason === 'string' ? result.reason : '',
-        text: isOffer ? result.text : undefined,
-        alternatives: isOffer && Array.isArray(result.alternatives) ? result.alternatives : undefined,
+        // A fallback offer keeps why the model gave nothing.
+        reason: fallback ? (typeof result.modelReason === 'string' ? result.modelReason : '') : typeof result.reason === 'string' ? result.reason : '',
+        // Model candidates and local phrases are kept apart: only the former are scored as the model's.
+        text: isOffer && !fallback ? result.text : undefined,
+        alternatives: isOffer && !fallback && Array.isArray(result.alternatives) ? result.alternatives : undefined,
+        local: isOffer && Array.isArray(result.local) ? result.local : undefined,
+        fallback,
+        cached: extra?.cached === true,
         route: meta?.route,
         latencyMs: meta?.latencyMs ?? Math.max(0, Date.now() - startedAt),
         usage: meta?.usage ?? undefined,
-        suggestionGraphemes: isOffer && typeof result.text === 'string' ? Array.from(result.text).length : undefined,
+        suggestionGraphemes: isOffer && !fallback && typeof result.text === 'string' ? Array.from(result.text).length : undefined,
       })
     } catch {
       /* 记录失败静默 */
@@ -619,8 +689,8 @@ export function createPredictorService(options) {
     const dispatchKey = dispatchKeyFor(request)
     /** 这条请求实际等到的那个生产任务的计量信息；没有经过生产任务时为空。 */
     let meta
-    const respond = (result) => {
-      recordResult(result, request, dispatchKey, requestStartedAt, meta)
+    const respond = (result, extra) => {
+      recordResult(result, request, dispatchKey, requestStartedAt, meta, extra)
       const response = predictResponse(request, result)
       if (result.reason !== 'cancelled') remember(request.requestId, response)
       return { status: 200, body: response }
@@ -673,7 +743,7 @@ export function createPredictorService(options) {
       if (acceptedIds.has(cached.suggestionId)) return respond({ kind: RESULT_STALE, reason: 'turn-accepted' })
       diagnostics.count('cacheHits')
       diagnostics.record('offer', { trigger: request.trigger, source: 'cache' })
-      return respond(cached)
+      return respond(cached, { cached: true })
     }
     let production = registry.findProduction(cacheKey)
     if (production === undefined) {
@@ -683,7 +753,11 @@ export function createPredictorService(options) {
         ledger.turnCredit(turnKey, request.trigger, effective.config.manualLimit)
       if (!persistedCredit || !registry.hasCredit(turnKey, request.trigger, effective.config.manualLimit)) {
         diagnostics.count('stale')
-        return respond({ kind: RESULT_STALE, reason: 'already-requested' })
+        const refused = { kind: RESULT_STALE, reason: 'already-requested' }
+        // The user asked, the model will not be called again on this reply: their own phrases still can be offered.
+        const fallback = await localFallback(request, refused, staleReason)
+        if (isReleased()) return respond({ kind: RESULT_UNAVAILABLE, reason: 'cancelled' })
+        return respond(fallback ?? refused)
       }
       if (registry.activeCount() >= 1) {
         diagnostics.count('unavailable')
@@ -697,19 +771,39 @@ export function createPredictorService(options) {
         completedEventSeq: request.anchor.completedEventSeq,
       })
       production = registry.startProduction(cacheKey, async (productionSignal) => {
-        const outcome = await runProduction(request, productionSignal, verification, staleReason, (value) => productionMeta.set(cacheKey, value))
-        // 没有调用模型就结束的任务不占用本回合的预测机会。
-        if (outcome.refundCredit === true) registry.refundCredit(turnKey, request.trigger)
+        const spend = { called: false }
+        let outcome
+        try {
+          outcome = await runProduction(request, productionSignal, verification, staleReason, (value) => productionMeta.set(cacheKey, value), spend)
+        } finally {
+          // 没有调用模型就结束的任务不占用本回合的预测机会：上下文读取失败、路由
+          // 不可用、账本没写成、每日额度已满、回合在调用前过期或被取消、调用在流开始
+          // 前失败，以及意外抛错，都把内存里的次数退回。账本里的回合次数只在预留成功
+          // 时增加，调用没有发出时由 settle(notDispatched) 减回，两层保持一致。
+          if (!spend.called) registry.refundCredit(turnKey, request.trigger)
+        }
         const reason = staleReason()
         if (reason) return { kind: RESULT_STALE, reason }
         if (productionSignal.aborted) return { kind: RESULT_UNAVAILABLE, reason: 'cancelled' }
-        const result = materialize(outcome)
+        let result = materialize(outcome)
         if (result.kind === RESULT_OFFER) {
-          cacheOffer(cacheKey, result)
+          // The user's own phrases go behind the model's candidates.
+          const local = await localPhrases(request, [result.text, ...(result.alternatives ?? [])])
+          const after = staleReason()
+          if (after) return { kind: RESULT_STALE, reason: after }
+          if (productionSignal.aborted) return { kind: RESULT_UNAVAILABLE, reason: 'cancelled' }
+          if (local.length > 0) result = { ...result, local }
+          // Only model candidates are remembered for "another one": the model is told
+          // what it already said, never the user's phrases.
           const earlier = offeredTexts.get(turnKey) ?? []
           const added = [result.text, ...(result.alternatives ?? [])].filter((text) => !earlier.includes(text))
           if (added.length > 0) offeredTexts.set(turnKey, [...earlier, ...added].slice(-9))
+        } else {
+          const fallback = await localFallback(request, result, staleReason)
+          if (productionSignal.aborted) return { kind: RESULT_UNAVAILABLE, reason: 'cancelled' }
+          if (fallback !== null) result = fallback
         }
+        if (result.kind === RESULT_OFFER) cacheOffer(cacheKey, result)
         return result
       })
     }
@@ -788,7 +882,10 @@ export function createPredictorService(options) {
     const suggestionId = typeof body.suggestionId === 'string' ? body.suggestionId : ''
     if (suggestionId === '') return operationError(OPERATION_ACCEPTED, 'bad-request', 'suggestionId is required', 400)
     acceptedIds.add(suggestionId)
-    if (results !== null) void results.recordOutcome(suggestionId, 'accepted').catch(() => {})
+    // Which ring entry was taken (index, and the source the page saw). A page
+    // older than this Host sends neither; the results log then assumes the first entry.
+    const choice = acceptedChoice(body)
+    if (results !== null) void Promise.resolve(results.recordOutcome(suggestionId, 'accepted', '', choice)).catch(() => {})
     diagnostics.count('accepts')
     return operationResult(OPERATION_ACCEPTED, { accepted: true })
   }

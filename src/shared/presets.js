@@ -7,8 +7,9 @@
 // Rules a mode follows:
 // - It never turns prediction on or off (`enabled` stays the user's switch).
 // - It never touches privacy options (`redactSecrets`, `includeTurnFacts`),
-//   the shortcut, the sidebar entry, the interface language or the
-//   screen-reader option.
+//   the shortcut, the sidebar entry, the interface language, the
+//   screen-reader option or the user's own phrases (`habitSuggestions`,
+//   `pinnedPhrases`).
 // - It sets the model *strategy* (`modelMode`), not the model: a provider and
 //   model the user already entered are kept. Only an empty or offline-test
 //   route is replaced by the recommended one.

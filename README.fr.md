@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.4.1-4d6bfe" alt="version 0.4.1">
+  <img src="https://img.shields.io/badge/version-0.5.0-4d6bfe" alt="version 0.5.0">
   <img src="https://img.shields.io/badge/DeepSeek%20Harness-0.2.2--rc.1-1f2937" alt="DeepSeek Harness 0.2.2-rc.1">
   <img src="https://img.shields.io/badge/langues-9-8250df" alt="langues 9">
   <img src="https://img.shields.io/badge/d%C3%A9pendances%20tierces-0-2ea44f" alt="dépendances tierces 0">
@@ -68,7 +68,7 @@ Il se contente de placer du texte dans la zone de saisie. Le plugin ne contient 
 
 ### 💰 Un coût maîtrisé
 
-Un modèle économique par défaut, avec des limites quotidiennes de requêtes et de jetons. Les phrases courtes que vous répétez sont proposées directement, sans appeler le modèle.
+Un modèle économique par défaut, avec des limites quotidiennes de requêtes et de jetons. Vos propres phrases (les messages courts que vous répétez et celles que vous épinglez) sont à un clic sur « Une autre », ne coûtent rien et ne quittent jamais votre ordinateur.
 
 </td>
 <td valign="top">
@@ -120,6 +120,14 @@ Pas envie d’étudier chaque option ? Choisissez un mode. Vous pourrez l’annu
 | **Qualité** | Automatiquement après chaque réponse | Le modèle de la session | 20 messages | 200 requêtes | Des suggestions plus justes |
 
 Un mode ne modifie que le déclenchement, la stratégie de modèle, la taille du contexte et les limites. Il ne touche ni à l’interrupteur principal, ni au raccourci, ni à la langue, ni aux options de confidentialité, et il conserve le modèle que vous avez saisi.
+
+### Vos propres phrases, à portée de main
+
+Ajoutez les phrases que vous envoyez sans cesse (« continue », « lance les tests ») dans **Paramètres → Prédiction → Origine des suggestions → Phrases épinglées**, classez-les dans l’ordre voulu et cliquez une seule fois sur « Enregistrer ». Elles suivent la suggestion du modèle : « Une autre » (ou <kbd>Alt</kbd>+<kbd>\\</kbd>) parcourt la suggestion du modèle, les messages courts que vous avez répétés dans cette conversation, puis vos phrases épinglées, et ne redemande au modèle qu’après la dernière. Une petite marque sur le bouton indique qu’une phrase est la vôtre. Elles ne coûtent rien, ne quittent jamais votre ordinateur et, quand une prédiction manuelle ne donne rien du côté du modèle, elles sont proposées à la place de « Pas de suggestion cette fois ».
+
+<p align="center">
+  <img src="docs/images/phrases.png" width="720" alt="Une phrase épinglée comme suggestion grise ; le bouton « Une autre » porte une épingle et la position dans la liste">
+</p>
 
 ### Neuf langues d’interface
 
@@ -209,7 +217,7 @@ Chaque prédiction est une seule requête au modèle, sans nouvelle tentative au
 - Ni arguments ni résultats d’outils, ni raisonnement, ni prompt système.
 - Avant l’envoi, les clés privées, clés d’API, jetons, mots de passe, adresses e-mail, numéros de mobile et d’identité probables, ainsi que le nom d’utilisateur dans les chemins du dossier personnel, sont remplacés par des substituts (fondé sur des règles ; il ne peut pas garantir de tout repérer).
 - La page du navigateur n’envoie que des identifiants de session et de tour, jamais le brouillon, les pièces jointes ni le texte de la conversation ; le contenu destiné au modèle est lu par la partie en arrière-plan dans les enregistrements de session de DSH.
-- « Privilégier les messages courts fréquents » compare seulement les messages courts que vous avez envoyés sur cet ordinateur ; aucun modèle n’est appelé.
+- Vos propres phrases (les messages courts que vous répétez dans une conversation et les « Phrases épinglées ») ne sont utilisées que sur cet ordinateur : aucun modèle n’est appelé pour elles et elles ne lui sont jamais envoyées.
 
 La description complète, et la manière de supprimer les données locales, se trouvent dans [Confidentialité et périmètre des données](docs/PRIVACY.md).
 

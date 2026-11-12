@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/versi%C3%B3n-0.4.1-4d6bfe" alt="versión 0.4.1">
+  <img src="https://img.shields.io/badge/versi%C3%B3n-0.5.0-4d6bfe" alt="versión 0.5.0">
   <img src="https://img.shields.io/badge/DeepSeek%20Harness-0.2.2--rc.1-1f2937" alt="DeepSeek Harness 0.2.2-rc.1">
   <img src="https://img.shields.io/badge/idiomas-9-8250df" alt="idiomas 9">
   <img src="https://img.shields.io/badge/dependencias%20externas-0-2ea44f" alt="dependencias externas 0">
@@ -68,7 +68,7 @@ Solo pone texto en el cuadro de entrada. En el plugin no hay ningún código de 
 
 ### 💰 Coste bajo control
 
-Por defecto usa un modelo de bajo coste, con límites diarios de solicitudes y de tokens. Las frases cortas que repites se ofrecen directamente, sin llamar al modelo.
+Por defecto usa un modelo de bajo coste, con límites diarios de solicitudes y de tokens. Tus propias frases (los mensajes cortos que repites y las que fijas) están a un «Otra» de distancia, no cuestan nada y nunca salen de tu equipo.
 
 </td>
 <td valign="top">
@@ -120,6 +120,14 @@ Cuando el asistente termina, si el cuadro de entrada está vacío, aparece una s
 | **Calidad** | Automáticamente tras cada respuesta | El modelo de la sesión | 20 mensajes | 200 solicitudes | Sugerencias más ajustadas |
 
 Un modo solo cambia el disparador, la estrategia de modelo, el tamaño del contexto y los límites. No toca el interruptor principal, el atajo, el idioma ni las opciones de privacidad, y conserva el modelo que hayas introducido.
+
+### Tus propias frases, a un paso
+
+Añade las frases que envías una y otra vez («continúa», «ejecuta las pruebas») en **Ajustes → Predicción → Origen de las sugerencias → Frases fijadas**, ordénalas como quieras y pulsa «Guardar» una sola vez. Van detrás de la sugerencia del modelo: «Otra» (o <kbd>Alt</kbd>+<kbd>\\</kbd>) recorre la sugerencia del modelo, los mensajes cortos que has repetido en esta conversación y después tus frases fijadas, y solo vuelve a preguntar al modelo cuando se acaban. Una pequeña marca en el botón indica que la frase es tuya. No cuestan nada, no salen de tu equipo y, cuando una predicción manual no obtiene nada del modelo, se ofrecen en lugar de «Esta vez no hay sugerencia».
+
+<p align="center">
+  <img src="docs/images/phrases.png" width="720" alt="Una frase fijada como sugerencia gris; el botón «Otra» lleva una chincheta y la posición en la lista">
+</p>
 
 ### Nueve idiomas de interfaz
 
@@ -209,7 +217,7 @@ Cada predicción es una única solicitud al modelo, sin reintentos automáticos.
 - No incluye argumentos ni resultados de herramientas, razonamiento ni el prompt del sistema.
 - Antes de enviar, las posibles claves privadas, claves de API, tokens, contraseñas, direcciones de correo, números de móvil y de identidad, y el nombre de usuario en las rutas de la carpeta personal se sustituyen por marcadores (se basa en reglas; no puede garantizar que lo detecte todo).
 - La página del navegador solo envía identificadores de sesión y de turno, nunca el borrador, los adjuntos ni texto de la conversación; el contenido para el modelo lo lee la parte en segundo plano de los registros de sesión del propio DSH.
-- «Dar prioridad a los mensajes cortos frecuentes» solo compara los mensajes cortos que has enviado en este equipo; no se llama a ningún modelo.
+- Tus propias frases (los mensajes cortos que repites en una conversación y las «Frases fijadas») solo se usan en este equipo: no se llama a ningún modelo por ellas y nunca se envían al modelo.
 
 La descripción completa, y cómo borrar los datos locales, está en [Privacidad y límites de los datos](docs/PRIVACY.md).
 
