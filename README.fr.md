@@ -17,11 +17,11 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.4.0-4d6bfe" alt="version 0.4.0">
+  <img src="https://img.shields.io/badge/version-0.4.1-4d6bfe" alt="version 0.4.1">
   <img src="https://img.shields.io/badge/DeepSeek%20Harness-0.2.2--rc.1-1f2937" alt="DeepSeek Harness 0.2.2-rc.1">
   <img src="https://img.shields.io/badge/langues-9-8250df" alt="langues 9">
   <img src="https://img.shields.io/badge/d%C3%A9pendances%20tierces-0-2ea44f" alt="dépendances tierces 0">
-  <img src="https://img.shields.io/badge/tests-242%20r%C3%A9ussis-2ea44f" alt="tests 242 réussis">
+  <a href="https://github.com/KungerChen/dsh-next-message-predictor/actions/workflows/ci.yml"><img src="https://github.com/KungerChen/dsh-next-message-predictor/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <img src="https://img.shields.io/badge/licence-MIT-blue" alt="licence MIT">
 </p>
 
@@ -262,7 +262,7 @@ La documentation détaillée est rédigée en chinois.
 
 ```powershell
 npm run build   # génère lib/client.js à partir de src/shared + src/client
-npm test        # 242 tests unitaires et d’intégration
+npm test        # exécute les tests unitaires et d’intégration
 npm run check   # construction + tests + vérification de la syntaxe
 ```
 

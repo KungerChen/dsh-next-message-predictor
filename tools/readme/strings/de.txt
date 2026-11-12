@@ -1,0 +1,135 @@
+title: Vorhersage der nächsten Nachricht
+product: Ein Plugin für das Eingabefeld von DeepSeek Harness
+tagline1: Wenn der Assistent fertig ist, wartet Ihre wahrscheinlich nächste Nachricht schon im Eingabefeld.
+tagline2: <kbd>Tab</kbd> fügt sie ein, <kbd>Esc</kbd> ignoriert sie, und <b>gesendet wird nie etwas für Sie</b>.
+b_version: Version
+b_deps: Fremdabhängigkeiten
+b_langs: Sprachen
+b_license: Lizenz
+demo_alt: Demo: Nach der Antwort des Assistenten erscheint ein grauer Vorschlag im Eingabefeld; ein anderer wird angefordert; Tab fügt ihn ein
+demo_caption: Ein Vorschlag erscheint → bei Bedarf einen anderen anfordern → <kbd>Tab</kbd> fügt ihn ein, und vor dem Senden können Sie ihn noch bearbeiten
+why_h: Wozu das Ganze
+why_p: Bei der Arbeit mit einem Assistenten sind viele Antworten kurz und leicht zu erraten: „weiter“, „führ die Tests aus“, „zeig mir die Änderungen“. Dieses Plugin schreibt diese Anschlussnachricht im Voraus und legt sie ins Eingabefeld.
+c1_h: Weniger tippen
+c1_p: Übliche Anschlussnachrichten mit einem Tastendruck. Einmal eingefügt, verhält sich der Text wie selbst getippter: bearbeiten und rückgängig machen inklusive.
+c2_h: Keine Störung
+c2_p: Sobald Sie zu tippen beginnen, macht der Vorschlag Platz. Während einer IME-Eingabe und bei geöffnetem Menü erscheint er nicht. Ist sich das Modell nicht sicher, schlägt es nichts vor.
+c3_h: Keine Eigenmächtigkeit
+c3_p: Es wird nur Text ins Eingabefeld gesetzt. Im Plugin gibt es keinerlei Code zum Senden einer Nachricht; ob gesendet wird, entscheiden immer Sie.
+c4_h: Kosten im Griff
+c4_p: Standardmäßig ein kostengünstiges Modell, dazu Tageslimits für Anfragen und Tokens. Kurze Sätze, die Sie immer wieder verwenden, werden direkt vorgeschlagen, ohne das Modell aufzurufen.
+c5_h: Datenschutz zuerst
+c5_p: Vor dem Senden werden mutmaßliche Schlüssel, Tokens, E-Mail-Adressen und Telefonnummern maskiert. Der Browser lädt Ihren Entwurf nie hoch. Die lokale Statistik speichert Zahlen, keinen Text.
+c6_h: Transparenter Verbrauch
+c6_p: Anfragen, Übernahmequote, Antwortzeit und Token-Verbrauch der letzten 7 Tage stehen auf der Einstellungsseite, sodass Sie sehen, ob es sich lohnt.
+feat_h: Funktionen
+f1_h: Der Vorschlag steht direkt im Eingabefeld
+f1_p: Ist das Eingabefeld leer, wenn der Assistent fertig ist, erscheint ein grauer Vorschlag genau dort, wo Sie gleich tippen würden. Kein Pop-up, kein zusätzlicher Platzbedarf.
+f1_alt: Ein grauer Vorschlag im Eingabefeld, rechts daneben „{ui:ghost.adopt}“ und „{ui:ghost.another}“
+k_th1: Taste
+k_th2: Wirkung
+k1a: <kbd>Tab</kbd> oder <kbd>→</kbd>
+k1b: Fügt den Vorschlag ins Eingabefeld ein, wo Sie ihn weiterbearbeiten können; <kbd>Strg</kbd>+<kbd>Z</kbd> macht nur dieses Einfügen rückgängig
+k2a: <kbd>Esc</kbd>
+k2b: Blendet den Vorschlag aus
+k3a: <kbd>Alt</kbd>+<kbd>\\</kbd> (änderbar)
+k3b: Sagt sofort vorher; wird bereits ein Vorschlag angezeigt, wechselt es zu einem anderen. Ein Aufruf liefert mehrere Alternativen, das Wechseln geht daher ohne Wartezeit
+k4a: Einfach tippen
+k4b: Der Vorschlag verschwindet sofort; er kommt zurück, wenn Sie das Eingabefeld leeren
+f2_h: Drei Modi, ein Klick
+f2_p: Keine Lust, jede Option zu studieren? Wählen Sie einen Modus. Rückgängig machen oder nachjustieren können Sie jederzeit.
+f2_alt: Die Moduskarte: {ui:preset.balanced.name}, {ui:preset.saver.name}, {ui:preset.quality.name}
+m_th1: Modus
+m_th2: Vorhersage
+m_th3: Modell
+m_th4: Kontext
+m_th5: Tageslimit
+m_th6: Geeignet für
+m_auto: Automatisch nach jeder Antwort
+m_manual: Nur per Klick auf „{ui:ghost.predict}“ oder per Tastenkürzel
+m_fixed: Ein bestimmtes, kostengünstiges Modell
+m_session: Das Sitzungsmodell
+m_ctx12: 12 Nachrichten
+m_ctx6: 6 Nachrichten
+m_ctx20: 20 Nachrichten
+m_cap200: 200 Anfragen
+m_cap60: 60 Anfragen
+m_fit1: Den Alltag
+m_fit2: Strikte Kostenkontrolle
+m_fit3: Treffendere Vorschläge
+f2_note: Ein Modus ändert nur den Auslöser, die Modellstrategie, die Kontextgröße und die Limits. Hauptschalter, Tastenkürzel, Sprache und Datenschutzoptionen bleiben unberührt, und das von Ihnen eingetragene Modell bleibt erhalten.
+fl_h: Neun Oberflächensprachen
+fl_p: Die Einstellungsseite, die Schaltflächen im Eingabefeld und ihre Tooltips gibt es in {langs}. Standardmäßig folgt das Plugin der in DeepSeek Harness eingestellten Sprache; unter **Einstellungen → {ui:settings.nav} → {ui:settings.language}** können Sie auch eine eigene wählen, die sofort gilt. Die Vorschläge selbst richten sich immer nach der Sprache Ihrer Unterhaltung.
+fl_alt: Der obere Teil der Einstellungsseite auf Englisch, Japanisch, Spanisch und Russisch
+f3_h: Mit einem Klick in der Seitenleiste
+f3_p: Ein Klick auf „{ui:settings.sidebarAdd}“, und in der linken DSH-Seitenleiste erscheint ein Eintrag; Status prüfen oder Modus wechseln geht danach ohne Umweg über die Einstellungen. Die Version neben dem Titel zeigt jederzeit, welcher Stand installiert ist.
+f3_alt1: Der Eintrag „{ui:settings.nav}“ in der linken Seitenleiste
+f3_alt2: Die Version neben dem Seitentitel und die Schaltfläche „{ui:settings.sidebarRemove}“
+f4_h: Der Verbrauch auf einen Blick
+f4_sum: <b>Die ganze Einstellungsseite anzeigen</b> (Grundlagen, Modi, Herkunft der Vorschläge, Modell, letzte 7 Tage)
+f4_alt: Die vollständige Einstellungsseite
+shots: Die meisten Screenshots zeigen die chinesische Oberfläche. Sie stammen aus einer Demo-Unterhaltung und werden von einem Skript in diesem Repository mit einem lokalen Mock-Modell erzeugt; deshalb heißt das Modell Mock, und die Zahlen sind klein. Im echten Einsatz kommen die Vorschläge von dem Modell, das Sie in DSH eingerichtet haben.
+inst_h: Installation
+inst_p: Erfordert DeepSeek Harness `0.2.2-rc.1` (`>=0.2.2-rc.1 <0.3.0`). Das Plugin hat keine Fremdabhängigkeiten und braucht keinen Build-Schritt. Ein Befehl genügt:
+inst_profile: Hinter `--profile` steht das Profil, das Sie täglich nutzen: `desktop` für die Desktop-App, `web` für die Web-Version. Danach **DSH vollständig beenden und neu starten**.
+inst_d_sum: Der Befehl <code>dsh</code> wird nicht gefunden, oder Sie möchten aus einem lokalen Ordner installieren
+inst_d_p: Die Kommandozeile `dsh` liegt im Installationsordner von DeepSeek Harness und lässt sich über ihren vollständigen Pfad aufrufen. Wenn Sie den Code selbst ändern möchten, klonen Sie das Repository und installieren Sie aus dem lokalen Ordner:
+ph_dsh: DSH-Installationsordner
+ph_plugin: Plugin-Ordner
+inst_d_tail: `<{ph_dsh}>` ist der Ort, an dem DeepSeek Harness installiert ist; `<{ph_plugin}>` ist der gerade geklonte Ordner.
+steps_p: Danach sind es drei Schritte:
+s1: Öffnen Sie **Einstellungen → {ui:settings.nav}** und schalten Sie „{ui:settings.enabled}“ ein. Standardmäßig ist es aus: Vorher wird kein Vorschlag angezeigt und kein Modell aufgerufen.
+s2: Wählen Sie unter „{ui:preset.title}“ einen aus. Voreingestellt ist „{ui:preset.balanced.name}“.
+s3: Für schnelleren Zugriff klicken Sie oben rechts auf „{ui:settings.sidebarAdd}“.
+upd_sum: Aktualisieren und deinstallieren
+upd_p: **Aktualisieren**: Bei Installation von GitHub erst deinstallieren und den Installationsbefehl erneut ausführen; bei Installation aus einem lokalen Ordner dort `git pull` ausführen. Anschließend DSH neu starten. Die Seite neu zu laden reicht nicht: Dann wäre die Seite neu, der Hintergrundteil aber noch alt, und die Einstellungsseite würde auf abweichende Versionen hinweisen.
+unin: **Deinstallieren**:
+conflict: Aktivieren Sie pro Profil nur ein Vorhersage-Plugin für das Eingabefeld. Wird ein weiteres erkannt, pausiert dieses Plugin von selbst und nennt auf der Einstellungsseite den Grund.
+send_h: Was gesendet wird
+send_p: Jede Vorhersage ist genau eine Anfrage an das Modell, ohne automatische Wiederholung. Sie enthält Ausschnitte der letzten **Benutzernachrichten und der abschließenden Textantworten des Assistenten** der aktuellen Sitzung: standardmäßig höchstens 12 Nachrichten und rund 2.000 Tokens.
+sb1: Keine Argumente oder Ausgaben von Tool-Aufrufen, kein Reasoning, kein Systemprompt.
+sb2: Vor dem Senden werden mutmaßliche private Schlüssel, API-Schlüssel, Tokens, Passwörter, E-Mail-Adressen, Mobil- und Ausweisnummern sowie der Benutzername in Pfaden des Benutzerordners durch Platzhalter ersetzt (regelbasiert; es kann nicht zusichern, alles zu erkennen).
+sb3: Die Browserseite sendet nur Sitzungs- und Turn-Kennungen, niemals den Entwurf, Anhänge oder Gesprächstext; den Inhalt für das Modell liest der Hintergrundteil aus den Sitzungsaufzeichnungen von DSH.
+sb4: „{ui:settings.habits}“ vergleicht nur die kurzen Nachrichten, die Sie auf diesem Rechner gesendet haben; ein Modell wird dabei nicht aufgerufen.
+send_more: Die vollständige Beschreibung und wie sich die lokalen Daten löschen lassen, steht unter [Datenschutz und Datengrenzen](docs/PRIVACY.md).
+faq_h: Häufige Fragen
+q1: Sendet es eine Nachricht für mich?
+a1: Nein. Das Übernehmen eines Vorschlags setzt nur Text ins Eingabefeld, über dessen eigene Einfügeschnittstelle; das Plugin enthält keinen Aufruf, der abschickt oder sendet.
+q2: Was kostet das?
+a2: Jede Vorhersage ist ein sehr kurzer Modellaufruf (standardmäßig höchstens 96 Ausgabe-Tokens). Die voreingestellten Tageslimits liegen bei 200 Anfragen und 500.000 Tokens; sind sie erreicht, gibt es an diesem Tag keine Aufrufe mehr. Wer weniger ausgeben möchte, wählt den Modus „{ui:preset.saver.name}“, der nur auf Anforderung vorhersagt. Den tatsächlichen Verbrauch zeigt „{ui:settings.resultTitle}“ auf der Einstellungsseite.
+q3: Warum gibt es manchmal keinen Vorschlag?
+a3: Das ist Absicht: Ist sich das Modell nicht sicher, schlägt es nichts vor, und Ausgaben, die gegen die Regeln verstoßen (zu lang, mehrzeilig, im Ton des Assistenten), werden verworfen. Die Statuszeile auf der Einstellungsseite nennt den Grund, warum es gerade keinen gibt. Wenn Sie einen möchten, drücken Sie <kbd>Alt</kbd>+<kbd>\\</kbd>.
+q4: Sind die Vorschläge treffend?
+a4: Stark ist es bei kurzen, klaren Anschlussnachrichten: bestätigen, eine Überprüfung verlangen, nach Details fragen. Was nur Sie wissen, kann es nicht erraten, und dann soll es schweigen.
+docs_h: Dokumentation
+docs_note: Die ausführliche Dokumentation ist auf Chinesisch verfasst.
+d_th1: Dokument
+d_th2: Inhalt
+d1: Benutzerhandbuch
+d1c: Tasten, jeder Punkt der Einstellungsseite, Modi, Seitenleisteneintrag, häufige Fragen
+d2: Konfigurationsreferenz
+d2c: Standardwerte und Bereiche aller Optionen, Werte der drei Modi
+d3: Datenschutz und Datengrenzen
+d3c: Was gesendet wird, lokale Dateien, Löschen der Daten
+d4: Architektur
+d4c: Host- und Browser-Hälfte, Ablauf einer Anfrage, Protokoll
+d5: Entwicklung und Verifikation
+d5c: Build, Tests, End-to-End-Verifikation, Screenshots neu erzeugen
+d6: Kompatibilität
+d6c: Der bestätigte Vertrag mit DSH 0.2.2-rc.1 und die Rückfalllösungen
+d7: Änderungsprotokoll
+d7c: Änderungen je Version
+d8: Dokumentationsindex
+d8c: Alle Dokumente, einschließlich früherer Verifikations- und Optimierungsnotizen
+dev_h: Mitentwickeln
+dev_c1: erzeugt lib/client.js aus src/shared + src/client
+dev_c2: führt die Unit- und Integrationstests aus
+dev_c3: Build + Tests + Syntaxprüfung
+dev_p: Kein `npm install`, kein Bundler; erforderlich ist Node.js 22 oder neuer. Um eine Übersetzung zu ergänzen oder zu korrigieren, bearbeiten Sie `src/client/locales/<Sprache>.js`; die Tests prüfen, dass alle Sprachen dieselben Schlüssel haben.
+lim_h: Bekannte Einschränkungen
+l1: Nur mit DSH `0.2.2-rc.1` verifiziert.
+l2: Das Speichern einer Einstellung veranlasst den Host, den Hintergrundteil des Plugins neu zu starten; eine laufende Vorhersage wird abgebrochen.
+l3: Mehrere Fenster teilen sich die Vorhersageergebnisse; das Ausblenden eines Vorschlags in einem Fenster wird nicht in Echtzeit auf die anderen übertragen.
+l4: Befehlspalette und Feedback-Dialog werden anhand von Fokus und modalen Merkmalen erkannt; eine Fehleinschätzung kostet höchstens einen Vorschlag, nie einen abgefangenen Tastendruck.
+lic_h: Lizenz
+lic_p: Veröffentlicht unter der [MIT-Lizenz](LICENSE). Die Wahl der Erweiterungspunkte und die Bedienung „grauer Vorschlag + Tab zum Übernehmen + Esc zum Ausblenden“ orientieren sich an `dsh-composer-prediction`, ebenfalls unter MIT-Lizenz; dessen Code wurde nicht kopiert. Siehe [NOTICE](NOTICE).

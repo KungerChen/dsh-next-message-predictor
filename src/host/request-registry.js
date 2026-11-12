@@ -3,6 +3,12 @@
 // One result key has exactly one production task with any number of waiters.
 // A network retry of the same requestId re-attaches instead of re-producing.
 // The last waiter leaving aborts the production task.
+//
+// The per-turn credits here live in memory and cover this plugin instance,
+// including productions still running. They are forgotten when the Host half
+// restarts (saving any setting restarts it), so the persistent ledger keeps
+// its own per-turn count of model calls (budget-ledger `turns`), written in
+// the same atomic write as the dispatch reservation. The service checks both.
 
 /**
  * @typedef {object} Production

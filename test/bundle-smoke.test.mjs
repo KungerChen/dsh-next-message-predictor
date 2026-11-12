@@ -91,6 +91,7 @@ async function boot(options) {
           return { ok: true, config: hostConfig, restarted: true }
         },
       },
+      ...(options?.ledger !== undefined ? { ledger: options.ledger } : {}),
     })
   const service = makeService()
 
@@ -376,6 +377,31 @@ test('settings page: a Host on another version is called out', async () => {
     runtimeState.hostVersion = ''
     assert.ok(textOf(app.render('settings.section')).includes('旧版本'))
     runtimeState.hostVersion = PLUGIN_VERSION
+  } finally {
+    app.dispose()
+  }
+})
+
+test('settings page: the daily allowance adds up measured, estimated and in-flight tokens and names the last two', async () => {
+  const budget = {
+    day: '2026-11-11', timeZone: 'UTC', requests: 4, dailyRequestLimit: 200, dailyTokenBudget: 500000,
+    inputTokens: 1000, outputTokens: 50, reasoningTokens: 0, estimatedTokens: 1096, reservedTokens: 300, unknownUsage: 1, orphanedCalls: 0,
+  }
+  const ledger = { ensureLoaded: async () => {}, hasDispatch: () => false, snapshot: () => ({ ...budget }) }
+  const app = await boot({ config: { language: 'en' }, ledger })
+  try {
+    const en = NMP_DICTIONARIES.en
+    let text = textOf(app.render('settings.section'))
+    // 1,000 + 50 measured, 1,096 estimated, 300 in flight.
+    assert.ok(text.includes('2,446 / 500,000 token'), text)
+    assert.ok(text.includes(en['settings.budgetReserved'].split('{n}').join('1,096')))
+    assert.ok(text.includes(en['settings.budgetInFlight'].split('{n}').join('300')))
+    // Nothing estimated, nothing running: the measured figure alone, no notes.
+    app.api().config().budget = { ...budget, estimatedTokens: 0, reservedTokens: 0 }
+    text = textOf(app.render('settings.section'))
+    assert.ok(text.includes('1,050 / 500,000 token'), text)
+    assert.equal(text.includes(en['settings.budgetReserved'].split('{n}')[0]), false)
+    assert.equal(text.includes(en['settings.budgetInFlight'].split('{n}')[0]), false)
   } finally {
     app.dispose()
   }

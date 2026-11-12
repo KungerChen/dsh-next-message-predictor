@@ -12,6 +12,8 @@
 //
 // 本模块只依赖注入的 getter，便于单测替换。
 
+import { estimateTokens } from '../shared/prompt.js'
+
 /** 低成本档位偏好（B09f）：优先 off/none/minimal，再退回模型 advertised 首项。 */
 const PREFERRED_EFFORTS = ['off', 'none', 'minimal', 'no-thinking', 'disabled', 'low']
 
@@ -189,7 +191,15 @@ export function createModelProvider(deps) {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
       onEvent({ kind: 'llm-threw', reason: message.slice(0, 200) })
-      return { kind: 'unavailable', reason: `stream-failed:${message.slice(0, 120)}` }
+      // 流中途断开：已经收到的用量（常见的是先报告的输入 token）和已收到的文字交给
+      // 预算层，只估算缺的部分。这份用量不完整，所以不放进 usage。
+      return {
+        kind: 'unavailable',
+        reason: `stream-failed:${message.slice(0, 120)}`,
+        finishKind: 'threw',
+        ...(usage !== undefined ? { partialUsage: usage } : {}),
+        observedOutputTokens: estimateTokens(text),
+      }
     }
     const elapsedMs = Date.now() - started
     onEvent({ kind: 'llm-finish', finish: finishKind, elapsedMs, usage: usage === undefined ? 'unknown' : 'reported' })
@@ -199,6 +209,8 @@ export function createModelProvider(deps) {
         kind: 'abstain',
         reason: `finish-${finishKind}${reasonCode === '' ? '' : `:${reasonCode}`}`,
         usage,
+        finishKind,
+        observedOutputTokens: estimateTokens(text),
         detail: failure !== undefined && failure !== null && typeof failure.message === 'string' ? failure.message.slice(0, 160) : undefined,
       }
     }

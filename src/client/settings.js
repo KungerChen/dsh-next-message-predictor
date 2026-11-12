@@ -1008,13 +1008,17 @@ export function createSettingsComponent(react, runtime, t) {
     }
     const budget = configState.budget
     if (budget !== null && budget !== undefined) {
-      // The daily limit counts tokens held back for calls whose real usage never
-      // arrived, so the figure shown includes them and says how many they are.
+      // The daily limit counts three things: usage the provider reported, an
+      // estimate for finished calls whose usage was not (fully) reported, and the
+      // reservation of a call still running. The figure is their sum, and the two
+      // that are not measured are named with their size.
       const reservedTokens = Math.max(0, Number(budget.reservedTokens) || 0)
-      const usedTokens = (Number(budget.inputTokens) || 0) + (Number(budget.outputTokens) || 0) + (Number(budget.reasoningTokens) || 0) + reservedTokens
+      const estimatedTokens = Math.max(0, Number(budget.estimatedTokens) || 0)
+      const usedTokens = (Number(budget.inputTokens) || 0) + (Number(budget.outputTokens) || 0) + (Number(budget.reasoningTokens) || 0) + estimatedTokens + reservedTokens
+      const notes = `${estimatedTokens > 0 ? t('settings.budgetReserved').split('{n}').join(nmpNumber(estimatedTokens)) : ''}${reservedTokens > 0 ? t('settings.budgetInFlight').split('{n}').join(nmpNumber(reservedTokens)) : ''}`
       resultRows.push([
         t('settings.budgetToday'),
-        `${nmpNumber(budget.requests)} / ${nmpNumber(budget.dailyRequestLimit)}${t('settings.unitTimes')}${t('settings.listSeparator')}${nmpNumber(usedTokens)} / ${nmpNumber(budget.dailyTokenBudget)} token${reservedTokens > 0 ? t('settings.budgetReserved').split('{n}').join(nmpNumber(reservedTokens)) : ''}`,
+        `${nmpNumber(budget.requests)} / ${nmpNumber(budget.dailyRequestLimit)}${t('settings.unitTimes')}${t('settings.listSeparator')}${nmpNumber(usedTokens)} / ${nmpNumber(budget.dailyTokenBudget)} token${notes}`,
       ])
     }
     rows.push(
@@ -1070,7 +1074,7 @@ export function createSettingsComponent(react, runtime, t) {
     }
     if (budget !== null && budget !== undefined) {
       diagLines.push(
-        `${t('settings.diagnosticBudget')}: ${budget.day} requests=${budget.requests}/${budget.dailyRequestLimit} tokens=${budget.inputTokens + budget.outputTokens + budget.reasoningTokens}/${budget.dailyTokenBudget} reserved=${budget.reservedTokens}`,
+        `${t('settings.diagnosticBudget')}: ${budget.day} requests=${budget.requests}/${budget.dailyRequestLimit} measured=${(Number(budget.inputTokens) || 0) + (Number(budget.outputTokens) || 0) + (Number(budget.reasoningTokens) || 0)} estimated=${Number(budget.estimatedTokens) || 0} reserved=${Number(budget.reservedTokens) || 0} limit=${budget.dailyTokenBudget} unknownCalls=${Number(budget.unknownUsage) || 0} orphaned=${Number(budget.orphanedCalls) || 0}`,
       )
     }
     const capabilities = configState.capabilities ?? {}

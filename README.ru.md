@@ -17,11 +17,11 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/%D0%B2%D0%B5%D1%80%D1%81%D0%B8%D1%8F-0.4.0-4d6bfe" alt="версия 0.4.0">
+  <img src="https://img.shields.io/badge/%D0%B2%D0%B5%D1%80%D1%81%D0%B8%D1%8F-0.4.1-4d6bfe" alt="версия 0.4.1">
   <img src="https://img.shields.io/badge/DeepSeek%20Harness-0.2.2--rc.1-1f2937" alt="DeepSeek Harness 0.2.2-rc.1">
   <img src="https://img.shields.io/badge/%D1%8F%D0%B7%D1%8B%D0%BA%D0%B8-9-8250df" alt="языки 9">
   <img src="https://img.shields.io/badge/%D1%81%D1%82%D0%BE%D1%80%D0%BE%D0%BD%D0%BD%D0%B8%D0%B5%20%D0%B7%D0%B0%D0%B2%D0%B8%D1%81%D0%B8%D0%BC%D0%BE%D1%81%D1%82%D0%B8-0-2ea44f" alt="сторонние зависимости 0">
-  <img src="https://img.shields.io/badge/%D1%82%D0%B5%D1%81%D1%82%D1%8B-242%20%D0%BF%D1%80%D0%BE%D0%B9%D0%B4%D0%B5%D0%BD%D0%BE-2ea44f" alt="тесты 242 пройдено">
+  <a href="https://github.com/KungerChen/dsh-next-message-predictor/actions/workflows/ci.yml"><img src="https://github.com/KungerChen/dsh-next-message-predictor/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <img src="https://img.shields.io/badge/%D0%BB%D0%B8%D1%86%D0%B5%D0%BD%D0%B7%D0%B8%D1%8F-MIT-blue" alt="лицензия MIT">
 </p>
 
@@ -262,7 +262,7 @@ dsh plugin --profile desktop remove dsh-next-message-predictor
 
 ```powershell
 npm run build   # создаёт lib/client.js из src/shared + src/client
-npm test        # модульные и интеграционные тесты, всего 242
+npm test        # запускает модульные и интеграционные тесты
 npm run check   # сборка + тесты + проверка синтаксиса
 ```
 

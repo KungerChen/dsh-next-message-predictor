@@ -3,6 +3,7 @@
 // for each language is there.
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { execFile } from 'node:child_process'
 import { readFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -207,4 +208,22 @@ test('readme: one per language, each linking to all the others', async () => {
       else assert.ok(head.includes(`[${NMP_LANGUAGE_NAMES[other]}](${target})`), `${file}: no link to ${target}`)
     }
   }
+})
+
+test('readme: every README carries the CI badge and none carries a hand-typed test count', async () => {
+  const badge = 'https://github.com/KungerChen/dsh-next-message-predictor/actions/workflows/ci.yml/badge.svg'
+  for (const file of ['README.md', ...LANGUAGE_IDS.filter((id) => id !== 'zh').map((id) => `README.${id}.md`)]) {
+    const text = await readFile(join(root, file), 'utf8')
+    assert.ok(text.includes(badge), `${file}: no CI badge`)
+    assert.equal(/<img [^>]*alt="[^"]*\b\d{3}\b/.test(text), false, `${file}: a badge with a hand-typed count`)
+  }
+})
+
+test('readme: the generator reports every README as up to date (npm run readme)', async () => {
+  const script = join(root, 'tools', 'build-readmes.mjs')
+  const result = await new Promise((resolve) => {
+    execFile(process.execPath, [script, '--check'], { cwd: root }, (error, stdout, stderr) => resolve({ error, stdout, stderr }))
+  })
+  assert.equal(result.error, null, `READMEs are stale: run \`npm run readme\`\n${result.stderr}`)
+  assert.match(result.stdout, /up to date/)
 })

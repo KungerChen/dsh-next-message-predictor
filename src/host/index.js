@@ -123,6 +123,9 @@ export function apply(ctx, rawConfig) {
       dailyTokenBudget: liveConfig.dailyTokenBudget,
     }),
     logger: (line) => console.warn(line),
+    // 保存设置会让宿主在同一进程里重新 apply 本插件：新旧实例共用一份账本状态，
+    // 旧实例还在进行的调用照常结算，不会被新实例当作上一个进程遗留的预留。
+    shareWithinProcess: true,
   })
 
   const service = createPredictorService({

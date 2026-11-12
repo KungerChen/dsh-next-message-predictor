@@ -6,4 +6,4 @@
 // compares the two to tell the user when a restart is still pending.
 // This file is concatenated into the browser bundle: plain declarations only.
 
-export const PLUGIN_VERSION = '0.4.0'
+export const PLUGIN_VERSION = '0.4.1'

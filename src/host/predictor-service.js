@@ -32,8 +32,9 @@ import {
   validatePredictRequest,
 } from '../shared/protocol.js'
 import { parseCandidatesJson } from '../shared/output-validation.js'
-import { buildManualSuffix, buildSystemPrompt, PROMPT_VERSION } from '../shared/prompt.js'
+import { buildManualSuffix, buildSystemPrompt, estimateTokens, PROMPT_VERSION } from '../shared/prompt.js'
 import { PLUGIN_VERSION } from '../shared/version.js'
+import { NO_REASONING_EFFORTS } from './budget-ledger.js'
 import { produceFixedSuggestion, PROVIDER_KIND as FIXED_PROVIDER_KIND } from './fake-provider.js'
 import { createDiagnostics } from './diagnostics.js'
 import { createRequestRegistry } from './request-registry.js'
@@ -375,8 +376,15 @@ export function createPredictorService(options) {
     const callConfig = candidateCount > 1
       ? { ...config, maxOutputTokens: Math.max(Number(config.maxOutputTokens) || 0, MULTI_CANDIDATE_OUTPUT_TOKENS, candidateCount * OUTPUT_TOKENS_PER_CANDIDATE) }
       : config
+    // “换一条”：把这一回合已经给过的建议列给模型，要求换一个方向。
+    const earlier = request.trigger === 'manual' ? offeredTexts.get(turnKeyFor(request)) ?? [] : []
+    // 手动触发（包括第一次）都追加说明：用户主动要，就尽量给，不要沉默。
+    const input = request.trigger === 'manual' ? `${context.input}${buildManualSuffix(earlier)}` : context.input
+    const system = buildSystemPrompt({ candidates: candidateCount })
+    // 预留按真正要发送的内容估算：手动预测追加的说明和多条候选的提示词也算在内
+    // （上下文的估算只含单条提示词和对话片段，是裁剪用的）。
     const estimate = {
-      inputTokens: context.estimatedTokens,
+      inputTokens: Math.max(Number(context.estimatedTokens) || 0, estimateTokens(system) + estimateTokens(input) + 24),
       maxOutputTokens: Math.max(1, Number(callConfig.maxOutputTokens) || 256),
     }
     let reservation
@@ -385,11 +393,19 @@ export function createPredictorService(options) {
         dispatchKey,
         estimate,
         trigger: request.trigger,
+        // 本回合的调用次数和派发标记、预留在同一次写盘里记下，重启后仍然有效。
+        turnKey: turnKeyFor(request),
+        manualLimit: config.manualLimit,
         provider: route.provider,
         model: route.model,
         configRevision: revision,
       })
       if (reserve.ok !== true) {
+        if (reserve.reason === 'turn-limit') {
+          // 持久记录显示这一回合的次数已经用完（例如插件重启前用掉的）。
+          diagnostics.count('stale')
+          return { kind: RESULT_STALE, reason: 'already-requested' }
+        }
         diagnostics.count('ledgerFailures')
         if (reserve.reason === 'already-dispatched') return { kind: 'abstain', reason: 'already-dispatched' }
         diagnostics.record('reserve-failed', { reason: reserve.reason })
@@ -416,30 +432,37 @@ export function createPredictorService(options) {
         : AbortSignal.any([signal, timeoutSignal])
     diagnostics.count('providerCalls')
     lastRoute = route
-    // “换一条”：把这一回合已经给过的建议列给模型，要求换一个方向。
-    const earlier = request.trigger === 'manual' ? offeredTexts.get(turnKeyFor(request)) ?? [] : []
-    // 手动触发（包括第一次）都追加说明：用户主动要，就尽量给，不要沉默。
-    const input = request.trigger === 'manual' ? `${context.input}${buildManualSuffix(earlier)}` : context.input
     let outcome
     try {
       outcome = await modelProvider.produce({
-        system: buildSystemPrompt({ candidates: candidateCount }),
+        system,
         input,
         config: callConfig,
         route,
         signal: combinedSignal,
       })
     } catch {
-      outcome = { kind: 'unavailable', reason: 'provider-threw' }
+      outcome = { kind: 'unavailable', reason: 'provider-threw', finishKind: 'threw' }
     }
     // 流开始之前就失败（服务不可用、路由准备失败、已取消）：什么都没发给服务商，
-    // 预留整笔退回、派发标记撤销，这次机会也还给本回合。其余情况照旧保守结算：
-    // 用量未知时保留预留，不当作零成本。
+    // 预留整笔退回、派发标记撤销，这次机会也还给本回合。其余情况按已知的用量结算，
+    // 缺的部分估算（budget-ledger 的 chargeForCall），不当作零成本。
     const neverDispatched = outcome.dispatched === false
     if (reservation) {
       await ledger.settle(neverDispatched
         ? { ...reservation, dispatchKey, notDispatched: true }
-        : { ...reservation, dispatchKey, usage: outcome.usage, markUnknown: outcome.usage == null },
+        : {
+            ...reservation,
+            dispatchKey,
+            usage: outcome.usage,
+            partialUsage: outcome.partialUsage,
+            finishKind: finishKindOf(outcome),
+            observedOutputTokens: typeof outcome.observedOutputTokens === 'number'
+              ? outcome.observedOutputTokens
+              : typeof outcome.text === 'string' && outcome.text !== '' ? estimateTokens(outcome.text) : 0,
+            reasoningRuledOut: typeof outcome.effort === 'string' && NO_REASONING_EFFORTS.has(outcome.effort),
+            markUnknown: outcome.usage == null,
+          },
       ).catch(() => {})
     }
     if (!neverDispatched) countUsage(outcome.usage)
@@ -654,7 +677,11 @@ export function createPredictorService(options) {
     }
     let production = registry.findProduction(cacheKey)
     if (production === undefined) {
-      if (!registry.hasCredit(turnKey, request.trigger, effective.config.manualLimit)) {
+      // 内存里的次数管本进程（含进行中的任务）；账本里的次数在插件重启后仍然有效
+      // （保存设置就会重启插件）。两者取更严的一个；账本在预留时还会再核对一次。
+      const persistedCredit = ledger === null || typeof ledger.turnCredit !== 'function' ||
+        ledger.turnCredit(turnKey, request.trigger, effective.config.manualLimit)
+      if (!persistedCredit || !registry.hasCredit(turnKey, request.trigger, effective.config.manualLimit)) {
         diagnostics.count('stale')
         return respond({ kind: RESULT_STALE, reason: 'already-requested' })
       }
@@ -875,6 +902,17 @@ export function createPredictorService(options) {
   }
 
   return { handle, statusValue, dispose, get revision() { return revision } }
+}
+
+/**
+ * 模型调用是怎样结束的（结算用）：走到 finish 时是 finish 的种类，流中途抛错是
+ * 'threw'，没有任何说明时按 'missing'（没有走到 finish，保守处理）。
+ */
+function finishKindOf(outcome) {
+  if (typeof outcome?.finishKind === 'string' && outcome.finishKind !== '') return outcome.finishKind
+  if (outcome?.kind === 'raw') return 'stop'
+  const match = typeof outcome?.reason === 'string' ? /^finish-([a-z-]+)/.exec(outcome.reason) : null
+  return match !== null ? match[1] : 'missing'
 }
 
 function defaultRandomId() {

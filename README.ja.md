@@ -17,11 +17,11 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/%E3%83%90%E3%83%BC%E3%82%B8%E3%83%A7%E3%83%B3-0.4.0-4d6bfe" alt="バージョン 0.4.0">
+  <img src="https://img.shields.io/badge/%E3%83%90%E3%83%BC%E3%82%B8%E3%83%A7%E3%83%B3-0.4.1-4d6bfe" alt="バージョン 0.4.1">
   <img src="https://img.shields.io/badge/DeepSeek%20Harness-0.2.2--rc.1-1f2937" alt="DeepSeek Harness 0.2.2-rc.1">
   <img src="https://img.shields.io/badge/%E8%A8%80%E8%AA%9E-9-8250df" alt="言語 9">
   <img src="https://img.shields.io/badge/%E5%A4%96%E9%83%A8%E4%BE%9D%E5%AD%98-0-2ea44f" alt="外部依存 0">
-  <img src="https://img.shields.io/badge/%E3%83%86%E3%82%B9%E3%83%88-242%20%E4%BB%B6%E5%90%88%E6%A0%BC-2ea44f" alt="テスト 242 件合格">
+  <a href="https://github.com/KungerChen/dsh-next-message-predictor/actions/workflows/ci.yml"><img src="https://github.com/KungerChen/dsh-next-message-predictor/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <img src="https://img.shields.io/badge/%E3%83%A9%E3%82%A4%E3%82%BB%E3%83%B3%E3%82%B9-MIT-blue" alt="ライセンス MIT">
 </p>
 
@@ -262,7 +262,7 @@ dsh plugin --profile desktop remove dsh-next-message-predictor
 
 ```powershell
 npm run build   # src/shared + src/client から lib/client.js を生成
-npm test        # 242 件の単体・結合テスト
+npm test        # 単体・結合テストを実行
 npm run check   # ビルド + テスト + 構文チェック
 ```
 

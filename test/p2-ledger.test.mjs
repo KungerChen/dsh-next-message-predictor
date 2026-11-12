@@ -145,7 +145,11 @@ test('settle records reported usage and counts unknown usage conservatively', as
     await ledger.settle({ reservedTokens: 100, usage: undefined, markUnknown: true })
     snapshot = ledger.snapshot()
     assert.equal(snapshot.unknownUsage, 1)
-    assert.equal(snapshot.reservedTokens, 100)
+    // 0.4.1: the call is over, so the charge is an estimate, not a reservation.
+    // Without any detail about how the call ended, the estimate is the whole reservation.
+    assert.equal(snapshot.reservedTokens, 0)
+    assert.equal(snapshot.estimatedTokens, 100)
+    assert.equal(snapshot.usedTokens, 30 + 5 + 2 + 100)
   } finally {
     await rm(home, { recursive: true, force: true })
   }

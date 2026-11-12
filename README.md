@@ -1,8 +1,12 @@
+<!-- readme:langbar:start -->
+
 <div align="center">
 
 **简体中文** · [English](README.en.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Русский](README.ru.md) · [Português](README.pt.md)
 
 </div>
+
+<!-- readme:langbar:end -->
 
 <p align="center">
   <img src="icon.svg" width="88" alt="">
@@ -16,14 +20,18 @@
   <kbd>Tab</kbd> 填入，<kbd>Esc</kbd> 忽略，<b>绝不替你发送</b>。
 </p>
 
+<!-- readme:badges:start -->
+
 <p align="center">
-  <img src="https://img.shields.io/badge/%E7%89%88%E6%9C%AC-0.4.0-4d6bfe" alt="版本 0.4.0">
+  <img src="https://img.shields.io/badge/%E7%89%88%E6%9C%AC-0.4.1-4d6bfe" alt="版本 0.4.1">
   <img src="https://img.shields.io/badge/DeepSeek%20Harness-0.2.2--rc.1-1f2937" alt="DeepSeek Harness 0.2.2-rc.1">
   <img src="https://img.shields.io/badge/%E7%95%8C%E9%9D%A2%E8%AF%AD%E8%A8%80-9%20%E7%A7%8D-8250df" alt="界面语言 9 种">
   <img src="https://img.shields.io/badge/%E7%AC%AC%E4%B8%89%E6%96%B9%E4%BE%9D%E8%B5%96-0-2ea44f" alt="第三方依赖 0">
-  <img src="https://img.shields.io/badge/%E6%B5%8B%E8%AF%95-242%20%E9%A1%B9%E9%80%9A%E8%BF%87-2ea44f" alt="测试 242 项通过">
+  <a href="https://github.com/KungerChen/dsh-next-message-predictor/actions/workflows/ci.yml"><img src="https://github.com/KungerChen/dsh-next-message-predictor/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <img src="https://img.shields.io/badge/%E8%AE%B8%E5%8F%AF-MIT-blue" alt="许可 MIT">
 </p>
+
+<!-- readme:badges:end -->
 
 <p align="center">
   <img src="docs/images/demo.png" width="760" alt="演示：助手回答结束后，输入框里出现灰色建议；换一条；按 Tab 填入">
@@ -260,7 +268,7 @@ dsh plugin --profile desktop remove dsh-next-message-predictor
 
 ```powershell
 npm run build   # 由 src/shared + src/client 生成 lib/client.js
-npm test        # 242 项单元与集成测试
+npm test        # 运行单元与集成测试
 npm run check   # build + test + 语法检查
 ```
 

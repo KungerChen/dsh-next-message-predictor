@@ -1,0 +1,135 @@
+title: Previsão da próxima mensagem
+product: Um plugin para a caixa de entrada do DeepSeek Harness
+tagline1: Quando o assistente termina, a sua provável próxima mensagem já está esperando na caixa de entrada.
+tagline2: <kbd>Tab</kbd> insere, <kbd>Esc</kbd> ignora, e <b>nada é enviado por você</b>.
+b_version: versão
+b_deps: dependências externas
+b_langs: idiomas
+b_license: licença
+demo_alt: Demonstração: depois da resposta do assistente, uma sugestão cinza aparece na caixa de entrada; outra é pedida; Tab a insere
+demo_caption: Uma sugestão aparece → peça outra se não servir → <kbd>Tab</kbd> insere, e você ainda pode editar antes de enviar
+why_h: Por que usar
+why_p: Ao trabalhar com um assistente, muitas respostas são curtas e fáceis de adivinhar: “continue”, “rode os testes”, “mostre as alterações”. Este plugin escreve essa continuação com antecedência e a deixa na caixa de entrada.
+c1_h: Menos digitação
+c1_p: As continuações mais comuns a uma tecla de distância. Depois de inserido, o texto é como qualquer outro que você digitou: dá para editar e desfazer.
+c2_h: Sem interrupções
+c2_p: Assim que você começa a digitar, a sugestão sai do caminho. Ela não aparece durante a composição do IME nem com um menu aberto. Quando o modelo não tem certeza, não oferece nada.
+c3_h: Nunca passa dos limites
+c3_p: Ele apenas coloca texto na caixa de entrada. Não existe nenhum código de “enviar mensagem” no plugin; enviar é sempre uma decisão sua.
+c4_h: Custo sob controle
+c4_p: Por padrão, um modelo de baixo custo, com limites diários de pedidos e de tokens. Frases curtas que você repete são oferecidas diretamente, sem chamar o modelo.
+c5_h: Privacidade em primeiro lugar
+c5_p: Antes do envio, possíveis chaves, tokens, endereços de e-mail e números de telefone são ocultados. O navegador nunca envia o seu rascunho. As estatísticas locais guardam números, não texto.
+c6_h: Uso transparente
+c6_p: Pedidos, taxa de aceitação, tempo de resposta e uso de tokens dos últimos 7 dias ficam na página de configurações, para você ver se vale a pena.
+feat_h: Recursos
+f1_h: A sugestão fica na própria caixa de entrada
+f1_p: Quando o assistente termina, se a caixa de entrada estiver vazia, uma sugestão cinza aparece exatamente onde você ia digitar. Sem janelas pop-up e sem ocupar espaço.
+f1_alt: Uma sugestão cinza na caixa de entrada, com “{ui:ghost.adopt}” e “{ui:ghost.another}” à direita
+k_th1: Tecla
+k_th2: O que faz
+k1a: <kbd>Tab</kbd> ou <kbd>→</kbd>
+k1b: Insere a sugestão na caixa de entrada, onde você pode continuar editando; <kbd>Ctrl</kbd>+<kbd>Z</kbd> desfaz apenas essa inserção
+k2a: <kbd>Esc</kbd>
+k2b: Oculta a sugestão
+k3a: <kbd>Alt</kbd>+<kbd>\\</kbd> (configurável)
+k3b: Faz a previsão na hora; com uma sugestão exibida, passa para outra. Uma única chamada traz várias alternativas, então a troca é instantânea
+k4a: Simplesmente digitar
+k4b: A sugestão some na hora; ela volta quando você esvazia a caixa de entrada
+f2_h: Três modos, um clique
+f2_p: Não quer estudar cada opção? Escolha um modo. Dá para desfazer ou ajustar depois.
+f2_alt: O cartão de modos: {ui:preset.balanced.name}, {ui:preset.saver.name}, {ui:preset.quality.name}
+m_th1: Modo
+m_th2: Quando prevê
+m_th3: Modelo
+m_th4: Contexto
+m_th5: Limite diário
+m_th6: Indicado para
+m_auto: Automaticamente após cada resposta
+m_manual: Só quando você clica em “{ui:ghost.predict}” ou usa o atalho
+m_fixed: Um modelo específico de baixo custo
+m_session: O modelo da sessão
+m_ctx12: 12 mensagens
+m_ctx6: 6 mensagens
+m_ctx20: 20 mensagens
+m_cap200: 200 pedidos
+m_cap60: 60 pedidos
+m_fit1: O uso diário
+m_fit2: Controle rigoroso de custos
+m_fit3: Sugestões mais certeiras
+f2_note: Um modo só altera o disparo, a estratégia de modelo, o tamanho do contexto e os limites. Ele não mexe no interruptor principal, no atalho, no idioma nem nas opções de privacidade, e mantém o modelo que você informou.
+fl_h: Nove idiomas de interface
+fl_p: A página de configurações, os botões da caixa de entrada e as dicas deles estão disponíveis em {langs}. Por padrão, o plugin segue o idioma definido no DeepSeek Harness; você também pode escolher um em **Configurações → {ui:settings.nav} → {ui:settings.language}**, e ele vale na hora. Já as sugestões seguem sempre o idioma da sua conversa.
+fl_alt: O topo da página de configurações em inglês, japonês, espanhol e russo
+f3_h: A um clique na barra lateral
+f3_p: Clique em “{ui:settings.sidebarAdd}” e um item aparece na barra lateral esquerda do DSH; depois disso, conferir o estado ou trocar de modo não exige mais passar pelas Configurações. A versão ao lado do título mostra sempre qual está instalada.
+f3_alt1: O item “{ui:settings.nav}” na barra lateral esquerda
+f3_alt2: A versão ao lado do título da página e o botão “{ui:settings.sidebarRemove}”
+f4_h: Quanto você usa, num relance
+f4_sum: <b>Ver a página de configurações inteira</b> (básico, modos, origem das sugestões, modelo, últimos 7 dias)
+f4_alt: A página de configurações inteira
+shots: A maioria das capturas de tela mostra a interface em chinês. Elas vêm de uma conversa de demonstração e são geradas por um script deste repositório com um modelo simulado local; por isso o modelo aparece como Mock e os números são pequenos. No uso real, as sugestões vêm do modelo que você configurou no DSH.
+inst_h: Instalação
+inst_p: Requer o DeepSeek Harness `0.2.2-rc.1` (`>=0.2.2-rc.1 <0.3.0`). O plugin não tem dependências externas nem precisa de compilação. Um comando instala:
+inst_profile: O nome depois de `--profile` é o perfil que você usa no dia a dia: `desktop` no aplicativo para computador, `web` na versão web. Depois, **feche o DSH por completo e abra de novo**.
+inst_d_sum: O comando <code>dsh</code> não é encontrado, ou você quer instalar a partir de uma pasta local
+inst_d_p: A linha de comando `dsh` fica na pasta de instalação do DeepSeek Harness e pode ser chamada pelo caminho completo. Para alterar o código por conta própria, clone o repositório e instale a partir da pasta local:
+ph_dsh: pasta de instalação do DSH
+ph_plugin: pasta do plugin
+inst_d_tail: `<{ph_dsh}>` é onde o DeepSeek Harness está instalado; `<{ph_plugin}>` é a pasta que você acabou de clonar.
+steps_p: Depois, três passos para começar:
+s1: Abra **Configurações → {ui:settings.nav}** e ligue “{ui:settings.enabled}”. Vem desligado: até você ativar, nenhuma sugestão é exibida e nenhum modelo é chamado.
+s2: Escolha um em “{ui:preset.title}”. O padrão é “{ui:preset.balanced.name}”.
+s3: Para chegar mais rápido, clique em “{ui:settings.sidebarAdd}” no canto superior direito.
+upd_sum: Atualizar e desinstalar
+upd_p: **Atualizar**: se você instalou pelo GitHub, desinstale e execute de novo o comando de instalação; se instalou de uma pasta local, execute `git pull` nela. Depois reinicie o DSH. Recarregar a página não basta: a página ficaria nova e a parte em segundo plano continuaria antiga, e a página de configurações avisaria que as versões não coincidem.
+unin: **Desinstalar**:
+conflict: Ative apenas um plugin de previsão para a caixa de entrada por perfil. Quando outro é detectado, este plugin se pausa sozinho e explica o motivo na página de configurações.
+send_h: O que ele envia
+send_p: Cada previsão é um único pedido ao modelo, sem nova tentativa automática. Ele contém trechos das **mensagens do usuário e das respostas finais em texto do assistente** mais recentes da sessão atual: por padrão, no máximo 12 mensagens e cerca de 2.000 tokens.
+sb1: Não inclui argumentos nem saída de ferramentas, raciocínio ou o prompt do sistema.
+sb2: Antes do envio, possíveis chaves privadas, chaves de API, tokens, senhas, endereços de e-mail, números de celular e de identidade e o nome de usuário em caminhos da pasta pessoal são trocados por marcadores (baseado em regras; não há garantia de encontrar tudo).
+sb3: A página do navegador envia apenas identificadores de sessão e de turno, nunca o rascunho, anexos ou texto da conversa; o conteúdo destinado ao modelo é lido pela parte em segundo plano nos registros de sessão do próprio DSH.
+sb4: “{ui:settings.habits}” apenas compara as mensagens curtas que você enviou neste computador; nenhum modelo é chamado.
+send_more: A descrição completa, e como apagar os dados locais, está em [Privacidade e limites dos dados](docs/PRIVACY.md).
+faq_h: Perguntas frequentes
+q1: Ele vai enviar uma mensagem por mim?
+a1: Não. Aceitar uma sugestão apenas coloca texto na caixa de entrada, pela interface de inserção da própria caixa; o plugin não contém nenhuma chamada que envie ou confirme.
+q2: Quanto custa?
+a2: Cada previsão é uma chamada bem curta ao modelo (por padrão, no máximo 96 tokens de saída). Os limites diários padrão são 200 pedidos e 500.000 tokens; atingidos, não há mais chamadas naquele dia. Para gastar menos, escolha o modo “{ui:preset.saver.name}”, que só prevê quando você pede. O uso real aparece em “{ui:settings.resultTitle}”, na página de configurações.
+q3: Por que às vezes não há sugestão?
+a3: É proposital: quando o modelo não tem certeza, não oferece nada, e a saída que foge às regras (longa demais, com várias linhas, no tom do assistente) é descartada. A linha de estado na página de configurações diz por que não há nenhuma agora. Quando quiser uma, pressione <kbd>Alt</kbd>+<kbd>\\</kbd>.
+q4: As sugestões são precisas?
+a4: Ele vai bem com continuações curtas e claras: confirmar, pedir uma verificação, perguntar um detalhe. Não consegue adivinhar o que só você sabe, e nesse caso o certo é ficar em silêncio.
+docs_h: Documentação
+docs_note: A documentação detalhada está escrita em chinês.
+d_th1: Documento
+d_th2: Conteúdo
+d1: Guia de uso
+d1c: Teclas, cada item da página de configurações, modos, o item da barra lateral, perguntas frequentes
+d2: Referência de configuração
+d2c: Valores padrão e intervalos de todas as opções, valores dos três modos
+d3: Privacidade e limites dos dados
+d3c: O que é enviado, arquivos locais, como apagar os dados
+d4: Arquitetura
+d4c: As metades Host e navegador, o fluxo dos pedidos, o protocolo
+d5: Desenvolvimento e verificação
+d5c: Compilação, testes, verificação de ponta a ponta, como gerar as capturas de novo
+d6: Compatibilidade
+d6c: O contrato confirmado com o DSH 0.2.2-rc.1 e as alternativas
+d7: Registro de alterações
+d7c: Mudanças de cada versão
+d8: Índice da documentação
+d8c: Todos os documentos, incluindo notas anteriores de verificação e otimização
+dev_h: Contribuir
+dev_c1: gera lib/client.js a partir de src/shared + src/client
+dev_c2: executa os testes unitários e de integração
+dev_c3: compilação + testes + verificação de sintaxe
+dev_p: Não precisa de `npm install` nem de empacotador; é necessário o Node.js 22 ou mais recente. Para adicionar ou corrigir uma tradução, edite `src/client/locales/<idioma>.js`; os testes verificam que todos os idiomas têm as mesmas chaves.
+lim_h: Limitações conhecidas
+l1: Verificado apenas no DSH `0.2.2-rc.1`.
+l2: Salvar uma configuração faz o host reiniciar a parte em segundo plano do plugin; uma previsão em andamento é cancelada.
+l3: Várias janelas compartilham os resultados das previsões; ocultar uma sugestão em uma janela não é sincronizado com as outras em tempo real.
+l4: A paleta de comandos e a caixa de diálogo de feedback são reconhecidas pelo foco e por características modais; um erro de detecção significa apenas uma sugestão a menos, nunca uma tecla capturada.
+lic_h: Licença
+lic_p: Publicado sob a [licença MIT](LICENSE). A escolha dos pontos de extensão e a interação “sugestão cinza + Tab para aceitar + Esc para ocultar” foram inspiradas no `dsh-composer-prediction`, também sob licença MIT; nenhum código dele foi copiado. Veja [NOTICE](NOTICE).

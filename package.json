@@ -1,6 +1,6 @@
 {
   "name": "dsh-next-message-predictor",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "private": true,
   "description": "Next-message suggestions in the DeepSeek Harness composer: Tab fills the draft, Esc hides the suggestion, nothing is sent automatically.",
   "repository": {
@@ -55,6 +55,7 @@
   "scripts": {
     "build": "node scripts/build-client.mjs",
     "test": "node --test \"test/*.test.mjs\"",
-    "check": "npm run build && npm test && node --check lib/index.js && node --check lib/client.js"
+    "readme": "node tools/build-readmes.mjs",
+    "check": "npm run build && npm run readme -- --check && npm test && node --check lib/index.js && node --check lib/client.js"
   }
 }

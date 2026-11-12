@@ -1,6 +1,6 @@
 # 开发与验证
 
-适用版本：0.4.0。
+适用版本：0.4.1。
 
 ## 环境
 
@@ -29,7 +29,8 @@ DSH 的数据目录取环境变量 `DSH_HOME`，未设置时为用户主目录�
 ```powershell
 npm run build   # 生成 lib/client.js
 npm test        # 全部单元与集成测试
-npm run check   # build + test + node --check
+npm run check   # build + README 是否过期 + test + node --check
+npm run readme  # 重新生成各语言 README
 ```
 
 改了 `src/shared/` 或 `src/client/` 之后必须重新 `npm run build`，否则 DSH 加载的还是旧的 `lib/client.js`。`test/v030.test.mjs` 会在 bundle 里的版本号与 `package.json` 不一致时失败，提醒重新构建。
@@ -39,14 +40,33 @@ npm run check   # build + test + node --check
 - `src/shared/` 和 `src/client/` 的文件会被拼成一个函数作用域：只写普通的顶层声明；顶层名字在所有文件间唯一（客户端辅助函数习惯加 `nmp` 前缀）；新增文件要加进 `scripts/build-client.mjs` 的 `INPUTS`，顺序即依赖顺序。
 - 新增配置项：在 `src/shared/config.js` 的 `DEFAULT_CONFIG` 加默认值，并登记到 `NUMBER_FIELDS` / `STRING_FIELDS` / `BOOLEAN_FIELDS`；要在设置页显示数值项再加 `SETTING_LIMITS`。同步更新 [CONFIGURATION.md](CONFIGURATION.md)。
 - 新增界面文字：在 `src/client/locales/` 的九个语言文件里都加上同一个键，位置相同（`test/i18n.test.mjs` 检查键、顺序和 `{key}` 这类占位符）。先写 `zh.js` 和 `en.js`，其余语言照英文翻译。
-- 新增一种语言：加 `src/client/locales/<语言>.js`，登记到 `src/shared/config.js` 的 `LANGUAGE_IDS`、`src/client/i18n.js` 的字典和语言名称、`scripts/build-client.mjs` 的 `INPUTS`，再加 `locale/<语言>.json` 和 `README.<语言>.md`。
+- 新增一种语言：加 `src/client/locales/<语言>.js`，登记到 `src/shared/config.js` 的 `LANGUAGE_IDS`、`src/client/i18n.js` 的字典和语言名称、`scripts/build-client.mjs` 的 `INPUTS`，再加 `locale/<语言>.json`，以及 README（见下面的“README 的生成”）。
 - 新增原因码：给它加 `reason.<code>` 文案。带细节的原因码写成 `<code>:<细节>`，文案只需覆盖冒号前的部分（见 `src/client/labels.js`）。
 - 修改提示词：递增 `src/shared/prompt.js` 的 `PROMPT_VERSION`（它是结果缓存键的一部分）。
 - 发版：同时改 `package.json` 的 `version` 和 `src/shared/version.js` 的 `PLUGIN_VERSION`，更新 `CHANGELOG.md`，然后 `npm run check`。
 
+## CI
+
+`.github/workflows/ci.yml` 在推送到 `main` 和每个 pull request 上运行，矩阵是 ubuntu-latest 与 windows-latest（Node 22）。步骤只有 `npm run check`，随后用 `git diff --exit-code -- lib/client.js` 确认入库的 bundle 与源码一致；没有依赖，所以不执行 `npm install`。测试要在两个系统上都通过：不要在测试里写死路径分隔符、本机时区或 `git` 之外的外部程序。README 顶部的 CI 徽章指向这个工作流。
+
+## README 的生成
+
+除中文的 `README.md` 外，其余八份 `README.<语言>.md` 都是生成的，不要直接改：
+
+- `tools/readme/template.md` 是共同的版式，`{{键}}` 由 `tools/readme/strings/<语言>.txt` 中每行一条的 `键: 文字` 填入。文字里 `{ui:<界面文案键>}` 取该语言的界面文案（`src/client/locales/<语言>.js`），`{langs}` 是语言名称列表，`{ph_dsh}` / `{ph_plugin}` 是两个占位符文字。
+- 版本徽章读 `package.json` 的版本，DeepSeek Harness 徽章读 `engines.dsh` 的下限，不要手写版本号或测试数量。
+- 中文 `README.md` 手写，只有 `<!-- readme:langbar:start/end -->`（语言栏）和 `<!-- readme:badges:start/end -->`（徽章）两段由 `tools/build-readmes.mjs` 维护，标记之间的内容会被覆盖。标记放在居中的 `<div>` / `<p>` 块外面，不影响 GitHub 的渲染。
+
+```powershell
+npm run readme                        # 重新生成
+node tools/build-readmes.mjs --check  # 只检查；有差异时退出码为 1（npm run check 会调用它）
+```
+
+新增 README 语言：先按上面“新增一种语言”加好界面语言，复制 `tools/readme/strings/en.txt` 为 `<语言>.txt` 并逐行翻译（键和顺序必须与其他语言一致），把语言 id 加到 `tools/build-readmes.mjs` 的 `ORDER`，运行 `npm run readme`。其他语言 README 的语言栏会随之更新。
+
 ## 测试
 
-`node --test "test/*.test.mjs"`，共 242 项。
+`node --test "test/*.test.mjs"`。
 
 | 文件 | 覆盖 |
 |---|---|
@@ -60,8 +80,9 @@ npm run check   # build + test + node --check
 | `results-log.test.mjs` | 结果记录、轮换、汇总 |
 | `request-registry.test.mjs` / `semantic-filter.test.mjs` / `ghost-conflict.test.mjs` | 各自的模块 |
 | `v030.test.mjs` | 版本、模式、左侧栏选项、原因码文案、0.3.0 修复的回归 |
+| `v041.test.mjs` | 用量未知调用的计费（各种结束方式）、实测/估算/预留三类与每日上限、上一进程遗留的预留、0.4.0 账本升级、每回合调用次数落盘与重启后生效、清理、写盘失败不占用次数 |
 | `v040.test.mjs` | 0.4.0 修复的回归：遮蔽范围、配置字段名、快捷键限制、行分隔符、片段上限、次数与额度的退还、切会话恢复、后台无响应 |
-| `i18n.test.mjs` | 九种语言的字典一致性、语言解析、`language` 配置项、打包内容、各语言 README 的语言栏 |
+| `i18n.test.mjs` | 九种语言的字典一致性、语言解析、`language` 配置项、打包内容、各语言 README 的语言栏与 CI 徽章、README 生成器的 `--check` |
 | `bundle-smoke.test.mjs` | 对 `lib/client.js` 的冒烟测试，见下 |
 | `no-local-paths.test.mjs` | 已入库的文件里没有本机路径 |
 
@@ -107,11 +128,24 @@ node tools/p1-e2e.mjs --url $u --out scratch/evidence --tag p1
 node tools/set-config.mjs --url $u --patch-file scratch/config-model.json
 node tools/p2-e2e.mjs --url $u --out scratch/evidence --tag p2
 
+# 界面语言跟随 DSH（需要先打开一个会话，输入框为空）
+node tools/i18n-e2e.mjs --url $u --out scratch/evidence --tag i18n
+
 .\tools\mock-llm-control.ps1 -Action stop
 .\tools\stop-scratch-web.ps1
 ```
 
 启动脚本设置 `NMP_DATA_HOME=scratch\data-home`，测试产生的账本和统计不会混入真实数据。URL 带有本次启动的访问令牌，`scratch/logs/` 和 `scratch/evidence/` 不入库。
+
+`tools/i18n-e2e.mjs` 检查“界面语言：跟随 DSH”是否真的跟随：它在 DSH 自己的设置里把界面语言依次切到英语、日语、俄语再切回中文，每次都在不刷新和刷新后各记录一遍插件的语言、设置导航和左侧栏里的入口名称、页面标题、“预测”按钮的文字以及跟随所用的时间；再确认显式选择的语言（韩语）不受 DSH 影响、改回“跟随 DSH”后重新跟随；最后把 DSH 和插件选项恢复原样。
+
+0.4.1 的结果（2026-11-11，DSH 0.2.2-rc.1）：
+
+| 脚本 | 结果 |
+|---|---|
+| `p1-e2e.mjs` / `p2-e2e.mjs` | 13 步、9 步全部通过 |
+| `i18n-e2e.mjs` | 15 步全部通过 |
+| 手动（浏览器） | `manualLimit` 为 2 时用完两次手动预测，保存两次设置（插件后台重启两次）并刷新页面，再次手动预测得到“本次回答的预测次数已用完”，模型调用数和当日请求数都没有增加 |
 
 0.4.0 的结果（2026-11-11，DSH 0.2.2-rc.1）：
 

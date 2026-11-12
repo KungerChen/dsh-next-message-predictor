@@ -17,11 +17,11 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/%EB%B2%84%EC%A0%84-0.4.0-4d6bfe" alt="버전 0.4.0">
+  <img src="https://img.shields.io/badge/%EB%B2%84%EC%A0%84-0.4.1-4d6bfe" alt="버전 0.4.1">
   <img src="https://img.shields.io/badge/DeepSeek%20Harness-0.2.2--rc.1-1f2937" alt="DeepSeek Harness 0.2.2-rc.1">
   <img src="https://img.shields.io/badge/%EC%96%B8%EC%96%B4-9-8250df" alt="언어 9">
   <img src="https://img.shields.io/badge/%EC%99%B8%EB%B6%80%20%EC%9D%98%EC%A1%B4%EC%84%B1-0-2ea44f" alt="외부 의존성 0">
-  <img src="https://img.shields.io/badge/%ED%85%8C%EC%8A%A4%ED%8A%B8-242%EA%B0%9C%20%ED%86%B5%EA%B3%BC-2ea44f" alt="테스트 242개 통과">
+  <a href="https://github.com/KungerChen/dsh-next-message-predictor/actions/workflows/ci.yml"><img src="https://github.com/KungerChen/dsh-next-message-predictor/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <img src="https://img.shields.io/badge/%EB%9D%BC%EC%9D%B4%EC%84%A0%EC%8A%A4-MIT-blue" alt="라이선스 MIT">
 </p>
 
@@ -262,7 +262,7 @@ dsh plugin --profile desktop remove dsh-next-message-predictor
 
 ```powershell
 npm run build   # src/shared + src/client로 lib/client.js 생성
-npm test        # 단위·통합 테스트 242개
+npm test        # 단위·통합 테스트 실행
 npm run check   # 빌드 + 테스트 + 문법 검사
 ```
 
