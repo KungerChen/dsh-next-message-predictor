@@ -16,6 +16,8 @@ export const OPERATION_CONFIG_SET = 'config.set'
 export const OPERATION_OUTCOME = 'outcome'
 /** O01：近 7 天结果汇总（不含正文）。 */
 export const OPERATION_RESULTS = 'results.summary'
+export const OPERATION_SESSION_STATE = 'session.state'
+export const OPERATION_SESSION_PAUSE = 'session.pause'
 
 export const TRIGGER_AUTO = 'auto'
 export const TRIGGER_MANUAL = 'manual'
@@ -50,6 +52,31 @@ function isId(value) {
   return typeof value === 'string' && value.length > 0 && value.length <= MAX_ID_LENGTH
 }
 
+export function isSessionId(value) {
+  // Handed to the Host's session store: forbid path separators and traversal.
+  return isId(value) && !/[\s\/\\\u0000-\u001f\u007f]/u.test(value) && !value.includes('..')
+}
+
+export function isSessionRevision(value) {
+  return Number.isSafeInteger(value) && value >= 0
+}
+
+export function validSessionVersion(value) {
+  return isPlainRecord(value) && isId(value.hostId) &&
+    isSessionRevision(value.pauseRevision) && isSessionRevision(value.turnRevision)
+}
+
+export function sameSessionVersion(first, second) {
+  return first != null && second != null && first.hostId === second.hostId &&
+    first.pauseRevision === second.pauseRevision && first.turnRevision === second.turnRevision
+}
+
+/** Use the completed event; the zero-sequence offline path uses turnId. */
+export function sessionTurnIdentity(anchor) {
+  if (anchor == null) return ''
+  return JSON.stringify([anchor.branchEpoch, anchor.completedEventSeq || anchor.turnId])
+}
+
 /**
  * Validate one TurnAnchor.
  * `completedEventSeq`/`contextRevision` are advanced identities that P2 fills;
@@ -58,9 +85,7 @@ function isId(value) {
 export function validateTurnAnchor(anchor) {
   if (!isPlainRecord(anchor)) return 'anchor must be a plain object'
   if (!isId(anchor.sessionId)) return 'anchor.sessionId is required'
-  // The id is handed to the Host's session store: no path separators, no
-  // parent-directory steps, no whitespace or control characters.
-  if (/[\s\/\\\u0000-\u001f\u007f]/u.test(anchor.sessionId) || anchor.sessionId.includes('..')) return 'anchor.sessionId is not a valid id'
+  if (!isSessionId(anchor.sessionId)) return 'anchor.sessionId is not a valid id'
   if (typeof anchor.branchEpoch !== 'string' || anchor.branchEpoch.length > MAX_ANCHOR_STRING) {
     return 'anchor.branchEpoch must be a string'
   }
@@ -91,6 +116,9 @@ export function validatePredictRequest(raw) {
       return { ok: false, error: 'expectedConfigRevision must be a number' }
     }
   }
+  if (raw.sessionVersion !== undefined && !validSessionVersion(raw.sessionVersion)) {
+    return { ok: false, error: 'sessionVersion is invalid' }
+  }
   if (raw.trigger !== TRIGGER_AUTO && raw.trigger !== TRIGGER_MANUAL) {
     return { ok: false, error: 'trigger must be "auto" or "manual"' }
   }
@@ -113,6 +141,13 @@ export function validatePredictRequest(raw) {
         contextRevision: raw.anchor.contextRevision,
       },
       expectedConfigRevision: raw.expectedConfigRevision,
+      ...(raw.sessionVersion === undefined ? {} : {
+        sessionVersion: {
+          hostId: raw.sessionVersion.hostId,
+          pauseRevision: raw.sessionVersion.pauseRevision,
+          turnRevision: raw.sessionVersion.turnRevision,
+        },
+      }),
       trigger: raw.trigger,
       attempt: raw.trigger === TRIGGER_MANUAL && Number.isInteger(raw.attempt) ? raw.attempt : 0,
     },

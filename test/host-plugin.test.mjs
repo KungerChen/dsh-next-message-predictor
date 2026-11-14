@@ -27,6 +27,14 @@ function fakeContext(options) {
   const effects = []
   const edits = []
   const listeners = new Map()
+  const connection = {
+    fetch: {
+      register(route) {
+        routes.set(route.path, route)
+        return () => routes.delete(route.path)
+      },
+    },
+  }
   const state = {
     sessions: options?.sessions ?? { s1: { id: 's1', seq: 8 } },
     allowConfigEditor: options?.allowConfigEditor !== false,
@@ -36,14 +44,7 @@ function fakeContext(options) {
     fiber: { entry: { id: 'next-message-predictor', options: { id: 'next-message-predictor', config: state.entryConfig } } },
     get(name) {
       if (name === 'connection') {
-        return {
-          fetch: {
-            register(route) {
-              routes.set(route.path, route)
-              return () => routes.delete(route.path)
-            },
-          },
-        }
+        return connection
       }
       if (name === 'configEditor') {
         if (!state.allowConfigEditor) return undefined
@@ -119,6 +120,32 @@ function predictBody(overrides) {
 async function readJson(response) {
   return JSON.parse(await response.text())
 }
+
+test('pause survives plugin apply after a settings save on the same connection', async () => {
+  const { ctx, routes, effects, state } = fakeContext({ entryConfig: { enabled: true } })
+  const call = async (operation, payload = {}) => readJson(await routes.get(ROUTE).fetch(jsonRequest({ schemaVersion: 1, operation, ...payload })))
+  const dispose = () => { for (const effect of effects.splice(0).reverse()) effect() }
+  try {
+    apply(ctx, state.entryConfig)
+    const initial = (await call('session.state', { sessionId: 's1' })).value
+    const paused = await call('session.pause', {
+      sessionId: 's1', paused: true, expectedHostId: initial.hostId, expectedPauseRevision: initial.pauseRevision,
+    })
+    assert.equal(paused.value.paused, true)
+    assert.equal((await call('config.set', { patch: { requireInputFocus: true } })).ok, true)
+    dispose()
+
+    apply(ctx, state.entryConfig)
+    const current = (await call('session.state', { sessionId: 's1' })).value
+    assert.equal(current.hostId, initial.hostId)
+    assert.equal(current.pauseRevision, paused.value.pauseRevision)
+    assert.equal(current.paused, true)
+    const direct = await call('predict', predictBody({ trigger: 'manual' }))
+    assert.equal(direct.result.reason, 'session-paused')
+  } finally {
+    dispose()
+  }
+})
 
 test('apply registers the plugin route and handles predict', async () => {
   const { ctx, routes, finishTurn } = fakeContext()

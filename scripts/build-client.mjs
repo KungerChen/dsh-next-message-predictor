@@ -30,6 +30,7 @@ const INPUTS = [
   'src/client/locales/pt.js',
   'src/client/i18n.js',
   'src/client/dom.js',
+  'src/client/editor-history.js',
   'src/client/labels.js',
   'src/client/controller.js',
   'src/client/overlay.js',

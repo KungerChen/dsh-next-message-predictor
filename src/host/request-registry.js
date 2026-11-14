@@ -87,12 +87,13 @@ export function createRequestRegistry() {
    * @param {(signal: AbortSignal) => Promise<{kind: string, text?: string, reason?: string}>} run
    * @returns {Production}
    */
-  function startProduction(cacheKey, run) {
+  function startProduction(cacheKey, run, owner) {
     /** @type {Production} */
     const production = {
       waiters: new Set(),
       abort: new AbortController(),
       settled: false,
+      owner,
       result: Promise.resolve(),
     }
     productions.set(cacheKey, production)
@@ -150,6 +151,15 @@ export function createRequestRegistry() {
     return aborted
   }
 
+  /** Cancel every waiter of the matching production(s), without affecting peers. */
+  function cancelWhere(matches) {
+    for (const production of productions.values()) {
+      if (!matches(production.owner)) continue
+      for (const cancel of production.waiters) cancel()
+      production.abort.abort()
+    }
+  }
+
   /** Abort every live production (plugin unload / disable). */
   function dispose() {
     for (const requestId of byRequest.keys()) release(requestId)
@@ -178,6 +188,7 @@ export function createRequestRegistry() {
     startProduction,
     attach,
     release,
+    cancelWhere,
     dispose,
     activeCount,
   }

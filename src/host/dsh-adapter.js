@@ -53,12 +53,22 @@ export function createHostAdapter(ctx) {
   function sessionKnown(sessionId) {
     try {
       if (sessions !== undefined && typeof sessions.get === 'function') {
-        return sessions.get(sessionId) !== undefined
+        return sessions.get(sessionId) != null
       }
     } catch {
       return undefined
     }
     return undefined
+  }
+
+  /** A live subagent is outside the predictor's editable conversation scope. */
+  function sessionManageable(sessionId) {
+    try {
+      const session = sessions?.get(sessionId)
+      return session != null && session.header?.origin !== 'subagent'
+    } catch {
+      return false
+    }
   }
 
   /** Read the resolved row config plus the live entry id, best effort. */
@@ -175,6 +185,8 @@ export function createHostAdapter(ctx) {
     connectionAvailable: connection !== undefined && connection.fetch !== undefined,
     configEditorAvailable: configEditor !== undefined && typeof configEditor.edit === 'function',
     sessionKnown,
+    sessionManageable,
+    connection,
     currentEntryConfig,
     persistConfig,
     registerRoute,

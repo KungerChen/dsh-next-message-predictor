@@ -5,7 +5,7 @@
 | 字段 | 值 |
 |---|---|
 | 包名 | `dsh-next-message-predictor` |
-| 版本 | `0.5.1`（变更见 [CHANGELOG.md](../CHANGELOG.md)） |
+| 版本 | `0.6.0`（变更见 [CHANGELOG.md](../CHANGELOG.md)） |
 | 目标 DSH | `>=0.2.2-rc.1 <0.3.0`（实测范围见 [兼容性](COMPATIBILITY.md)） |
 | 提示词版本 | `nmp-p2-v3`（结果缓存键的一部分） |
 | 构建 | 无打包器：`scripts/build-client.mjs` 由 `src/shared` + `src/client` 生成 `lib/client.js`；`lib/index.js` 是 Host 入口 |
@@ -19,6 +19,21 @@
 3. `npm run check`（构建 + 测试 + 语法检查）。构建会拒绝不一致的版本号。
 4. 在隔离 profile 上跑端到端矩阵（[DEVELOPMENT.md](DEVELOPMENT.md#端到端验证隔离-profile)）。
 5. 提交、打标签 `v<版本>`、推送。
+
+## 0.6.0 的验证
+
+2026-11-14，在 Windows 的 DSH Desktop `0.2.2-rc.3` 和独立 Web Host 上验证，模型请求使用本机 mock。完整证据与验证边界见 [显示、会话与撤销验证](VALIDATION-DISPLAY-SESSION.md)。
+
+| 检查 | 结果 |
+|---|---|
+| `npm run check` | 344 项通过，含原生编辑器适配、待提交编辑及不兼容版本的回归 |
+| 原生采纳、撤销与重做 | 严格焦点流程连续三轮，每轮 23 项通过；已有用户编辑历史的独立检查 10 项通过 |
+| 原生窗口与页面缩放 | 中英文正常窗口、窄窗口及窄窗口 150% 页面缩放的实际截图通过；当前显示器缩放比例为 225%，未改变 Windows 的 DPI 设置 |
+| 用户手动验收 | 用户确认真实 Windows 中文输入法、Tab 采纳、Ctrl+Z 撤销及 Ctrl+Shift+Z 重做符合预期；此为用户回执，不等同于自动采集的最终草稿或消息计数 |
+| Web 会话同步 | 同一认证上下文的两个独立页面连接同一隔离 Web Host，10 项通过；浏览器无界面运行，不代替原生多窗口测试 |
+| 分发范围 | `npm pack --dry-run` 检查 61 个发布文件，包含撤销适配源文件，不含测试数据、日志或隔离环境 |
+
+撤销适配仅应用于已核验的 Lexical `0.49.0+prod.esm`；未知版本仍使用宿主原生插入。没有修改 DSH 安装文件，也没有增加运行依赖。
 
 ## 0.5.1 的验证
 
@@ -96,5 +111,5 @@ $dsh = '<DSH 安装目录>\resources\runtime\cli\bin\dsh.cmd'
 
 1. 更多真实会话回放。
 2. 原生配置 schema 与热更新（保存设置不再重启插件）。
-3. 多窗口之间实时同步建议的隐藏状态；账本的跨进程锁。
+3. 跨进程的预测状态协调与账本锁；同一 Host 的会话状态已支持同步。
 4. Desktop 原生窗口的输入法与快捷键验收。

@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-0.5.1-4d6bfe" alt="Version 0.5.1">
+  <img src="https://img.shields.io/badge/Version-0.6.0-4d6bfe" alt="Version 0.6.0">
   <img src="https://img.shields.io/badge/DeepSeek%20Harness-0.2.2--rc.1-1f2937" alt="DeepSeek Harness 0.2.2-rc.1">
   <img src="https://img.shields.io/badge/Sprachen-9-8250df" alt="Sprachen 9">
   <img src="https://img.shields.io/badge/Fremdabh%C3%A4ngigkeiten-0-2ea44f" alt="Fremdabhängigkeiten 0">
@@ -45,7 +45,7 @@ Bei der Arbeit mit einem Assistenten sind viele Antworten kurz und leicht zu err
 
 ### ⌨️ Weniger tippen
 
-Übliche Anschlussnachrichten mit einem Tastendruck. Einmal eingefügt, verhält sich der Text wie selbst getippter: bearbeiten und rückgängig machen inklusive.
+Häufige Anschlussnachrichten lassen sich mit einer Taste einfügen. Der eingefügte Vorschlag bleibt bearbeitbar.
 
 </td>
 <td width="33%" valign="top">
@@ -92,7 +92,7 @@ Anfragen, Übernahmequote, Antwortzeit und Token-Verbrauch der letzten 7 Tage st
 
 ### Der Vorschlag steht direkt im Eingabefeld
 
-Ist das Eingabefeld leer, wenn der Assistent fertig ist, erscheint ein grauer Vorschlag genau dort, wo Sie gleich tippen würden. Kein Pop-up, kein zusätzlicher Platzbedarf.
+Ist das Eingabefeld leer, wenn der Assistent fertig ist, erscheint ein grauer Vorschlag genau dort, wo Sie gleich tippen würden. Kein Pop-up, kein zusätzlicher Platzbedarf. Im aktiven Fenster erscheinen Vorschläge standardmäßig auch ohne Fokus im Eingabefeld. In den Einstellungen können Sie „Vorhersagen nur anzeigen, wenn das Eingabefeld den Fokus hat“ aktivieren. Klicken Sie vor der Übernahme in das Eingabefeld.
 
 <p align="center">
   <img src="docs/images/suggestion.png" width="720" alt="Ein grauer Vorschlag im Eingabefeld, rechts daneben „Tab: übernehmen“ und „Anderer“">
@@ -100,10 +100,13 @@ Ist das Eingabefeld leer, wenn der Assistent fertig ist, erscheint ein grauer Vo
 
 | Taste | Wirkung |
 |---|---|
-| <kbd>Tab</kbd> oder <kbd>→</kbd> | Fügt den Vorschlag ins Eingabefeld ein, wo Sie ihn weiterbearbeiten können; <kbd>Strg</kbd>+<kbd>Z</kbd> macht nur dieses Einfügen rückgängig |
+| <kbd>Tab</kbd> oder <kbd>→</kbd> | Fügt den Vorschlag bei fokussiertem Eingabefeld ein. Sie können ihn weiterbearbeiten. |
 | <kbd>Esc</kbd> | Blendet den Vorschlag aus |
 | <kbd>Alt</kbd>+<kbd>\\</kbd> (änderbar) | Sagt sofort vorher; wird bereits ein Vorschlag angezeigt, wechselt es zu einem anderen. Ein Aufruf liefert mehrere Alternativen, das Wechseln geht daher ohne Wartezeit |
 | Einfach tippen | Der Vorschlag verschwindet sofort; er kommt zurück, wenn Sie das Eingabefeld leeren |
+| Auf „Tab: übernehmen“ klicken | Fügt den Vorschlag bei fokussiertem Eingabefeld ein |
+
+Mit der Pausentaste in der Eingabeleiste pausieren Sie Vorhersagen für dieses Gespräch bis zum Fortsetzen oder Neustart von DSH. Fordern Sie nach dem Fortsetzen eine Vorhersage an oder warten Sie auf die nächste Antwort. Die Pause bleibt beim Neuladen der Seite und beim Speichern der Einstellungen erhalten.
 
 ### Drei Modi, ein Klick
 
@@ -280,8 +283,9 @@ Kein `npm install`, kein Bundler; erforderlich ist Node.js 22 oder neuer. Um ein
 
 - In der Web-Oberfläche von DSH `0.2.2-rc.1` und `0.2.2-rc.3` geprüft. Eingabemethoden und Tastenkürzel der Desktop-App müssen separat geprüft werden.
 - Das Speichern einer Einstellung veranlasst den Host, den Hintergrundteil des Plugins neu zu starten; eine laufende Vorhersage wird abgebrochen.
-- Mehrere Fenster teilen sich die Vorhersageergebnisse; das Ausblenden eines Vorschlags in einem Fenster wird nicht in Echtzeit auf die anderen übertragen.
-- Befehlspalette und Feedback-Dialog werden anhand von Fokus und modalen Merkmalen erkannt; eine Fehleinschätzung kostet höchstens einen Vorschlag, nie einen abgefangenen Tastendruck.
+- Fenster am selben DSH-Host gleichen Pausen, Übernahmen und ausgeblendete Vorschläge sichtbar alle 800 ms und verborgen alle 5 Sekunden ab.
+- Das Plugin erkennt Pop-ups anhand der Menü- und Dialogmarkierungen von DSH. Änderungen an diesen Markierungen können beeinflussen, wann Vorschläge angezeigt werden.
+- Das Plugin stellt das Rückgängigmachen der ersten übernommenen Vorhersage nach dem Senden in DSH Desktop `0.2.2-rc.3` wieder her. Andere Editorversionen verwenden die native Rückgängig-Funktion von DSH. [Validierungsbericht](docs/VALIDATION-DISPLAY-SESSION.md)
 
 ## Lizenz
 

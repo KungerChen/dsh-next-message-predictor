@@ -12,7 +12,7 @@
 // schemastery/zod；P4 再引入 volatile Config）。设置写入走 configEditor.edit。
 
 import { homedir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, isAbsolute, join } from 'node:path'
 
 import { CONFIG_SET_MIN_BODY_BYTES, normalizeConfig } from '../shared/config.js'
 import { PLUGIN_VERSION } from '../shared/version.js'
@@ -22,6 +22,7 @@ import { createModelProvider } from './model-provider.js'
 import { createPersistentLedger } from './budget-ledger.js'
 import { createResultsLog } from './results-log.js'
 import { createPredictorService } from './predictor-service.js'
+import { sessionStateForHost } from './session-state.js'
 
 /**
  * Required host service: the browser HTTP carrier. Declaring it makes the
@@ -40,6 +41,13 @@ function resolveHomeDir() {
   const fromEnv = env.DSH_HOME
   if (typeof fromEnv === 'string' && fromEnv !== '') return fromEnv
   return join(homedir(), '.dsh')
+}
+
+function profileDirectory(ctx) {
+  const directory = safeGet(ctx, 'profileContext')?.dir
+  if (typeof directory === 'string' && isAbsolute(directory)) return directory
+  const configDocument = safeGet(ctx, 'configEditor')?.documentPath
+  return typeof configDocument === 'string' && isAbsolute(configDocument) ? dirname(configDocument) : undefined
 }
 
 /**
@@ -138,6 +146,7 @@ export function apply(ctx, rawConfig) {
     modelProvider,
     ledger,
     results: resultsLog,
+    sessionState: sessionStateForHost(adapter.connection, profileDirectory(ctx)),
     onConfigChange: (config) => {
       liveConfig = config
     },

@@ -102,6 +102,43 @@ test('auto trigger fires only on an observed running -> idle transition', async 
   assert.equal(runtime.assistStore.getSnapshot().text, '固定测试建议')
 })
 
+for (const requireInputFocus of [false, true]) {
+  test(`composer focus controls display only when requested: ${requireInputFocus}`, async () => {
+    const { runtime, calls } = await readyRuntime((operation, payload) =>
+      operation === 'predict' ? offerResponse(payload) : statusValue({ requireInputFocus }),
+    )
+    const blurred = makeEnv({ focused: false })
+    runtime.sync(makeEnv({ running: true, turnId: 'a0', focused: false }))
+    runtime.sync(blurred)
+    await sleep(20)
+    assert.equal(runtime.assistStore.getSnapshot().status, 'offered')
+    assert.equal(runtime.canDisplayOffer(blurred), !requireInputFocus)
+    assert.equal(runtime.prepareAdoption(blurred), null)
+    if (runtime.canDisplayOffer(blurred)) runtime.noteShown()
+
+    for (const focused of [true, false, true]) {
+      const env = makeEnv({ focused })
+      runtime.sync(env)
+      assert.equal(runtime.canDisplayOffer(env), focused || !requireInputFocus)
+      assert.equal(runtime.prepareAdoption(env)?.suggestionId, focused ? 'sug-1' : undefined)
+      if (runtime.canDisplayOffer(env)) runtime.noteShown()
+    }
+
+    assert.equal(calls.filter((call) => call.operation === 'predict').length, 1)
+    assert.equal(calls.filter((call) => call.operation === 'outcome' && call.payload.event === 'shown').length, 1)
+    for (const disqualifier of [
+      { windowFocused: false }, { windowVisible: false }, { menuOpen: true },
+      { composing: true }, { attachmentCount: 1 }, { phase: 'sending' },
+      { canEdit: false }, { draft: 'text' }, { draftRev: 1 }, { sessionId: 'wrong' },
+      { contextRevision: 'stale' }, { completedEventSeq: 1 }, { pendingInteraction: true },
+    ]) {
+      assert.equal(runtime.canDisplayOffer(makeEnv(disqualifier)), false, JSON.stringify(disqualifier))
+      assert.equal(runtime.prepareAdoption(makeEnv(disqualifier)), null, JSON.stringify(disqualifier))
+    }
+    runtime.dispose()
+  })
+}
+
 test('mounting an already-idle old turn never auto-predicts', async () => {
   const { runtime, calls } = await readyRuntime((operation, payload) =>
     operation === 'predict' ? offerResponse(payload) : statusValue(),

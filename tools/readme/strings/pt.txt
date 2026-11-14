@@ -11,7 +11,7 @@ demo_caption: Uma sugestão aparece → peça outra se não servir → <kbd>Tab<
 why_h: Por que usar
 why_p: Ao trabalhar com um assistente, muitas respostas são curtas e fáceis de adivinhar: “continue”, “rode os testes”, “mostre as alterações”. Este plugin escreve essa continuação com antecedência e a deixa na caixa de entrada.
 c1_h: Menos digitação
-c1_p: As continuações mais comuns a uma tecla de distância. Depois de inserido, o texto é como qualquer outro que você digitou: dá para editar e desfazer.
+c1_p: Insira mensagens comuns de acompanhamento com uma tecla. O texto inserido continua editável.
 c2_h: Sem interrupções
 c2_p: Assim que você começa a digitar, a sugestão sai do caminho. Ela não aparece durante a composição do IME nem com um menu aberto. Quando o modelo não tem certeza, não oferece nada.
 c3_h: Nunca passa dos limites
@@ -24,18 +24,21 @@ c6_h: Uso transparente
 c6_p: Pedidos, taxa de aceitação, tempo de resposta e uso de tokens dos últimos 7 dias ficam na página de configurações, para você ver se vale a pena.
 feat_h: Recursos
 f1_h: A sugestão fica na própria caixa de entrada
-f1_p: Quando o assistente termina, se a caixa de entrada estiver vazia, uma sugestão cinza aparece exatamente onde você ia digitar. Sem janelas pop-up e sem ocupar espaço.
+f1_p: Quando o assistente termina, se a caixa de entrada estiver vazia, uma sugestão cinza aparece exatamente onde você ia digitar. Sem janelas pop-up e sem ocupar espaço. Na janela ativa, as sugestões são exibidas por padrão mesmo quando o campo está sem foco. Você pode ativar “{ui:settings.requireInputFocus}” nas configurações. Clique no campo de entrada antes de aceitar uma sugestão.
 f1_alt: Uma sugestão cinza na caixa de entrada, com “{ui:ghost.adopt}” e “{ui:ghost.another}” à direita
 k_th1: Tecla
 k_th2: O que faz
 k1a: <kbd>Tab</kbd> ou <kbd>→</kbd>
-k1b: Insere a sugestão na caixa de entrada, onde você pode continuar editando; <kbd>Ctrl</kbd>+<kbd>Z</kbd> desfaz apenas essa inserção
+k1b: Insere a sugestão quando o campo de entrada está em foco. Você pode continuar editando.
 k2a: <kbd>Esc</kbd>
 k2b: Oculta a sugestão
 k3a: <kbd>Alt</kbd>+<kbd>\\</kbd> (configurável)
 k3b: Faz a previsão na hora; com uma sugestão exibida, passa para outra. Uma única chamada traz várias alternativas, então a troca é instantânea
 k4a: Simplesmente digitar
 k4b: A sugestão some na hora; ela volta quando você esvazia a caixa de entrada
+k5a: Clique em “{ui:ghost.adopt}”
+k5b: Insere a sugestão quando o campo de entrada está em foco
+f1_pause: Use o botão de pausa na barra de composição para pausar as previsões desta conversa até retomá-las ou reiniciar o DSH. Depois de retomar, peça uma previsão manualmente ou aguarde a próxima resposta. A pausa é mantida ao atualizar a página ou salvar as configurações.
 f2_h: Três modos, um clique
 f2_p: Não quer estudar cada opção? Escolha um modo. Dá para desfazer ou ajustar depois.
 f2_alt: O cartão de modos: {ui:preset.balanced.name}, {ui:preset.saver.name}, {ui:preset.quality.name}
@@ -132,7 +135,9 @@ dev_p: Não precisa de `npm install` nem de empacotador; é necessário o Node.j
 lim_h: Limitações conhecidas
 l1: Verificado na interface web do DSH `0.2.2-rc.1` e `0.2.2-rc.3`. Os métodos de entrada e atalhos do aplicativo para desktop exigem uma verificação separada.
 l2: Salvar uma configuração faz o host reiniciar a parte em segundo plano do plugin; uma previsão em andamento é cancelada.
-l3: Várias janelas compartilham os resultados das previsões; ocultar uma sugestão em uma janela não é sincronizado com as outras em tempo real.
-l4: A paleta de comandos e a caixa de diálogo de feedback são reconhecidas pelo foco e por características modais; um erro de detecção significa apenas uma sugestão a menos, nunca uma tecla capturada.
+l3: As janelas conectadas ao mesmo host DSH consultam pausas, aceitações e dispensas a cada 800 ms quando visíveis e a cada 5 segundos quando ocultas.
+l4: O plugin detecta janelas pop-up pelos marcadores de menus e caixas de diálogo do DSH. Mudanças nesses marcadores podem afetar a exibição de sugestões.
+l5: O plugin corrige o comando Desfazer para a primeira sugestão aceita após o envio no DSH Desktop `0.2.2-rc.3`. Outras versões do editor usam o comportamento nativo do DSH.
+l5_link: Relatório de validação
 lic_h: Licença
 lic_p: Publicado sob a [licença MIT](LICENSE). A escolha dos pontos de extensão e a interação “sugestão cinza + Tab para aceitar + Esc para ocultar” foram inspiradas no `dsh-composer-prediction`, também sob licença MIT; nenhum código dele foi copiado. Veja [NOTICE](NOTICE).

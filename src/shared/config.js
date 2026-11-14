@@ -69,6 +69,8 @@ export const DEFAULT_CONFIG = {
   manualOnly: false,
   /** 输入框为空时，在右侧显示一个“预测”按钮（等同于按 Alt+\）。 */
   showPredictButton: true,
+  /** Display suggestions only while the input itself is focused. */
+  requireInputFocus: false,
   /** 一次模型调用给出最多 3 条候选，“换一条”先在本地切换，切完才再调用模型。 */
   multiCandidates: true,
   /**
@@ -336,7 +338,7 @@ const LIST_FIELDS = {
   },
 }
 
-const BOOLEAN_FIELDS = ['enabled', 'announceSuggestions', 'manualOnly', 'showPredictButton', 'multiCandidates', 'habitSuggestions', 'includeTurnFacts', 'redactSecrets', 'sidebarEntry']
+const BOOLEAN_FIELDS = ['enabled', 'announceSuggestions', 'manualOnly', 'showPredictButton', 'requireInputFocus', 'multiCandidates', 'habitSuggestions', 'includeTurnFacts', 'redactSecrets', 'sidebarEntry']
 
 /** Own-property test that also works for objects without a prototype. */
 function hasOwn(object, key) {

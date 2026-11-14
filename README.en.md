@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.5.1-4d6bfe" alt="version 0.5.1">
+  <img src="https://img.shields.io/badge/version-0.6.0-4d6bfe" alt="version 0.6.0">
   <img src="https://img.shields.io/badge/DeepSeek%20Harness-0.2.2--rc.1-1f2937" alt="DeepSeek Harness 0.2.2-rc.1">
   <img src="https://img.shields.io/badge/languages-9-8250df" alt="languages 9">
   <img src="https://img.shields.io/badge/third--party%20deps-0-2ea44f" alt="third-party deps 0">
@@ -45,7 +45,7 @@ When you work with an assistant, many replies are short and easy to guess: “co
 
 ### ⌨️ Less typing
 
-Common follow-ups are one key away. Once filled in, the text behaves like anything you typed: edit it, undo it.
+Common follow-ups are one key away. You can edit a suggestion after inserting it.
 
 </td>
 <td width="33%" valign="top">
@@ -92,7 +92,7 @@ Requests, acceptance rate, response time and token usage for the last 7 days are
 
 ### The suggestion is right in the input box
 
-After the assistant finishes, if the input box is empty, a grey suggestion appears exactly where you are about to type. No pop-up, no extra space taken.
+After the assistant finishes, if the input box is empty, a grey suggestion appears exactly where you are about to type. No pop-up, no extra space taken. In the active window, suggestions appear even when the input is unfocused by default. You can turn on “Show predictions only when the input is focused” in settings. Click the input before accepting a suggestion.
 
 <p align="center">
   <img src="docs/images/suggestion.png" width="720" alt="A grey suggestion in the input box, with “Tab accept” and “Another” on the right">
@@ -100,10 +100,13 @@ After the assistant finishes, if the input box is empty, a grey suggestion appea
 
 | Key | What it does |
 |---|---|
-| <kbd>Tab</kbd> or <kbd>→</kbd> | Fills the suggestion into the input box, where you can keep editing; <kbd>Ctrl</kbd>+<kbd>Z</kbd> undoes just that insertion |
+| <kbd>Tab</kbd> or <kbd>→</kbd> | Inserts the suggestion when the input is focused. You can keep editing. |
 | <kbd>Esc</kbd> | Hides the suggestion |
 | <kbd>Alt</kbd>+<kbd>\\</kbd> (configurable) | Predicts right now; with a suggestion showing, switches to another one. One call brings back several alternatives, so switching is instant |
 | Just type | The suggestion disappears at once; it comes back when you clear the input box |
+| Click “Tab accept” | Inserts the suggestion while the input is focused |
+
+Click the pause button in the composer toolbar to pause predictions for this conversation until you resume them or restart DSH. After resuming, predict manually or wait for the next reply. Refreshing the page or saving settings retains the pause.
 
 ### Three modes, one click
 
@@ -280,8 +283,9 @@ No `npm install` and no bundler; Node.js 22 or later is required. To add or corr
 
 - Verified in the Web UI of DSH `0.2.2-rc.1` and `0.2.2-rc.3`. Native desktop input methods and shortcuts need separate verification.
 - Saving a setting makes the host restart the background half of the plugin; a prediction in progress is cancelled.
-- Several windows share prediction results; hiding a suggestion in one window is not synchronised to the others in real time.
-- The command palette and the feedback dialog are recognised by focus and modal traits; a wrong guess only means one suggestion less, never a stolen key press.
+- Windows connected to the same DSH Host poll for pauses, adoption and dismissal every 800 ms when visible and every 5 seconds when hidden.
+- The plugin detects pop-ups through DSH’s menu and dialog markers. Changes to these markers may affect when suggestions appear.
+- The plugin restores Undo for the first accepted suggestion after sending on DSH Desktop `0.2.2-rc.3`. Other editor versions use DSH’s native Undo behavior. [Validation report](docs/VALIDATION-DISPLAY-SESSION.md)
 
 ## License
 

@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.5.1-4d6bfe" alt="version 0.5.1">
+  <img src="https://img.shields.io/badge/version-0.6.0-4d6bfe" alt="version 0.6.0">
   <img src="https://img.shields.io/badge/DeepSeek%20Harness-0.2.2--rc.1-1f2937" alt="DeepSeek Harness 0.2.2-rc.1">
   <img src="https://img.shields.io/badge/langues-9-8250df" alt="langues 9">
   <img src="https://img.shields.io/badge/d%C3%A9pendances%20tierces-0-2ea44f" alt="dépendances tierces 0">
@@ -45,7 +45,7 @@ Quand on travaille avec un assistant, beaucoup de réponses sont courtes et faci
 
 ### ⌨️ Moins de frappe
 
-Les relances courantes en une touche. Une fois inséré, le texte se comporte comme tout ce que vous avez tapé : il se modifie et s’annule.
+Insérez une relance courante d’une touche. Le texte inséré reste modifiable.
 
 </td>
 <td width="33%" valign="top">
@@ -92,7 +92,7 @@ Les requêtes, le taux d’acceptation, le temps de réponse et la consommation 
 
 ### La suggestion est directement dans la zone de saisie
 
-Une fois la réponse de l’assistant terminée, si la zone de saisie est vide, une suggestion grise apparaît exactement là où vous alliez taper. Pas de fenêtre surgissante, pas de place perdue.
+Une fois la réponse de l’assistant terminée, si la zone de saisie est vide, une suggestion grise apparaît exactement là où vous alliez taper. Pas de fenêtre surgissante, pas de place perdue. Dans la fenêtre active, les suggestions apparaissent par défaut même si la zone de saisie n’a pas le focus. Vous pouvez activer « Afficher les prédictions uniquement lorsque la zone de saisie a le focus » dans les paramètres. Cliquez dans la zone de saisie avant d’adopter une suggestion.
 
 <p align="center">
   <img src="docs/images/suggestion.png" width="720" alt="Une suggestion grise dans la zone de saisie, avec « Tab : accepter » et « Une autre » à droite">
@@ -100,10 +100,13 @@ Une fois la réponse de l’assistant terminée, si la zone de saisie est vide, 
 
 | Touche | Effet |
 |---|---|
-| <kbd>Tab</kbd> ou <kbd>→</kbd> | Insère la suggestion dans la zone de saisie, où vous pouvez continuer à la modifier ; <kbd>Ctrl</kbd>+<kbd>Z</kbd> n’annule que cette insertion |
+| <kbd>Tab</kbd> ou <kbd>→</kbd> | Insère la suggestion lorsque la zone de saisie a le focus. Vous pouvez continuer à la modifier. |
 | <kbd>Échap</kbd> | Masque la suggestion |
 | <kbd>Alt</kbd>+<kbd>\\</kbd> (modifiable) | Prédit immédiatement ; si une suggestion est affichée, passe à une autre. Un seul appel rapporte plusieurs propositions : le changement est instantané |
 | Taper, tout simplement | La suggestion disparaît aussitôt ; elle revient quand vous videz la zone de saisie |
+| Cliquer sur « Tab : accepter » | Insère la suggestion lorsque la zone de saisie a le focus |
+
+Le bouton de pause de la barre de saisie suspend les prédictions de cette conversation jusqu’à leur reprise ou au redémarrage de DSH. Après la reprise, lancez une prédiction manuellement ou attendez la prochaine réponse. La pause est conservée lors de l’actualisation de la page ou de l’enregistrement des paramètres.
 
 ### Trois modes, un clic
 
@@ -280,8 +283,9 @@ Pas de `npm install`, pas d’outil d’assemblage ; Node.js 22 ou une version u
 
 - Vérifié dans l’interface web de DSH `0.2.2-rc.1` et `0.2.2-rc.3`. Les méthodes de saisie et les raccourcis de l’application de bureau demandent une vérification distincte.
 - Enregistrer un réglage amène l’hôte à redémarrer la partie en arrière-plan du plugin ; une prédiction en cours est annulée.
-- Plusieurs fenêtres partagent les résultats de prédiction ; masquer une suggestion dans une fenêtre n’est pas répercuté en temps réel dans les autres.
-- La palette de commandes et la boîte de dialogue de commentaires sont reconnues d’après le focus et des caractéristiques modales ; une erreur de détection ne coûte qu’une suggestion, jamais une frappe détournée.
+- Les fenêtres connectées au même hôte DSH vérifient les mises en pause, les adoptions et les masquages toutes les 800 ms lorsqu’elles sont visibles et toutes les 5 secondes lorsqu’elles sont masquées.
+- Le module détecte les fenêtres surgissantes grâce aux marqueurs de menus et de boîtes de dialogue de DSH. Une modification de ces marqueurs peut affecter l’affichage des suggestions.
+- Le module rétablit la possibilité d’annuler la première suggestion adoptée après un envoi dans DSH Desktop `0.2.2-rc.3`. Les autres versions de l’éditeur utilisent le comportement natif de DSH. [Rapport de validation](docs/VALIDATION-DISPLAY-SESSION.md)
 
 ## Licence
 

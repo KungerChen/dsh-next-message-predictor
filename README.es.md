@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/versi%C3%B3n-0.5.1-4d6bfe" alt="versión 0.5.1">
+  <img src="https://img.shields.io/badge/versi%C3%B3n-0.6.0-4d6bfe" alt="versión 0.6.0">
   <img src="https://img.shields.io/badge/DeepSeek%20Harness-0.2.2--rc.1-1f2937" alt="DeepSeek Harness 0.2.2-rc.1">
   <img src="https://img.shields.io/badge/idiomas-9-8250df" alt="idiomas 9">
   <img src="https://img.shields.io/badge/dependencias%20externas-0-2ea44f" alt="dependencias externas 0">
@@ -45,7 +45,7 @@ Al trabajar con un asistente, muchas respuestas son cortas y fáciles de adivina
 
 ### ⌨️ Menos tecleo
 
-Los seguimientos habituales, a una tecla. Una vez insertado, el texto es como cualquier otro que hayas escrito: se puede editar y deshacer.
+Inserta mensajes de seguimiento habituales con una tecla. Puedes editar el texto después de insertarlo.
 
 </td>
 <td width="33%" valign="top">
@@ -92,7 +92,7 @@ Las solicitudes, la tasa de aceptación, el tiempo de respuesta y el uso de toke
 
 ### La sugerencia está en el propio cuadro de entrada
 
-Cuando el asistente termina, si el cuadro de entrada está vacío, aparece una sugerencia gris justo donde ibas a escribir. Sin ventanas emergentes y sin ocupar espacio.
+Cuando el asistente termina, si el cuadro de entrada está vacío, aparece una sugerencia gris justo donde ibas a escribir. Sin ventanas emergentes y sin ocupar espacio. En la ventana activa, las sugerencias se muestran de forma predeterminada aunque el campo no tenga el foco. Puedes activar «Mostrar predicciones solo cuando el campo de entrada tiene el foco» en la configuración. Haz clic en el campo antes de aceptar una sugerencia.
 
 <p align="center">
   <img src="docs/images/suggestion.png" width="720" alt="Una sugerencia gris en el cuadro de entrada, con «Tab: aceptar» y «Otra» a la derecha">
@@ -100,10 +100,13 @@ Cuando el asistente termina, si el cuadro de entrada está vacío, aparece una s
 
 | Tecla | Qué hace |
 |---|---|
-| <kbd>Tab</kbd> o <kbd>→</kbd> | Inserta la sugerencia en el cuadro de entrada, donde puedes seguir editando; <kbd>Ctrl</kbd>+<kbd>Z</kbd> deshace solo esa inserción |
+| <kbd>Tab</kbd> o <kbd>→</kbd> | Inserta la sugerencia cuando el campo tiene el foco. Puedes seguir editándola. |
 | <kbd>Esc</kbd> | Oculta la sugerencia |
 | <kbd>Alt</kbd>+<kbd>\\</kbd> (configurable) | Predice al instante; si ya hay una sugerencia, pasa a otra. Una sola llamada trae varias alternativas, así que cambiar es inmediato |
 | Escribir sin más | La sugerencia desaparece al momento; vuelve cuando vacías el cuadro de entrada |
+| Haz clic en «Tab: aceptar» | Inserta la sugerencia cuando el campo tiene el foco |
+
+Usa el botón de pausa de la barra de escritura para pausar las predicciones de esta conversación hasta que las reanudes o reinicies DSH. Al reanudarlas, pide una predicción manualmente o espera la siguiente respuesta. La pausa se conserva al recargar la página o guardar la configuración.
 
 ### Tres modos, un clic
 
@@ -280,8 +283,9 @@ No hace falta `npm install` ni empaquetador; se requiere Node.js 22 o posterior.
 
 - Verificado en la interfaz web de DSH `0.2.2-rc.1` y `0.2.2-rc.3`. Los métodos de entrada y los atajos de la aplicación de escritorio requieren una verificación aparte.
 - Guardar un ajuste hace que el host reinicie la parte en segundo plano del plugin; la predicción en curso se cancela.
-- Varias ventanas comparten los resultados de predicción; ocultar una sugerencia en una ventana no se sincroniza con las demás en tiempo real.
-- La paleta de comandos y el diálogo de comentarios se reconocen por el foco y por rasgos modales; un error de detección solo supone una sugerencia menos, nunca una pulsación robada.
+- Las ventanas conectadas al mismo servidor DSH consultan los cambios de pausa, aceptación y ocultación cada 800 ms si están visibles y cada 5 segundos si están ocultas.
+- El complemento reconoce las ventanas emergentes mediante los marcadores de menús y diálogos de DSH. Los cambios en estos marcadores pueden afectar a la aparición de sugerencias.
+- El complemento restablece la opción de deshacer la primera sugerencia aceptada después de enviar un mensaje en DSH Desktop `0.2.2-rc.3`. Las demás versiones del editor utilizan la función nativa de DSH. [Informe de validación](docs/VALIDATION-DISPLAY-SESSION.md)
 
 ## Licencia
 

@@ -99,6 +99,9 @@
 | {{k2a}} | {{k2b}} |
 | {{k3a}} | {{k3b}} |
 | {{k4a}} | {{k4b}} |
+| {{k5a}} | {{k5b}} |
+
+{{f1_pause}}
 
 ### {{f2_h}}
 
@@ -277,6 +280,7 @@ npm run check   # {{dev_c3}}
 - {{l2}}
 - {{l3}}
 - {{l4}}
+- {{l5}} [{{l5_link}}](docs/VALIDATION-DISPLAY-SESSION.md)
 
 ## {{lic_h}}
 

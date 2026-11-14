@@ -63,45 +63,38 @@ export function editorHasFocus(input) {
 export function readEditorWritable(input) {
   if (input === null || input === undefined) return false
   if (typeof input.getAttribute === 'function' && input.getAttribute('aria-disabled') === 'true') return false
+  if (typeof input.getAttribute === 'function' && input.getAttribute('aria-readonly') === 'true') return false
   if (typeof input.isContentEditable === 'boolean' && input.isContentEditable === false) return false
   return true
 }
 
 /** Menus/popups rendered inside one composer card. */
-const CARD_MENU_SELECTORS = [
-  '[role="listbox"]',
-  '[role="menu"]',
-  '[role="alertdialog"]',
-  '[aria-haspopup][aria-expanded="true"]',
-]
+const CARD_MENU_SELECTOR = '[aria-haspopup][aria-expanded="true"]'
 
-/** Shell-level dialogs (feedback modal portals to the document body). */
+/** Shell-level menus and dialogs may be rendered in a body portal. */
 const PAGE_DIALOG_SELECTORS = [
   '[data-trigger-menu]',
-  '[role="dialog"][aria-modal="true"]',
+  '[role="listbox"]',
+  '[role="menu"]',
+  '[role="dialog"]',
   '[role="alertdialog"]',
 ]
 
-/**
- * Heuristic "a menu / popup / modal occupies the interaction".
- *
- * The / and @ candidate menu uses `[data-trigger-menu]`. Command popup and
- * feedback dialog have no stable data marker; they move focus away from the
- * editor (handled by the caller's focus requirement) and may render a listbox
- * or a modal. Over-applying the guard only suppresses an offer, never steals a
- * key, so the check stays conservative.
- */
+function hasVisiblePopup(root, selector) {
+  return Array.from(root.querySelectorAll(selector)).some((node) =>
+    node.closest('[hidden], [inert], [aria-hidden="true"]') === null &&
+    node.getClientRects().length > 0 &&
+    window.getComputedStyle(node).visibility === 'visible',
+  )
+}
+
+/** Whether a visible composer menu or page popup occupies the interaction. */
 export function hasOpenMenuOrDialog(card) {
   if (typeof document === 'undefined' || document === null) return false
-  if (card !== null && card !== undefined && typeof card.querySelector === 'function') {
-    for (const selector of CARD_MENU_SELECTORS) {
-      if (card.querySelector(selector) !== null) return true
-    }
+  if (card !== null && card !== undefined) {
+    if (hasVisiblePopup(card, CARD_MENU_SELECTOR)) return true
   }
-  for (const selector of PAGE_DIALOG_SELECTORS) {
-    if (document.querySelector(selector) !== null) return true
-  }
-  return false
+  return hasVisiblePopup(document, PAGE_DIALOG_SELECTORS.join(', '))
 }
 
 /** Whether the page is currently visible (not a hidden tab / minimized window). */
@@ -109,6 +102,11 @@ export function pageVisible() {
   if (typeof document === 'undefined' || document === null) return false
   if (document.visibilityState === 'hidden') return false
   return true
+}
+
+/** Whether the browser window currently owns keyboard focus. */
+export function pageFocused() {
+  return typeof document.hasFocus !== 'function' || document.hasFocus() !== false
 }
 
 /** Find the native placeholder element inside one card. */

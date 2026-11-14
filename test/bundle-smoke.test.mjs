@@ -17,6 +17,8 @@ import { NMP_DICTIONARIES, NMP_LANGUAGE_NAMES } from '../src/client/i18n.js'
 import { matchPreset } from '../src/shared/presets.js'
 import { PLUGIN_VERSION } from '../src/shared/version.js'
 import { createPredictorService } from '../src/host/predictor-service.js'
+import { createStore } from '../src/client/controller.js'
+import { createSettingsComponent } from '../src/client/settings.js'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const tick = (ms = 0) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -322,7 +324,7 @@ for (const language of LANGUAGE_IDS) {
       for (const id of ['balanced', 'saver', 'quality']) assert.ok(find(page, 'data-nmp-preset', id), `mode ${id}`)
       assert.equal(find(page, 'data-nmp-preset', 'balanced').props['aria-pressed'], true)
       assert.equal(find(page, 'data-nmp-preset', 'saver').props['aria-pressed'], false)
-      for (const name of ['enabled', 'manualOnly', 'showPredictButton', 'predictShortcut', 'habitSuggestions', 'pinned', 'pinnedInput', 'pinnedAdd', 'pinnedEmpty', 'multiCandidates', 'modelMode', 'advanced', 'restoreAdvanced']) {
+      for (const name of ['enabled', 'manualOnly', 'showPredictButton', 'requireInputFocus', 'predictShortcut', 'habitSuggestions', 'pinned', 'pinnedInput', 'pinnedAdd', 'pinnedEmpty', 'multiCandidates', 'modelMode', 'advanced', 'restoreAdvanced']) {
         assert.ok(find(page, 'data-nmp-setting', name), `control ${name}`)
       }
       const leaked = readableStrings(page).filter((value) => RAW_KEY.test(value.trim()))
@@ -421,6 +423,39 @@ test('a language learnt after registration renames the Settings and sidebar entr
     app.dispose()
   }
   assert.equal(app.registry.length, 0, 'unloading still removes every contribution')
+})
+
+test('focus-only display is off by default and saves from the settings switch', async () => {
+  const app = await boot({ config: { enabled: true } })
+  try {
+    const readSwitch = () => find(app.render('settings.section'), 'data-nmp-setting', 'requireInputFocus')
+    assert.equal(readSwitch().props['aria-checked'], false)
+    readSwitch().props.onClick()
+    await tick(5)
+    assert.deepEqual(app.writes, [{ requireInputFocus: true }])
+    assert.equal(readSwitch().props['aria-checked'], true)
+    assert.equal(matchPreset(app.hostConfig()), 'balanced')
+  } finally {
+    app.dispose()
+  }
+})
+
+test('settings render the localized paused session state', () => {
+  for (const language of LANGUAGE_IDS) {
+    const t = (key) => NMP_DICTIONARIES[language][key] ?? key
+    t.language = () => language
+    const runtime = {
+      configStore: createStore({
+        ready: true, config: { ...DEFAULT_CONFIG, enabled: true }, hostVersion: PLUGIN_VERSION,
+        hostError: '', configErrors: [], capabilities: {}, diagnostics: {},
+      }),
+      assistStore: createStore({ status: 'paused', reason: '' }),
+      shellStore: createStore({}),
+    }
+    const Settings = createSettingsComponent(react, runtime, t)
+    const label = find(expand(react.createElement(Settings, null)), 'data-nmp-setting', 'state')
+    assert.equal(textOf(label.children), t('settings.stateNow') + t('reason.session-paused'))
+  }
 })
 
 test('the composer overlay speaks the chosen language too', async () => {

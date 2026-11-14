@@ -46,44 +46,64 @@ export function hashId(value) {
   }
 }
 
-/** 归一化文本后计算完全匹配与公共前缀字符数（grapheme 感知）。 */
+/** 归一化文本后按 Unicode code point 计数（历史字段名保留 Graphemes）。 */
 export function matchScore(suggestion, message) {
   const normalize = (text) => Array.from(String(text ?? '').replace(/\s+/gu, ' ').trim())
   const a = normalize(suggestion)
   const b = normalize(message)
-  if (a.length === 0 || b.length === 0) return { exact: false, prefixChars: 0, editRatio: 1, suggestionGraphemes: a.length, userGraphemes: b.length }
+  if (a.length === 0 || b.length === 0) return { exact: false, prefixChars: 0, editRatio: 0, scoreExact: true, suggestionGraphemes: a.length, userGraphemes: b.length }
   const shortest = Math.min(a.length, b.length)
   let prefixChars = 0
   while (prefixChars < shortest && a[prefixChars] === b[prefixChars]) prefixChars += 1
   const maxLength = Math.max(a.length, b.length)
-  // 只在前缀相同或长度接近时计算编辑距离，避免长文本 O(n²) 开销。
-  const editRatio = 1 - levenshteinBounded(a, b, Math.min(maxLength, 400)) / maxLength
+  // Trim equal edges before budgeting the dynamic program; long nearly-identical
+  // strings can still receive an exact score. The count uses Unicode code points.
+  let endA = a.length
+  let endB = b.length
+  while (endA > prefixChars && endB > prefixChars && a[endA - 1] === b[endB - 1]) { endA -= 1; endB -= 1 }
+  const left = a.slice(prefixChars, endA)
+  const right = b.slice(prefixChars, endB)
+  let distance
+  let scoreExact = true
+  if (left.length === 0 || right.length === 0) {
+    distance = Math.max(left.length, right.length)
+  } else if (left.length * right.length <= 160000) {
+    distance = levenshtein(left, right)
+  } else {
+    // With no shared characters all positions must be replaced or deleted.
+    const chars = new Set(left)
+    if (!right.some((char) => chars.has(char))) distance = Math.max(left.length, right.length)
+    else {
+      // Unknown distance: zero is a conservative similarity lower bound, not
+      // a measured score. Persist its precision so consumers can distinguish it.
+      distance = maxLength
+      scoreExact = false
+    }
+  }
+  const editRatio = 1 - distance / maxLength
   return {
     exact: a.length === b.length && prefixChars === a.length,
     prefixChars,
     editRatio: Math.max(0, Math.min(1, editRatio)),
+    scoreExact,
     suggestionGraphemes: a.length,
     userGraphemes: b.length,
   }
 }
 
-function levenshteinBounded(a, b, limit) {
-  if (Math.abs(a.length - b.length) > limit) return limit
-  const previous = new Uint16Array(b.length + 1)
-  const current = new Uint16Array(b.length + 1)
+function levenshtein(a, b) {
+  const previous = new Uint32Array(b.length + 1)
+  const current = new Uint32Array(b.length + 1)
   for (let j = 0; j <= b.length; j += 1) previous[j] = j
   for (let i = 1; i <= a.length; i += 1) {
     current[0] = i
-    let rowMin = current[0]
     for (let j = 1; j <= b.length; j += 1) {
       const cost = a[i - 1] === b[j - 1] ? 0 : 1
       current[j] = Math.min(previous[j] + 1, current[j - 1] + 1, previous[j - 1] + cost)
-      if (current[j] < rowMin) rowMin = current[j]
     }
-    if (rowMin > limit) return limit + 1
     previous.set(current)
   }
-  return Math.min(limit, previous[b.length])
+  return previous[b.length]
 }
 
 /** `events.2026-11-10T18-01-34-123Z.jsonl` -> 轮换时刻（毫秒）；认不出时返回 null。 */
@@ -405,10 +425,14 @@ export function createResultsLog(options) {
     const modelTexts = entry.ring.filter((candidate) => candidate.source === 'model').map((candidate) => candidate.text)
     const acceptedModel = entry.accepted !== null && entry.accepted.source === 'model' ? entry.ring[entry.accepted.index]?.text : undefined
     let score = null
+    let uncertainCandidate = false
     for (const candidate of typeof acceptedModel === 'string' ? [acceptedModel] : modelTexts) {
       const next = matchScore(candidate, text)
-      if (score === null || (next.exact && !score.exact) || (!score.exact && next.editRatio > score.editRatio)) score = next
+      if (!next.scoreExact) uncertainCandidate = true
+      if (score === null || (next.exact && !score.exact) || (!score.exact && (next.editRatio > score.editRatio || (next.editRatio === score.editRatio && next.scoreExact && !score.scoreExact)))) score = next
     }
+    // A different unscored candidate could exceed the chosen lower bound.
+    if (score !== null && uncertainCandidate && !score.exact) score = { ...score, scoreExact: false }
     const key = normalizePhraseKey(text)
     const localHit = entry.ring.find((candidate) => candidate.source !== 'model' && normalizePhraseKey(candidate.text) === key)
     entry.matched = true
@@ -420,6 +444,7 @@ export function createResultsLog(options) {
       line.exact = score.exact
       line.prefix = score.prefixChars
       line.edit = Math.round(score.editRatio * 1000) / 1000
+      line.editExact = score.scoreExact
       line.ulen = score.userGraphemes
       line.slen = score.suggestionGraphemes
     }

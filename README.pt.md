@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/vers%C3%A3o-0.5.1-4d6bfe" alt="versão 0.5.1">
+  <img src="https://img.shields.io/badge/vers%C3%A3o-0.6.0-4d6bfe" alt="versão 0.6.0">
   <img src="https://img.shields.io/badge/DeepSeek%20Harness-0.2.2--rc.1-1f2937" alt="DeepSeek Harness 0.2.2-rc.1">
   <img src="https://img.shields.io/badge/idiomas-9-8250df" alt="idiomas 9">
   <img src="https://img.shields.io/badge/depend%C3%AAncias%20externas-0-2ea44f" alt="dependências externas 0">
@@ -45,7 +45,7 @@ Ao trabalhar com um assistente, muitas respostas são curtas e fáceis de adivin
 
 ### ⌨️ Menos digitação
 
-As continuações mais comuns a uma tecla de distância. Depois de inserido, o texto é como qualquer outro que você digitou: dá para editar e desfazer.
+Insira mensagens comuns de acompanhamento com uma tecla. O texto inserido continua editável.
 
 </td>
 <td width="33%" valign="top">
@@ -92,7 +92,7 @@ Pedidos, taxa de aceitação, tempo de resposta e uso de tokens dos últimos 7 d
 
 ### A sugestão fica na própria caixa de entrada
 
-Quando o assistente termina, se a caixa de entrada estiver vazia, uma sugestão cinza aparece exatamente onde você ia digitar. Sem janelas pop-up e sem ocupar espaço.
+Quando o assistente termina, se a caixa de entrada estiver vazia, uma sugestão cinza aparece exatamente onde você ia digitar. Sem janelas pop-up e sem ocupar espaço. Na janela ativa, as sugestões são exibidas por padrão mesmo quando o campo está sem foco. Você pode ativar “Mostrar previsões apenas quando o campo de entrada estiver em foco” nas configurações. Clique no campo de entrada antes de aceitar uma sugestão.
 
 <p align="center">
   <img src="docs/images/suggestion.png" width="720" alt="Uma sugestão cinza na caixa de entrada, com “Tab para aceitar” e “Outra” à direita">
@@ -100,10 +100,13 @@ Quando o assistente termina, se a caixa de entrada estiver vazia, uma sugestão 
 
 | Tecla | O que faz |
 |---|---|
-| <kbd>Tab</kbd> ou <kbd>→</kbd> | Insere a sugestão na caixa de entrada, onde você pode continuar editando; <kbd>Ctrl</kbd>+<kbd>Z</kbd> desfaz apenas essa inserção |
+| <kbd>Tab</kbd> ou <kbd>→</kbd> | Insere a sugestão quando o campo de entrada está em foco. Você pode continuar editando. |
 | <kbd>Esc</kbd> | Oculta a sugestão |
 | <kbd>Alt</kbd>+<kbd>\\</kbd> (configurável) | Faz a previsão na hora; com uma sugestão exibida, passa para outra. Uma única chamada traz várias alternativas, então a troca é instantânea |
 | Simplesmente digitar | A sugestão some na hora; ela volta quando você esvazia a caixa de entrada |
+| Clique em “Tab para aceitar” | Insere a sugestão quando o campo de entrada está em foco |
+
+Use o botão de pausa na barra de composição para pausar as previsões desta conversa até retomá-las ou reiniciar o DSH. Depois de retomar, peça uma previsão manualmente ou aguarde a próxima resposta. A pausa é mantida ao atualizar a página ou salvar as configurações.
 
 ### Três modos, um clique
 
@@ -280,8 +283,9 @@ Não precisa de `npm install` nem de empacotador; é necessário o Node.js 22 ou
 
 - Verificado na interface web do DSH `0.2.2-rc.1` e `0.2.2-rc.3`. Os métodos de entrada e atalhos do aplicativo para desktop exigem uma verificação separada.
 - Salvar uma configuração faz o host reiniciar a parte em segundo plano do plugin; uma previsão em andamento é cancelada.
-- Várias janelas compartilham os resultados das previsões; ocultar uma sugestão em uma janela não é sincronizado com as outras em tempo real.
-- A paleta de comandos e a caixa de diálogo de feedback são reconhecidas pelo foco e por características modais; um erro de detecção significa apenas uma sugestão a menos, nunca uma tecla capturada.
+- As janelas conectadas ao mesmo host DSH consultam pausas, aceitações e dispensas a cada 800 ms quando visíveis e a cada 5 segundos quando ocultas.
+- O plugin detecta janelas pop-up pelos marcadores de menus e caixas de diálogo do DSH. Mudanças nesses marcadores podem afetar a exibição de sugestões.
+- O plugin corrige o comando Desfazer para a primeira sugestão aceita após o envio no DSH Desktop `0.2.2-rc.3`. Outras versões do editor usam o comportamento nativo do DSH. [Relatório de validação](docs/VALIDATION-DISPLAY-SESSION.md)
 
 ## Licença
 

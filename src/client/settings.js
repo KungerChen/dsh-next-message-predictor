@@ -697,12 +697,15 @@ export function createSettingsComponent(react, runtime, t) {
     const enabled = config.enabled === true
     const autoPredict = config.manualOnly !== true
     const showButton = config.showPredictButton !== false
+    const requireInputFocus = config.requireInputFocus === true
     const waitingStates = ['idle', 'closed']
     const stateText = !enabled
       ? t('state.disabled')
       : !autoPredict && waitingStates.includes(assist.status)
         ? tk('state.manualWaiting')
-        : nmpCodeLabel(t, 'state', assist.status)
+        : assist.status === 'paused'
+          ? t('reason.session-paused')
+          : nmpCodeLabel(t, 'state', assist.status)
     // A conflict already says what is wrong; the detail worth adding is who the other plugin is.
     const stateReason = !enabled || !assist.reason
       ? ''
@@ -734,6 +737,12 @@ export function createSettingsComponent(react, runtime, t) {
           'predictButton',
           t('settings.predictButton'),
           nmpSwitch(h, { name: 'showPredictButton', checked: showButton, disabled: busy || !enabled, label: t('settings.predictButton'), onClick: () => toggle('showPredictButton', !showButton, 'settings.saved') }),
+          { dim: !enabled },
+        ),
+        row(
+          'requireInputFocus',
+          t('settings.requireInputFocus'),
+          nmpSwitch(h, { name: 'requireInputFocus', checked: requireInputFocus, disabled: busy || !enabled, label: t('settings.requireInputFocus'), onClick: () => toggle('requireInputFocus', !requireInputFocus, 'settings.saved') }),
           { dim: !enabled },
         ),
         row(

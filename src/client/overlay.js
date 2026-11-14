@@ -21,14 +21,62 @@ import {
   isComposingEvent,
   lastCompletedTurn,
   measureEditor,
+  pageFocused,
   pageVisible,
   readCanEdit,
   readComposing,
+  readEditorWritable,
 } from './dom.js'
 import { DEFAULT_PREDICT_SHORTCUT, eventMatchesShortcut, formatShortcut, parseShortcut } from '../shared/config.js'
 import { nmpLookupCode } from './labels.js'
+import { nmpPrepareComposerUndo } from './editor-history.js'
 
 const EMPTY_NODES = []
+
+/** Commit only the painted candidate and only through the native synchronous edit. */
+export function nmpAdoptSuggestion({ runtime, painted, card, actions }) {
+  const input = findInput(card)
+  if (!painted || input === null || !input.isConnected) return false
+  if (!editorHasFocus(input)) return false
+  if (typeof actions?.captureInsertion !== 'function' || typeof actions?.insertText !== 'function') return false
+  const readOffer = () => {
+    const env = runtime.getLatestEnv()
+    if (env === null || env.sessionId !== painted.sessionId) return null
+    const offer = runtime.prepareAdoption({
+      ...env,
+      canEdit: env.canEdit === true && readEditorWritable(input) && input.textContent === '' &&
+        (input.getAttribute('data-phase') ?? 'plain') === 'plain',
+      composing: runtime.signalsStore.getSnapshot().composing === true || readComposing(input),
+      menuOpen: env.pendingInteraction === true || hasOpenMenuOrDialog(card),
+      windowVisible: pageVisible(),
+      windowFocused: pageFocused(),
+      focused: editorHasFocus(input),
+    })
+    return offer?.suggestionId === painted.suggestionId && offer.index === painted.candidateIndex ? offer : null
+  }
+  const offer = readOffer()
+  if (offer === null) return false
+  let span = actions.captureInsertion()
+  if (span == null || span.start !== span.end) return false
+  if (span.draftRev !== offer.draftRev) {
+    runtime.markInsertRejected(offer)
+    return false
+  }
+  if (span.start === 0 && !nmpPrepareComposerUndo(input, () => {
+    if (!input.isConnected || findInput(card) !== input || runtime.assistStore.getSnapshot() !== painted ||
+      readOffer() === null) return false
+    const currentSpan = actions.captureInsertion()
+    if (currentSpan?.draftRev !== offer.draftRev || currentSpan.start !== 0 || currentSpan.end !== 0) return false
+    span = currentSpan
+    return true
+  })) return false
+  if (actions.insertText(offer.text, span) !== true) {
+    runtime.markInsertRejected(offer)
+    return false
+  }
+  runtime.markAccepted(offer)
+  return true
+}
 
 /** Subscribe to a tiny store with the current snapshot. */
 function useStore(react, store) {
@@ -51,7 +99,7 @@ export function createOverlayComponent(react, runtime, t) {
     const textRef = useRef(null)
     const inputActionsRef = useRef(inputActions)
     inputActionsRef.current = inputActions
-    const visibleRef = useRef(false)
+    const visibleRef = useRef(null)
     const [geometry, setGeometry] = useState(null)
     const [fit, setFit] = useState(null)
     const [env, setEnv] = useState(null)
@@ -85,6 +133,7 @@ export function createOverlayComponent(react, runtime, t) {
         : undefined
     const assist = useStore(react, runtime.assistStore)
     const configState = useStore(react, runtime.configStore)
+    const sessionState = useStore(react, runtime.sessionStore)
     const signals = useStore(react, runtime.signalsStore)
     const notice = useStore(react, runtime.noticeStore)
     // Subscribed for the interface language: render again when it changes.
@@ -93,31 +142,54 @@ export function createOverlayComponent(react, runtime, t) {
     const keyLabel = formatShortcut(configState.config.predictShortcut)
     const tk = (key) => t(key).split('{key}').join(keyLabel)
 
-    // Scoped observers: keep IME state and menu-like DOM changes fresh without a
-    // page-wide high-frequency scan. The card subtree is this composer's world.
+    // Observe editor changes within the composer. Portal changes refresh the
+    // snapshot only when the visible menu state changes.
     useEffect(() => {
       const card = findCard(anchorRef.current)
       if (card === null) return undefined
       let scheduled
+      let portalScheduled
       let compositionEndTimer
+      let menuOpen = hasOpenMenuOrDialog(card)
       const syncComposing = () => runtime.noteComposing(readComposing(findInput(card)))
       const onMutation = () => {
         if (scheduled !== undefined) return
         scheduled = setTimeout(() => {
           scheduled = undefined
+          menuOpen = hasOpenMenuOrDialog(card)
           syncComposing()
           runtime.noteDomMutation()
         }, 80)
       }
+      const onPortalMutation = () => {
+        if (portalScheduled !== undefined) return
+        portalScheduled = setTimeout(() => {
+          portalScheduled = undefined
+          const nextMenuOpen = hasOpenMenuOrDialog(card)
+          if (menuOpen === nextMenuOpen) return
+          menuOpen = nextMenuOpen
+          runtime.noteDomMutation()
+        }, 80)
+      }
       let observer
+      let portalObserver
       if (typeof MutationObserver === 'function') {
         observer = new MutationObserver(onMutation)
         observer.observe(card, {
           attributes: true,
-          attributeFilter: ['data-composer-composing', 'aria-expanded', 'aria-modal', 'role', 'aria-disabled'],
+          attributeFilter: ['data-composer-composing', 'aria-expanded', 'aria-modal', 'role', 'aria-disabled', 'aria-readonly', 'contenteditable'],
           childList: true,
           subtree: true,
         })
+        if (document.body) {
+          portalObserver = new MutationObserver(onPortalMutation)
+          portalObserver.observe(document.body, {
+            attributes: true,
+            attributeFilter: ['role', 'aria-modal', 'hidden', 'inert', 'aria-hidden'],
+            childList: true,
+            subtree: true,
+          })
+        }
       }
       const onCompositionStart = (event) => {
         if (eventInsideCard(event, card)) runtime.noteComposing(true)
@@ -130,21 +202,15 @@ export function createOverlayComponent(react, runtime, t) {
       }
       document.addEventListener('compositionstart', onCompositionStart, true)
       document.addEventListener('compositionend', onCompositionEnd, true)
-      // B01：窗口重新获得焦点/可见时重算一轮快照，让失焦期间完成的回合补发预测。
-      const onWindowActivity = () => runtime.noteDomMutation()
-      window.addEventListener('focus', onWindowActivity)
-      window.addEventListener('blur', onWindowActivity)
-      document.addEventListener('visibilitychange', onWindowActivity)
       syncComposing()
       return () => {
         if (observer !== undefined) observer.disconnect()
+        portalObserver?.disconnect()
         if (scheduled !== undefined) clearTimeout(scheduled)
+        if (portalScheduled !== undefined) clearTimeout(portalScheduled)
         clearTimeout(compositionEndTimer)
         document.removeEventListener('compositionstart', onCompositionStart, true)
         document.removeEventListener('compositionend', onCompositionEnd, true)
-        window.removeEventListener('focus', onWindowActivity)
-        window.removeEventListener('blur', onWindowActivity)
-        document.removeEventListener('visibilitychange', onWindowActivity)
       }
     }, [sessionId])
 
@@ -175,6 +241,7 @@ export function createOverlayComponent(react, runtime, t) {
         sessionRemoved,
         awaitingFirstTurn,
         canEdit: readCanEdit(input, session),
+        canManageSession: subagent === null && !sessionRemoved,
         draft: typeof draft === 'string' ? draft : '',
         draftRev: typeof draftRev === 'number' ? draftRev : 0,
         occurrencesCount: Array.isArray(occurrences) ? occurrences.length : 0,
@@ -182,12 +249,12 @@ export function createOverlayComponent(react, runtime, t) {
         claimed: claim !== undefined && claim !== null,
         phase: typeof phase === 'string' ? phase : 'plain',
         queuedCount: Array.isArray(queue) ? queue.length : 0,
-        composing: signals.composing === true,
+        composing: signals.composing === true || readComposing(input),
         pendingInteraction: pendingInteraction !== undefined && pendingInteraction !== null,
         menuOpen:
           (pendingInteraction !== undefined && pendingInteraction !== null) || hasOpenMenuOrDialog(card),
         windowVisible: pageVisible(),
-        windowFocused: typeof document.hasFocus === 'function' ? document.hasFocus() !== false : true,
+        windowFocused: pageFocused(),
         focused: editorHasFocus(input),
         inputMissing: input === null,
       }
@@ -205,7 +272,7 @@ export function createOverlayComponent(react, runtime, t) {
       draft === '' &&
       draftRev === assist.offerDraftRev &&
       signals.composing !== true &&
-      runtime.prepareAdoption(env) !== null
+      runtime.canDisplayOffer(env)
 
     // Manual trigger feedback: same grey text position as a suggestion, but it is
     // not a suggestion (no Tab, no ghost marker). Only for this session's empty input.
@@ -235,6 +302,11 @@ export function createOverlayComponent(react, runtime, t) {
       configState.ready === true &&
       configState.config.enabled === true &&
       configState.config.showPredictButton !== false &&
+      sessionState.available === true &&
+      sessionState.sessionId === sessionId &&
+      !sessionState.paused &&
+      !sessionState.pending &&
+      sessionState.terminal !== 'accepted' &&
       !visible &&
       env !== null &&
       env.sessionId === sessionId &&
@@ -289,7 +361,7 @@ export function createOverlayComponent(react, runtime, t) {
     }, [visible, geometry, assist.text, assist.suggestionId])
 
     const showGhost = visible && fit !== null && fit.suggestionId === assist.suggestionId && fit.geometry === geometry
-    visibleRef.current = showGhost
+    visibleRef.current = showGhost ? assist : null
     // O01: 只有真正画到输入框上的建议才上报 shown（用于展示率/采纳率）。
     const shownReportedRef = useRef('')
     useEffect(() => {
@@ -312,45 +384,15 @@ export function createOverlayComponent(react, runtime, t) {
       }
     }, [showGhost, showNotice, sessionId])
 
-    // Synchronous adoption: read the offer, verify every condition, then use the
-    // native insertion API. Swallow the key only after insertText returns true.
-    const adopt = (event) => {
-      if (!visibleRef.current) return false
-      const currentEnv = runtime.getLatestEnv()
-      if (currentEnv === null) return false
-      const actions = inputActionsRef.current
-      if (actions === undefined || actions === null) return false
-      if (typeof actions.captureInsertion !== 'function' || typeof actions.insertText !== 'function') return false
-      const card = findCard(anchorRef.current)
-      const input = findInput(card)
-      if (card === null || input === null) return false
-      if (!editorHasFocus(input)) return false
-      if (readComposing(input)) return false
-      if (hasOpenMenuOrDialog(card)) return false
-      if (currentEnv.pendingInteraction === true) return false
-      if (currentEnv.queuedCount > 0 || currentEnv.claimed === true) return false
-      if (currentEnv.phase !== 'plain' || currentEnv.canEdit !== true) return false
-      const offer = runtime.prepareAdoption(currentEnv)
-      if (offer === null) return false
-      const span = actions.captureInsertion()
-      if (span === null || span === undefined) return false
-      if (span.start !== span.end) return false
-      if (span.draftRev !== offer.draftRev) {
-        // The draft changed after the offer: hide it, but let the native key run.
-        runtime.markInsertRejected(offer)
-        return false
-      }
-      const inserted = actions.insertText(offer.text, span)
-      if (inserted !== true) {
-        runtime.markInsertRejected(offer)
-        return false
-      }
-      if (event !== undefined && event !== null) {
+    const adopt = (event, painted = visibleRef.current) => {
+      if (painted === null || visibleRef.current !== painted) return
+      const inserted = nmpAdoptSuggestion({
+        runtime, painted, card: findCard(anchorRef.current), actions: inputActionsRef.current,
+      })
+      if (inserted && event !== undefined) {
         event.preventDefault()
         event.stopPropagation()
       }
-      runtime.markAccepted(offer)
-      return true
     }
 
     // Tab adopts, Esc dismisses — captured before the composer keymap and only
@@ -378,6 +420,9 @@ export function createOverlayComponent(react, runtime, t) {
         if (manualChord) {
           // Off means off: with the feature disabled the key is left alone.
           if (runtime.configStore.getSnapshot().config.enabled !== true) return
+          const state = runtime.sessionStore.getSnapshot()
+          if (state.paused || state.pending) return
+          if (readComposing(input) || hasOpenMenuOrDialog(ownCard) || runtime.getLatestEnv()?.pendingInteraction === true) return
           event.preventDefault()
           event.stopPropagation()
           runtime.predictNow()
@@ -470,7 +515,7 @@ export function createOverlayComponent(react, runtime, t) {
               overflow: 'hidden',
             },
           }, assist.text),
-          h(
+          env.focused ? h(
             'button',
             {
               type: 'button',
@@ -479,9 +524,7 @@ export function createOverlayComponent(react, runtime, t) {
               'aria-label': t('ghost.adoptHint'),
               tabIndex: -1,
               onMouseDown: (event) => event.preventDefault(),
-              onClick: () => {
-                adopt(undefined)
-              },
+              onClick: () => adopt(undefined, assist),
               style: {
                 flex: 'none',
                 pointerEvents: 'auto',
@@ -497,7 +540,18 @@ export function createOverlayComponent(react, runtime, t) {
               },
             },
             t('ghost.adopt'),
-          ),
+          ) : h('span', {
+            'data-nmp-focus-hint': '',
+            style: {
+              maxWidth: '45%',
+              flexShrink: 1,
+              textAlign: 'end',
+              overflowWrap: 'anywhere',
+              color: 'var(--dsw-alias-label-secondary)',
+              fontSize: '11px',
+              lineHeight: '15px',
+            },
+          }, t('ghost.focusToAdopt')),
           // "Another one": same as pressing Alt+\ while the suggestion is showing.
           h(
             'button',
@@ -616,6 +670,58 @@ export function createOverlayComponent(react, runtime, t) {
             t('ghost.predict'),
           )
         : null,
+    )
+  }
+}
+
+/** A compact, keyboard-accessible control in the Host's composer toolbar. */
+export function createSessionPauseComponent(react, runtime, t) {
+  const { createElement: h } = react
+  return function SessionPauseControl({ sessionId }) {
+    const configState = useStore(react, runtime.configStore)
+    const state = useStore(react, runtime.sessionStore)
+    const control = useStore(react, runtime.sessionControlStore)
+    useStore(react, runtime.shellStore)
+    if (!configState.config.enabled || control.sessionId !== sessionId || !control.show || state.sessionId !== sessionId) return null
+    const action = t(state.paused ? 'ghost.sessionResume' : 'ghost.sessionPause')
+    const error = state.reason === '' ? '' : nmpLookupCode(t, 'reason', state.reason)
+    const disabled = state.pending || !state.available || !control.canEdit
+    const hint = error || t(state.paused ? 'ghost.sessionResumeHint' : 'ghost.sessionPauseHint')
+    return h('span', { style: { position: 'relative', display: 'inline-flex', flex: 'none' } },
+      h('button', {
+        type: 'button',
+        'aria-label': action,
+        'aria-pressed': state.paused,
+        'aria-busy': state.pending || undefined,
+        'data-nmp-session-toggle': '',
+        'data-nmp-session-state': state.pending ? 'pending' : !state.available ? 'unavailable' : state.paused ? 'paused' : 'active',
+        title: hint,
+        disabled,
+        onMouseDown: (event) => event.preventDefault(),
+        onClick: () => void runtime.toggleSessionPause(sessionId),
+        style: {
+          display: 'inline-grid',
+          placeItems: 'center',
+          width: '26px',
+          height: '26px',
+          padding: 0,
+          border: '1px solid var(--dsw-alias-border-l2)',
+          borderRadius: '6px',
+          background: state.paused ? 'var(--dsw-alias-interactive-bg-hover)' : 'transparent',
+          color: 'var(--dsw-alias-label-secondary)',
+          opacity: disabled ? 0.5 : 1,
+          cursor: disabled ? 'default' : 'pointer',
+        },
+      }, h('svg', {
+        width: 15, height: 15, viewBox: '0 0 16 16', fill: 'none', stroke: 'currentColor',
+        strokeWidth: 1.6, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true,
+      }, state.paused ? h('path', { d: 'M5.5 3.5l7 4.5-7 4.5z' }) : h('path', { d: 'M6 4v8m4-8v8' }))),
+      error === '' ? null : h('span', {
+        role: 'status',
+        style: {
+          position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clipPath: 'inset(50%)',
+        },
+      }, error),
     )
   }
 }

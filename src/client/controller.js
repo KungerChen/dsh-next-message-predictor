@@ -25,9 +25,14 @@ import {
   OPERATION_PREDICT,
   OPERATION_RELEASE,
   OPERATION_RESULTS,
+  OPERATION_SESSION_PAUSE,
+  OPERATION_SESSION_STATE,
   OPERATION_STATUS,
   SOURCE_MODEL,
   offerRing,
+  sameSessionVersion,
+  sessionTurnIdentity,
+  validSessionVersion,
   validateResponseForClient,
 } from '../shared/protocol.js'
 
@@ -77,6 +82,10 @@ const RPC_TIMEOUT_RESULTS_MS = 20000
 const RPC_TIMEOUT_PREDICT_MARGIN_MS = 15000
 /** After a failed status read: try again after these delays, then keep to the last one. */
 const STATUS_RETRY_DELAYS_MS = [2000, 5000, 15000, 30000]
+const SESSION_POLL_MS = 800
+const SESSION_BACKGROUND_POLL_MS = 5000
+const SESSION_FRESH_MS = 2000
+const SESSION_RPC_TIMEOUT_MS = 1800
 
 const NO_CANDIDATES = Object.freeze([])
 
@@ -99,6 +108,7 @@ const INITIAL_ASSIST = {
   contextRevision: '',
   configRevision: 0,
   offerDraftRev: -1,
+  sessionVersion: null,
   expiresAt: 0,
   reason: '',
   error: '',
@@ -110,6 +120,8 @@ const INITIAL_ASSIST = {
  * Kept apart from the assist state, which sync() resets freely.
  */
 const INITIAL_NOTICE = { kind: '', reason: '', sessionId: '', at: 0 }
+const INITIAL_SESSION_STATE = { available: false, pending: false, paused: false, terminal: '', reason: '', sessionId: '' }
+const INITIAL_SESSION_CONTROL = { sessionId: '', show: false, canEdit: false }
 
 const INITIAL_CONFIG_STATE = {
   ready: false,
@@ -140,6 +152,7 @@ const INITIAL_SHELL_STATE = { panelAvailable: false, sidebarAvailable: false, la
  * @param {object} options
  * @param {(operation: string, payload?: object, signal?: AbortSignal) => Promise<any>} options.rpc
  * @param {() => number} [options.now]
+ * @param {boolean} [options.requireSessionState] - the shipped client requires Host coordination.
  */
 export function createClientRuntime(options) {
   const rpc = options.rpc
@@ -148,6 +161,8 @@ export function createClientRuntime(options) {
   const assistStore = createStore(INITIAL_ASSIST)
   const signalsStore = createStore({ composing: false, menuTick: 0 })
   const noticeStore = createStore(INITIAL_NOTICE)
+  const sessionStore = createStore(INITIAL_SESSION_STATE)
+  const sessionControlStore = createStore(INITIAL_SESSION_CONTROL)
   const shellStore = createStore(INITIAL_SHELL_STATE)
   // A manual request is running: follow the assist state to its end.
   assistStore.subscribe(() => {
@@ -177,6 +192,12 @@ export function createClientRuntime(options) {
   let activeRequest = null
   /** "Another one" in flight: the suggestion it was pressed on, kept in case nothing new comes back. */
   let manualFallback = null
+  let sessionQuery = null
+  let sessionPollTimer
+  let sessionRead = null
+  let sessionWrite = null
+  let lastSessionCheckAt = 0
+  let knownSessionSnapshot = null
   /** @type {Set<string>} turn keys auto-served this session */
   const servedAuto = new Set()
   /** @type {Map<string, number>} turn key -> manual predictions asked on it (first + "another one") */
@@ -251,6 +272,7 @@ export function createClientRuntime(options) {
       turnKey: state.turnKey,
       completedEventSeq: state.completedEventSeq,
       contextRevision: state.contextRevision,
+      sessionVersion: state.sessionVersion,
     }
   }
 
@@ -270,7 +292,8 @@ export function createClientRuntime(options) {
     const cached = offersBySession.get(env.sessionId)
     if (cached === undefined) return false
     const record = cached.record
-    if (record.expiresAt <= now() || record.turnId !== env.turnId || record.completedEventSeq !== env.completedEventSeq || record.contextRevision !== env.contextRevision) {
+    if (record.expiresAt <= now() || record.turnId !== env.turnId || record.completedEventSeq !== env.completedEventSeq ||
+      record.contextRevision !== env.contextRevision || !currentSessionVersion(record.sessionVersion)) {
       offersBySession.delete(env.sessionId)
       return false
     }
@@ -440,6 +463,7 @@ export function createClientRuntime(options) {
       contextRevision: env.contextRevision,
       configRevision: configStore.getSnapshot().revision,
       offerDraftRev: env.draftRev,
+      sessionVersion: result.sessionVersion ?? null,
     })
     timer = setTimeout(() => {
       timer = undefined
@@ -547,6 +571,8 @@ export function createClientRuntime(options) {
     if (configState.capabilities.connectionFetch !== true) return { ok: false, reason: 'host-route-unavailable' }
     if (env === null || env === undefined) return { ok: false, reason: 'no-view' }
     if (!env.sessionId) return { ok: false, reason: 'no-session' }
+    const sessionReason = sessionStateReason(env)
+    if (sessionReason) return { ok: false, reason: sessionReason }
     if (env.turnId === '') return { ok: false, reason: 'no-completed-turn' }
     if (env.running) return { ok: false, reason: 'turn-running' }
     if (env.hasFinalText !== true) return { ok: false, reason: 'no-final-assistant-text' }
@@ -561,6 +587,218 @@ export function createClientRuntime(options) {
     if (env.menuOpen) return { ok: false, reason: 'menu-open' }
     if (!env.windowVisible || !env.windowFocused) return { ok: false, reason: 'window-inactive' }
     return { ok: true }
+  }
+
+  function coordinating() {
+    return options.requireSessionState === true || configStore.getSnapshot().capabilities.sessionState === true
+  }
+
+  function anchorFor(env) {
+    return {
+      sessionId: env.sessionId,
+      branchEpoch: env.branchEpoch,
+      turnId: env.turnId,
+      completedEventSeq: typeof env.completedEventSeq === 'number' ? env.completedEventSeq : 0,
+      contextRevision: env.contextRevision,
+    }
+  }
+
+  function stateQueryFor(env) {
+    const anchor = env.turnId ? anchorFor(env) : undefined
+    return { sessionId: env.sessionId, ...(anchor === undefined ? {} : { anchor }) }
+  }
+
+  function queryKey(query) {
+    return query === null ? '' : JSON.stringify(query)
+  }
+
+  function sessionStateReason(env) {
+    if (!coordinating()) return ''
+    const state = sessionStore.getSnapshot()
+    if (state.sessionId !== env.sessionId || state.pending || !state.available ||
+      queryKey(sessionQuery) !== queryKey(stateQueryFor(env)) || now() - lastSessionCheckAt > SESSION_FRESH_MS) {
+      return state.reason || 'session-state-unavailable'
+    }
+    if (state.paused) return 'session-paused'
+    if (state.terminal === 'accepted') return 'turn-accepted'
+    return ''
+  }
+
+  function currentSessionVersion(version) {
+    return !coordinating() || sameSessionVersion(version, sessionStore.getSnapshot())
+  }
+
+  function updateSessionControl(env) {
+    const previous = sessionControlStore.getSnapshot()
+    const sessionId = env?.sessionId ?? ''
+    const show = Boolean(sessionId && env.canManageSession !== false && !env.sessionRemoved && !env.inputMissing)
+    const canEdit = show && env.canEdit === true && env.phase === 'plain'
+    if (previous.sessionId !== sessionId || previous.show !== show || previous.canEdit !== canEdit) {
+      sessionControlStore.set({ sessionId, show, canEdit })
+    }
+  }
+
+  function cancelSessionRead() {
+    clearTimeout(sessionPollTimer)
+    sessionPollTimer = undefined
+    sessionRead?.abort()
+    sessionRead = null
+  }
+
+  function stopSessionTracking() {
+    cancelSessionRead()
+    sessionWrite?.abort()
+    sessionWrite = null
+    sessionQuery = null
+    knownSessionSnapshot = null
+    lastSessionCheckAt = 0
+    if (sessionStore.getSnapshot() !== INITIAL_SESSION_STATE) sessionStore.set(() => INITIAL_SESSION_STATE)
+  }
+
+  function scheduleSessionRead() {
+    if (disposed || sessionQuery === null || sessionWrite !== null) return
+    clearTimeout(sessionPollTimer)
+    sessionPollTimer = setTimeout(() => {
+      sessionPollTimer = undefined
+      void refreshSessionState()
+    }, latestEnv?.windowVisible ? SESSION_POLL_MS : SESSION_BACKGROUND_POLL_MS)
+    sessionPollTimer?.unref?.()
+  }
+
+  function invalidateSessionWork(sessionId, wholeSession, state) {
+    clearNotice()
+    manualFallback = null
+    if (wholeSession) {
+      completionArm = null
+      pendingBySession.delete(sessionId)
+    }
+    offersBySession.delete(sessionId)
+    for (const [key, cached] of suspendedOffers) {
+      if (cached.record.sessionId === sessionId && (wholeSession || key === turnKeyOf(latestEnv))) suspendedOffers.delete(key)
+    }
+    clearWork(state?.paused ? 'paused' : state?.terminal || 'idle')
+    if (state?.terminal === 'accepted') addBounded(acceptedTurns, turnKeyOf(latestEnv))
+    if (state?.terminal === 'dismissed') addBounded(dismissedTurns, turnKeyOf(latestEnv))
+  }
+
+  function applySessionSnapshot(query, value) {
+    if (!validSessionVersion(value) || !Number.isSafeInteger(value.stateRevision) || value.stateRevision < 0 ||
+      value.stateRevision < value.turnRevision || value.stateRevision < value.pauseRevision ||
+      value.sessionId !== query.sessionId || typeof value.paused !== 'boolean' ||
+      !['', 'accepted', 'dismissed'].includes(value.terminal)) return false
+    const previous = sessionStore.getSnapshot()
+    const known = knownSessionSnapshot
+    const sameHost = known !== null && known.value.hostId === value.hostId
+    const sameTurn = sameHost && known.query.anchor?.completedEventSeq === query.anchor?.completedEventSeq &&
+      known.query.anchor?.turnId === query.anchor?.turnId
+    if (sameHost && (value.stateRevision < known.value.stateRevision || value.pauseRevision < known.value.pauseRevision)) {
+      return true
+    }
+    const previousPauseRevision = known?.value.pauseRevision ?? 0
+    const pauseChanged = (known !== null && !sameHost) || value.pauseRevision !== previousPauseRevision
+    const terminalChanged = sameTurn && value.turnRevision !== known.value.turnRevision
+    const next = { ...value, available: true, pending: false, reason: '' }
+    knownSessionSnapshot = { query, value }
+    lastSessionCheckAt = now()
+    if (!previous.available || previous.pending || previous.reason || !sameSessionVersion(previous, next) ||
+      previous.paused !== next.paused || previous.terminal !== next.terminal) sessionStore.set(() => next)
+    const active = assistStore.getSnapshot()
+    if (pauseChanged || (value.paused && active.status !== 'paused') || terminalChanged ||
+      (value.terminal === 'accepted' && active.status === 'offered')) {
+      if (!terminalChanged || active.status !== value.terminal || active.turnKey !== turnKeyOf(latestEnv)) {
+        invalidateSessionWork(query.sessionId, pauseChanged || value.paused, value)
+      }
+    }
+    if (latestEnv !== null) sync(latestEnv)
+    return true
+  }
+
+  function failSessionCheck(reason) {
+    const state = sessionStore.getSnapshot()
+    sessionStore.set({ available: false, pending: false, reason })
+    invalidateSessionWork(state.sessionId, true, state)
+  }
+
+  async function refreshSessionState() {
+    const query = sessionQuery
+    if (disposed || query === null || sessionRead !== null || sessionWrite !== null) return
+    cancelSessionRead()
+    const abort = new AbortController()
+    sessionRead = abort
+    let body
+    try {
+      body = await rpc(OPERATION_SESSION_STATE, query, abort.signal, SESSION_RPC_TIMEOUT_MS)
+    } catch {
+      body = null
+    }
+    if (disposed || abort.signal.aborted || sessionRead !== abort || query !== sessionQuery) return
+    sessionRead = null
+    if (body?.ok !== true || !applySessionSnapshot(query, body.value)) failSessionCheck('session-state-unavailable')
+    scheduleSessionRead()
+  }
+
+  function trackSession(env, previous) {
+    if (!coordinating() || !configStore.getSnapshot().config.enabled || !env.sessionId || env.sessionRemoved || env.canManageSession === false) {
+      if (sessionQuery !== null) stopSessionTracking()
+      return
+    }
+    const query = stateQueryFor(env)
+    if (queryKey(query) !== queryKey(sessionQuery)) {
+      cancelSessionRead()
+      if (sessionQuery?.sessionId !== query.sessionId) {
+        stopSessionTracking()
+        sessionStore.set({ sessionId: query.sessionId })
+      } else {
+        sessionStore.set({ available: false })
+      }
+      sessionQuery = query
+      void refreshSessionState()
+    } else if ((!previous?.windowVisible && env.windowVisible) || (!previous?.windowFocused && env.windowFocused)) {
+      void refreshSessionState()
+    }
+  }
+
+  async function toggleSessionPause(sessionId) {
+    const query = sessionQuery
+    const state = sessionStore.getSnapshot()
+    if (query?.sessionId !== sessionId || state.sessionId !== sessionId || sessionWrite !== null ||
+      !state.available || now() - lastSessionCheckAt > SESSION_FRESH_MS) {
+      void refreshSessionState()
+      return false
+    }
+    if (!sessionControlStore.getSnapshot().canEdit || !configStore.getSnapshot().config.enabled) return false
+    cancelSessionRead()
+    const abort = new AbortController()
+    sessionWrite = abort
+    sessionStore.set({ pending: true, reason: '' })
+    let body
+    try {
+      body = await rpc(OPERATION_SESSION_PAUSE, {
+        ...query, paused: !state.paused, expectedHostId: state.hostId, expectedPauseRevision: state.pauseRevision,
+      }, abort.signal, SESSION_RPC_TIMEOUT_MS)
+    } catch {
+      body = null
+    }
+    if (disposed || abort.signal.aborted || sessionWrite !== abort) return false
+    sessionWrite = null
+    if (body?.ok !== true) {
+      const reason = body?.error?.code === 'session-pause-capacity' ? body.error.code : 'session-pause-failed'
+      sessionStore.set({ pending: false, available: false, reason })
+      invalidateSessionWork(query.sessionId, true, state)
+      // Preserve the failure long enough to read it. The next poll confirms
+      // the current state even when the Host committed but its reply was lost.
+      scheduleSessionRead()
+      return false
+    }
+    if (sessionQuery !== query) {
+      void refreshSessionState()
+    } else if (!applySessionSnapshot(query, body.value)) {
+      failSessionCheck('session-pause-failed')
+      scheduleSessionRead()
+      return false
+    }
+    scheduleSessionRead()
+    return true
   }
 
   /** Semantic emptiness: no text, no whitespace-only text, no chips/attachments/claim/queued input. */
@@ -613,6 +851,12 @@ export function createClientRuntime(options) {
   /** Dispatch one predict request and validate the answer against this view. */
   async function requestPrediction(trigger, env, retryCount = 0, attempt = 0) {
     if (disposed) return
+    const sessionVersion = coordinating() ? sessionStore.getSnapshot() : undefined
+    if (sessionVersion !== undefined && sessionStateReason(env) !== '') {
+      void refreshSessionState()
+      clearWork('idle')
+      return
+    }
     const mySequence = ++sequence
     const tkey = turnKeyOf(env)
     if (trigger === 'auto') addBounded(servedAuto, tkey)
@@ -625,13 +869,7 @@ export function createClientRuntime(options) {
     const abort = new AbortController()
     activeRequest = { id, abort }
     const requestedRevision = configStore.getSnapshot().revision
-    const anchor = {
-      sessionId: env.sessionId,
-      branchEpoch: env.branchEpoch,
-      turnId: env.turnId,
-      completedEventSeq: typeof env.completedEventSeq === 'number' ? env.completedEventSeq : 0,
-      contextRevision: env.contextRevision,
-    }
+    const anchor = anchorFor(env)
     setAssist({
       ...INITIAL_ASSIST,
       status: 'requesting',
@@ -649,6 +887,9 @@ export function createClientRuntime(options) {
         viewId,
         anchor,
         expectedConfigRevision: requestedRevision,
+        ...(sessionVersion === undefined ? {} : { sessionVersion: {
+          hostId: sessionVersion.hostId, pauseRevision: sessionVersion.pauseRevision, turnRevision: sessionVersion.turnRevision,
+        } }),
         trigger,
         ...(trigger === 'manual' && attempt > 0 ? { attempt } : {}),
       }, abort.signal, (Number(configStore.getSnapshot().config.timeoutMs) || DEFAULT_CONFIG.timeoutMs) + RPC_TIMEOUT_PREDICT_MARGIN_MS)
@@ -690,6 +931,12 @@ export function createClientRuntime(options) {
     }
     const result = body.result
     if (result.kind === 'offer') {
+      if (sessionVersion !== undefined && (!sameSessionVersion(body.sessionVersion, sessionVersion) ||
+        !currentSessionVersion(body.sessionVersion))) {
+        clearWork('idle')
+        void refreshSessionState()
+        return
+      }
       if (body.configRevision !== requestedRevision || result.expiresAt <= now()) {
         clearOffer('idle')
         if (body.configRevision !== requestedRevision) void loadStatus()
@@ -712,11 +959,14 @@ export function createClientRuntime(options) {
       if (replaced !== null && replaced.record.suggestionId !== result.suggestionId) {
         reportOutcome(replaced.record.suggestionId, replaced.record.sessionId, 'closed')
       }
-      showOffer(current, result)
+      showOffer(current, { ...result, sessionVersion: body.sessionVersion })
       return
     }
     if (result.kind === 'stale') {
       if (result.reason === 'config-changed') void loadStatus()
+      if (['session-state-changed', 'session-paused', 'turn-accepted', 'turn-dismissed'].includes(result.reason)) {
+        void refreshSessionState()
+      }
       endWithoutOffer({ ...INITIAL_ASSIST, status: 'abstained', reason: `stale:${result.reason}`, sessionId: env.sessionId })
       return
     }
@@ -758,7 +1008,7 @@ export function createClientRuntime(options) {
     if (
       current === null || turnKeyOf(current) !== fallback.record.turnKey || fallback.record.expiresAt <= now() ||
       fallback.record.completedEventSeq !== current.completedEventSeq || fallback.record.contextRevision !== current.contextRevision ||
-      acceptedTurns.has(fallback.record.turnKey) || !eligibility(current).ok
+      acceptedTurns.has(fallback.record.turnKey) || !eligibility(current).ok || !currentSessionVersion(fallback.record.sessionVersion)
     ) {
       reportOutcome(fallback.record.suggestionId, fallback.record.sessionId, 'closed')
       return
@@ -774,8 +1024,10 @@ export function createClientRuntime(options) {
     if (disposed) return
     const previous = latestEnv
     latestEnv = env
+    updateSessionControl(env)
     const configState = configStore.getSnapshot()
     if (!configState.ready) return
+    trackSession(env, previous)
     // O07: another ghost-text plugin owns the composer; stay out of its way.
     if (conflictSource !== '') {
       clearTimer()
@@ -824,6 +1076,12 @@ export function createClientRuntime(options) {
       servedAuto.clear()
       servedManual.clear()
     }
+    const coordinated = sessionStore.getSnapshot()
+    if (coordinating() && coordinated.sessionId === env.sessionId && (coordinated.paused || coordinated.pending)) {
+      completionArm = null
+      clearWork(coordinated.paused ? 'paused' : 'idle')
+      return
+    }
     if (env.running === true) {
       if (completionArm === null || completionArm.idleAt !== null) {
         completionArm = { turnIdAtArm: env.turnId, idleAt: null }
@@ -840,6 +1098,11 @@ export function createClientRuntime(options) {
       return
     }
     const tkey = turnKeyOf(env)
+    if (coordinating() && coordinated.available && coordinated.terminal === 'accepted') {
+      addBounded(acceptedTurns, tkey)
+      clearWork('accepted')
+      return
+    }
     const arm = completionArm
     const armedCompletion = arm !== null && env.turnId !== arm.turnIdAtArm
     const stateBefore = assistStore.getSnapshot()
@@ -862,6 +1125,7 @@ export function createClientRuntime(options) {
       if (!terminalSameTurn) clearWork('suppressed', 'overwritten')
       return
     }
+    if (coordinating() && !coordinated.available && sessionRead !== null) return
     // B06：草稿已清空 → 恢复用户开始输入前的那条建议。
     {
       const suspended = suspendedOffers.get(tkey)
@@ -869,12 +1133,14 @@ export function createClientRuntime(options) {
         const active = assistStore.getSnapshot()
         if (
           suspended.record.expiresAt <= now() || suspended.record.turnId !== env.turnId ||
-          suspended.record.completedEventSeq !== env.completedEventSeq || suspended.record.contextRevision !== env.contextRevision
+          suspended.record.completedEventSeq !== env.completedEventSeq || suspended.record.contextRevision !== env.contextRevision ||
+          (coordinated.available && !currentSessionVersion(suspended.record.sessionVersion))
         ) {
           suspendedOffers.delete(tkey)
         } else if (
           active.status !== 'offered' && active.status !== 'requesting' && active.status !== 'accepted' && active.status !== 'dismissed' &&
-          !acceptedTurns.has(tkey) && !dismissedTurns.has(tkey)
+          !acceptedTurns.has(tkey) && !dismissedTurns.has(tkey) &&
+          currentSessionVersion(suspended.record.sessionVersion)
         ) {
           suspendedOffers.delete(tkey)
           showOffer(env, { ...suspended.record, offerDraftRev: env.draftRev })
@@ -884,7 +1150,7 @@ export function createClientRuntime(options) {
     }
     const state = assistStore.getSnapshot()
     if (state.status === 'offered') {
-      if (!offerMatches(state, env)) clearWork('idle', 'closed')
+      if (!offerMatches(state, env) || (coordinated.available && !currentSessionVersion(state.sessionVersion))) clearWork('idle', 'closed')
       return
     }
     if (state.status === 'requesting' || state.status === 'waiting') {
@@ -925,10 +1191,14 @@ export function createClientRuntime(options) {
     // transition AND the chat projection has moved to a new completed turn.
     // Never trigger from remounting an old session.
     if (armedCompletion && !servedAuto.has(tkey)) {
-      completionArm = null
       // 手动模式：回答结束后不自动预测，等用户按 Alt+\。
-      if (configState.config.manualOnly === true) return
+      if (configState.config.manualOnly === true) {
+        completionArm = null
+        return
+      }
       const check = eligibility(env)
+      if (check.reason === 'session-state-unavailable' && sessionRead !== null) return
+      completionArm = null
       if (check.ok) scheduleAuto(env, tkey)
       // B01：失焦/不可见时先记下，聚焦后补发（Host 仍有 30 分钟窗口）。
       else if (check.reason === 'window-inactive') rememberPending({ ...env, turnKey: tkey })
@@ -975,7 +1245,10 @@ export function createClientRuntime(options) {
       return { ok: false, reason }
     }
     const check = eligibility(env)
-    if (!check.ok) return refuse(check.reason)
+    if (!check.ok) {
+      if (env !== null && sessionStateReason(env) === 'session-state-unavailable') void refreshSessionState()
+      return refuse(check.reason)
+    }
     if (status === 'requesting') return { ok: false, reason: 'prediction-active' }
     const tkey = turnKeyOf(env)
     const used = servedManual.get(tkey) ?? 0
@@ -1015,10 +1288,6 @@ export function createClientRuntime(options) {
     return { ok: true }
   }
 
-  /**
-   * Reserve the visible offer for adoption. The overlay performs the native
-   * captureInsertion/insertText pair and calls markAccepted only on success.
-   */
   function offerMatches(state, env) {
     return env != null && state.turnKey === turnKeyOf(env) &&
       state.completedEventSeq === env.completedEventSeq && state.contextRevision === env.contextRevision &&
@@ -1026,10 +1295,20 @@ export function createClientRuntime(options) {
       state.expiresAt > now()
   }
 
-  function prepareAdoption(env) {
+  function canDisplayOffer(env) {
     const state = assistStore.getSnapshot()
-    if (state.status !== 'offered' || state.text === '') return null
-    if (!offerMatches(state, env) || !eligibility(env).ok || !env.focused) return null
+    if (conflictSource !== '' || state.status !== 'offered' || state.text === '') return false
+    if (!offerMatches(state, env) || !currentSessionVersion(state.sessionVersion) || !eligibility(env).ok) return false
+    return configStore.getSnapshot().config.requireInputFocus !== true || env.focused === true
+  }
+
+  /** Reserve the offer for the focused editor's synchronous native insertion. */
+  function prepareAdoption(env) {
+    if (!canDisplayOffer(env) || env.focused !== true) {
+      if (env != null && sessionStateReason(env) === 'session-state-unavailable') void refreshSessionState()
+      return null
+    }
+    const state = assistStore.getSnapshot()
     return {
       text: state.text,
       index: state.candidateIndex,
@@ -1054,7 +1333,7 @@ export function createClientRuntime(options) {
       turnId: offer.turnId ?? '',
       sessionId: offer.sessionId ?? '',
     })
-    void rpc(OPERATION_ACCEPTED, {
+    reportTerminal(OPERATION_ACCEPTED, {
       schemaVersion: SCHEMA_VERSION,
       operation: OPERATION_ACCEPTED,
       suggestionId: offer.suggestionId,
@@ -1062,7 +1341,7 @@ export function createClientRuntime(options) {
       // Which entry of the ring was taken, for the statistics by source.
       ...(Number.isInteger(offer.index) ? { index: offer.index } : {}),
       ...(typeof offer.source === 'string' ? { source: offer.source } : {}),
-    }).catch(() => {})
+    })
   }
 
   /** The native insertion refused our span; hide the stale offer, keep the key native. */
@@ -1089,14 +1368,30 @@ export function createClientRuntime(options) {
     addBounded(dismissedTurns, state.turnKey)
     clearTimer()
     setAssist({ ...INITIAL_ASSIST, status: 'dismissed', suggestionId: state.suggestionId, turnKey: state.turnKey, turnId: state.turnId, sessionId: state.sessionId })
-    void rpc(OPERATION_DISMISS, {
+    reportTerminal(OPERATION_DISMISS, {
       schemaVersion: SCHEMA_VERSION,
       operation: OPERATION_DISMISS,
       suggestionId: state.suggestionId,
       sessionId: state.sessionId,
       turnKey: state.turnKey,
-    }).catch(() => {})
+    })
     return true
+  }
+
+  function reportTerminal(operation, payload) {
+    const query = sessionQuery
+    void rpc(operation, payload).then((body) => {
+      if (query === null || query !== sessionQuery || disposed) return
+      const state = body?.value?.sessionState
+      if (state !== undefined && body.value.turn === sessionTurnIdentity(query.anchor)) {
+        cancelSessionRead()
+        if (applySessionSnapshot(query, state)) {
+          scheduleSessionRead()
+          return
+        }
+      }
+      void refreshSessionState()
+    }).catch(() => { void refreshSessionState() })
   }
 
   /** O07: another ghost plugin was detected; step aside until it disappears. */
@@ -1142,6 +1437,7 @@ export function createClientRuntime(options) {
           assist: assistStore.getSnapshot(),
           config: configStore.getSnapshot(),
           env: latestEnv,
+          session: sessionStore.getSnapshot(),
         }
       },
       config: () => configStore.getSnapshot(),
@@ -1150,7 +1446,7 @@ export function createClientRuntime(options) {
       /** Paint a local fake offer without the Host; P1 manual smoke-test path. */
       suggest(text) {
         const env = latestEnv
-        if (env === null || !env.sessionId) return false
+        if (env === null || !env.sessionId || sessionStateReason(env) !== '') return false
         const clean = typeof text === 'string' ? text.trim() : ''
         if (clean === '') return false
         abortInflight()
@@ -1158,6 +1454,7 @@ export function createClientRuntime(options) {
           text: clean,
           suggestionId: `debug-${now().toString(36)}`,
           expiresAt: now() + OFFER_TTL_MS,
+          sessionVersion: coordinating() ? sessionStore.getSnapshot() : undefined,
         })
         return true
       },
@@ -1175,6 +1472,7 @@ export function createClientRuntime(options) {
     clearTimer()
     cancelStatusRetry()
     abortInflight()
+    stopSessionTracking()
   }
 
   /**
@@ -1190,9 +1488,11 @@ export function createClientRuntime(options) {
     if (state.status === 'offered') remembered = rememberOffer(state, latestEnv)
     else if (state.status === 'waiting') rememberPending(state)
     latestEnv = null
+    updateSessionControl(null)
     completionArm = null
     manualFallback = null
     clearWork('closed', remembered ? undefined : 'closed')
+    stopSessionTracking()
   }
 
   return {
@@ -1200,6 +1500,8 @@ export function createClientRuntime(options) {
     assistStore,
     signalsStore,
     noticeStore,
+    sessionStore,
+    sessionControlStore,
     shellStore,
     clearNotice,
     loadStatus,
@@ -1208,7 +1510,10 @@ export function createClientRuntime(options) {
     detachView,
     eligibility,
     predictNow,
+    refreshSessionState,
+    toggleSessionPause,
     canOfferAnother,
+    canDisplayOffer,
     prepareAdoption,
     markAccepted,
     markInsertRejected,

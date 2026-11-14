@@ -11,7 +11,7 @@ demo_caption: A suggestion appears → ask for another if it does not fit → <k
 why_h: Why use it
 why_p: When you work with an assistant, many replies are short and easy to guess: “continue”, “run the tests”, “show me the changes”. This plugin writes that follow-up ahead of time and leaves it in the input box.
 c1_h: Less typing
-c1_p: Common follow-ups are one key away. Once filled in, the text behaves like anything you typed: edit it, undo it.
+c1_p: Common follow-ups are one key away. You can edit a suggestion after inserting it.
 c2_h: No interruptions
 c2_p: The moment you start typing, the suggestion steps aside. It stays away during IME composition and while a menu is open. When the model is not confident, it offers nothing.
 c3_h: Never oversteps
@@ -24,18 +24,21 @@ c6_h: Transparent usage
 c6_p: Requests, acceptance rate, response time and token usage for the last 7 days are on the settings page, so you can see whether it is worth it.
 feat_h: Features
 f1_h: The suggestion is right in the input box
-f1_p: After the assistant finishes, if the input box is empty, a grey suggestion appears exactly where you are about to type. No pop-up, no extra space taken.
+f1_p: After the assistant finishes, if the input box is empty, a grey suggestion appears exactly where you are about to type. No pop-up, no extra space taken. In the active window, suggestions appear even when the input is unfocused by default. You can turn on “{ui:settings.requireInputFocus}” in settings. Click the input before accepting a suggestion.
 f1_alt: A grey suggestion in the input box, with “{ui:ghost.adopt}” and “{ui:ghost.another}” on the right
 k_th1: Key
 k_th2: What it does
 k1a: <kbd>Tab</kbd> or <kbd>→</kbd>
-k1b: Fills the suggestion into the input box, where you can keep editing; <kbd>Ctrl</kbd>+<kbd>Z</kbd> undoes just that insertion
+k1b: Inserts the suggestion when the input is focused. You can keep editing.
 k2a: <kbd>Esc</kbd>
 k2b: Hides the suggestion
 k3a: <kbd>Alt</kbd>+<kbd>\\</kbd> (configurable)
 k3b: Predicts right now; with a suggestion showing, switches to another one. One call brings back several alternatives, so switching is instant
 k4a: Just type
 k4b: The suggestion disappears at once; it comes back when you clear the input box
+k5a: Click “{ui:ghost.adopt}”
+k5b: Inserts the suggestion while the input is focused
+f1_pause: Click the pause button in the composer toolbar to pause predictions for this conversation until you resume them or restart DSH. After resuming, predict manually or wait for the next reply. Refreshing the page or saving settings retains the pause.
 f2_h: Three modes, one click
 f2_p: Do not want to study every option? Pick a mode. You can undo it or fine-tune it afterwards.
 f2_alt: The mode card: {ui:preset.balanced.name}, {ui:preset.saver.name}, {ui:preset.quality.name}
@@ -132,7 +135,9 @@ dev_p: No `npm install` and no bundler; Node.js 22 or later is required. To add 
 lim_h: Known limitations
 l1: Verified in the Web UI of DSH `0.2.2-rc.1` and `0.2.2-rc.3`. Native desktop input methods and shortcuts need separate verification.
 l2: Saving a setting makes the host restart the background half of the plugin; a prediction in progress is cancelled.
-l3: Several windows share prediction results; hiding a suggestion in one window is not synchronised to the others in real time.
-l4: The command palette and the feedback dialog are recognised by focus and modal traits; a wrong guess only means one suggestion less, never a stolen key press.
+l3: Windows connected to the same DSH Host poll for pauses, adoption and dismissal every 800 ms when visible and every 5 seconds when hidden.
+l4: The plugin detects pop-ups through DSH’s menu and dialog markers. Changes to these markers may affect when suggestions appear.
+l5: The plugin restores Undo for the first accepted suggestion after sending on DSH Desktop `0.2.2-rc.3`. Other editor versions use DSH’s native Undo behavior.
+l5_link: Validation report
 lic_h: License
 lic_p: Released under the [MIT License](LICENSE). The choice of extension points and the “grey suggestion + Tab to accept + Esc to hide” interaction were informed by `dsh-composer-prediction`, also MIT-licensed; none of its code was copied. See [NOTICE](NOTICE).

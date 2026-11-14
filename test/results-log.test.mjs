@@ -38,6 +38,63 @@ test('matchScore computes exact, prefix and edit ratio', () => {
   assert.equal(matchScore('', 'x').exact, false)
 })
 
+test('long matches are bounded and identify conservative scores', () => {
+  const unrelated = matchScore('继续', '完全无关'.repeat(2500))
+  assert.equal(unrelated.editRatio, 0)
+  assert.equal(unrelated.scoreExact, true)
+  const long = '🙂'.repeat(5000)
+  const near = matchScore(`${long}甲${long}`, `${long}乙${long}`)
+  assert.equal(near.scoreExact, true)
+  assert.equal(near.prefixChars, 5000)
+  assert.equal(near.editRatio, 1 - 1 / 10001)
+  const unknown = matchScore('甲乙'.repeat(1000), '乙甲'.repeat(1000))
+  assert.equal(unknown.scoreExact, false)
+  assert.equal(unknown.editRatio, 0)
+  assert.equal(matchScore('🙂甲', '🙂乙').editRatio, 0.5)
+  assert.equal(matchScore('', 'x').editRatio, 0)
+  assert.equal(matchScore('a'.repeat(400), 'b'.repeat(400)).scoreExact, true)
+})
+
+test('noteUserMessage persists long-message score and precision without content', async () => {
+  const home = await tempHome()
+  try {
+    const log = createResultsLog({ homeDir: home })
+    await log.recordRequest(offerInput({ text: '继续' }))
+    await log.markShown('sug-1')
+    const result = log.noteUserMessage('session-secret-1', '完全无关'.repeat(2500))
+    assert.equal(result.matched, true)
+    assert.equal(result.editRatio, 0)
+    assert.equal(result.scoreExact, true)
+    await log.flush()
+    const content = await readFile(log.filePath, 'utf8')
+    const line = content.trim().split('\n').map(JSON.parse).find((entry) => entry.kind === 'match')
+    assert.equal(line.edit, 0)
+    assert.equal(line.editExact, true)
+    assert.ok(!content.includes('完全无关'))
+    assert.ok(!content.includes('继续'))
+  } finally {
+    await rm(home, { recursive: true, force: true })
+  }
+})
+
+test('unknown candidate keeps the best score marked as a lower bound', async () => {
+  const home = await tempHome()
+  try {
+    const log = createResultsLog({ homeDir: home })
+    const message = '乙甲'.repeat(1000)
+    await log.recordRequest(offerInput({ text: '甲乙'.repeat(1000), alternatives: ['乙'] }))
+    await log.markShown('sug-1')
+    const result = log.noteUserMessage('session-secret-1', message)
+    assert.equal(result.matched, true)
+    assert.equal(result.scoreExact, false)
+    await log.flush()
+    const records = (await readFile(log.filePath, 'utf8')).trim().split('\n').map(JSON.parse)
+    assert.equal(records.find((entry) => entry.kind === 'match').editExact, false)
+  } finally {
+    await rm(home, { recursive: true, force: true })
+  }
+})
+
 test('request + shown + accepted + match writes privacy-safe lines and summary', async () => {
   const home = await tempHome()
   try {

@@ -4,9 +4,17 @@
 
 `package.json` 的安装范围为 `>=0.2.2-rc.1 <0.3.0`。`0.2.2-rc.1` 是 P0 宿主契约基线，`0.2.2-rc.3` 的回归在 Windows 安装包的隔离 Web profile 上执行。具体版本、场景和结果见 [发布与启用](RELEASE.md)。原生桌面窗口的输入法和快捷键需单独验收。
 
+0.6.0 在隔离的 Windows DSH 桌面版 `0.2.2-rc.3` 上验证了预测显示、采纳、撤销与重做及中英文原生窄窗口布局。页面 150% 缩放通过 Electron 的页面缩放接口验证。键鼠自动化、输入法、物理显示缩放及跨视图验证的场景和结果见 [验证报告](VALIDATION-DISPLAY-SESSION.md)。
+
 截至 2026-11-14，npm 的 `latest` 指向 `0.2.2-rc.1`，`next` 指向 `0.2.2-rc.3`。用 npm 验证特定版本可以固定 `@deepseek-ai/dsh@0.2.2-rc.3`。见 [npm 发布标签](https://registry.npmjs.org/-/package/@deepseek-ai%2Fdsh/dist-tags)。
 
 rc.3 导入的助手回复使用 `deepseek-chat-export` 标记来源。插件在「跟随会话模型」模式下用 DSH 的会话模型投影解析实际路由。尚无会话选择时使用 DSH 默认模型。打开导入历史不会触发自动预测。见 [DSH 导入实现](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.2-rc.3/packages/experimental/deepseek-chat-import/src/conversation.ts#L426-L428)。
+
+### 首次采纳的撤销
+
+DSH 桌面版 `0.2.2-rc.3` 在发送后清空编辑器的历史栈和当前历史前态。如果回复完成后聚焦输入框没有提交独立的选区更新，首次采纳可能没有可撤销前态。插件 0.5.1 的原生桌面对照中，按钮和 Tab 都触发了这条路径。见 [验证报告](VALIDATION-DISPLAY-SESSION.md)。
+
+0.6.0 仅对已核验的 Lexical `0.49.0+prod.esm` 编辑器准备撤销前态。适配层通过 Lexical 的 DOM 私有标记找到当前输入框对应的实例，之后使用公开的 `read` 和 `update`。适配层先让待提交的编辑保留其原有标签，再用 `history-merge` 提交当前草稿状态，保留原有撤销和重做条目。它复核焦点、选区、草稿版本及原生插入位置，再调用一次 `InputActions.insertText` 插入文字。DOM 标记或编辑器版本不匹配时，沿用 DSH 的原生插入及撤销行为。 [Lexical DOM 私有标记](https://github.com/facebook/lexical/blob/v0.49.0/packages/lexical/src/LexicalUtils.ts#L259-L276) · [Lexical 更新接口](https://github.com/facebook/lexical/blob/v0.49.0/packages/lexical/src/LexicalEditor.ts#L1720-L1762) · [Lexical 历史实现](https://github.com/facebook/lexical/blob/v0.49.0/packages/lexical-history/src/index.ts#L493-L529)
 
 ## P0 契约矩阵（DSH 0.2.2-rc.1）
 
@@ -26,7 +34,7 @@ rc.3 导入的助手回复使用 `deepseek-chat-export` 标记来源。插件在
 | 方案要求 | 状态 | 结论 |
 |---|---|---|
 | 展示入口 `conversation.input.overlay` | 确认 | list/session slot，声明于 `conversation.composer.bar`；条目渲染在 `[data-composer-overlay]` 内（`[C]`） |
-| 原生安全插入（非 setDraft） | 确认 | `captureInsertion()` + `insertText(text, span)`，同步布尔返回、独立 undo 单元、`draftRev` 校验（`[C]`） |
+| 原生安全插入（非 setDraft） | 确认 | `captureInsertion()` + `insertText(text, span)`，同步布尔返回并校验 `draftRev`。支持的编辑器使用上文所述的撤销适配。 |
 | Tab/Esc 手势 | 确认（有上游变更风险） | 无 composer keymap 的插件钩子；document capture 后自行 gating 是唯一可行路径（`[C]`） |
 | IME | 确认 | `[data-composer-input][data-composer-composing]` + `isComposing`/`keyCode 229`（`[C]`） |
 | 菜单/结构化交互避让 | 部分确认 | `/` `@` 菜单有 `[data-trigger-menu]`；command-popup、feedback-dialog 无稳定标记，用焦点/模态启发式并 fail-open；approval/question/plan 通过 `useSessionStatus.pendingInteraction` 且通常 takeover 掉 composer（`[C]`） |
@@ -78,7 +86,7 @@ rc.3 导入的助手回复使用 `deepseek-chat-export` 标记来源。插件在
 | slot 标准 props | `sessionId, useSession, useSessions, useSessionStatus, useProjection, useAccess, useConversation, useInput, inputActions, useChat` + locale `t` | `[C] §2` | 确认 |
 | `InputState` | `{draft, attachmentIds, draftRev, phase, claim?, occurrences, queue}`；phase=`plain/claimed/adjudicating/submitting/sending` | `[C] §3.1` | 确认 |
 | `InputActions.captureInsertion` | `() => {start, end, draftRev}`，同步 | `[C] §3.2` | 确认 |
-| `InputActions.insertText` | `(text, span) => boolean`；frozen/disposed/draftRev 不匹配时 false；`paste` tag 独立 undo 单元 | `[C] §3.2` | 确认（undo 独立性待 E2E 实测） |
+| `InputActions.insertText` | `(text, span) => boolean`，编辑器冻结、已销毁或草稿版本不匹配时返回 false。编辑使用宿主的 `paste` 历史标记。 | `[C] §3.2` | 已验证原生插入，撤销适配见上文 |
 | `setDraft` | 存在但**不用于采纳**（整段替换破坏引用/撤销语义） | `[C] §3.2` | 确认 |
 | `submit()` | 存在但**不得调用**（本插件零发送） | `[C] §3.2` | 确认 |
 | 语义为空 | `draft==='' && attachments=0 && occurrences=0 && queue=0 && phase==='plain' && !claim`（空白字符也算内容） | `[C] §3.3` | 确认规则 |

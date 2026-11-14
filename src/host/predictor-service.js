@@ -11,6 +11,7 @@
 import {
   LOCAL_PHRASES_MAX,
   OFFER_TTL_MS,
+  SCHEMA_VERSION,
   isPlainObject,
   normalizeConfig,
   sanitizeConfigPatch,
@@ -25,6 +26,8 @@ import {
   OPERATION_PREDICT,
   OPERATION_RELEASE,
   OPERATION_RESULTS,
+  OPERATION_SESSION_PAUSE,
+  OPERATION_SESSION_STATE,
   OPERATION_STATUS,
   RESULT_ABSTAIN,
   RESULT_OFFER,
@@ -33,7 +36,11 @@ import {
   SOURCE_HABIT,
   SOURCE_PINNED,
   acceptedChoice,
+  isSessionId,
+  isSessionRevision,
+  sessionTurnIdentity,
   validatePredictRequest,
+  validateTurnAnchor,
 } from '../shared/protocol.js'
 import { normalizePhraseKey, parseCandidatesJson, validateSuggestionText } from '../shared/output-validation.js'
 import { buildManualSuffix, buildSystemPrompt, estimateTokens, PROMPT_VERSION } from '../shared/prompt.js'
@@ -43,6 +50,7 @@ import { produceFixedSuggestion, PROVIDER_KIND as FIXED_PROVIDER_KIND } from './
 import { createDiagnostics } from './diagnostics.js'
 import { createRequestRegistry } from './request-registry.js'
 import { semanticViolation } from './semantic-filter.js'
+import { createSessionState } from './session-state.js'
 
 const REQUEST_MEMORY_MS = 30 * 1000
 const MAX_REQUEST_MEMORY = 200
@@ -151,6 +159,10 @@ export function createPredictorService(options) {
   const randomId = typeof options.randomId === 'function' ? options.randomId : defaultRandomId
   const diagnostics = createDiagnostics({ now })
   const registry = createRequestRegistry()
+  const sessionState = options.sessionState ?? createSessionState({ now })
+  const unsubscribeSessionState = sessionState.subscribe((sessionId, turn) => {
+    registry.cancelWhere((owner) => owner?.sessionId === sessionId && (turn === '' || owner.turn === turn))
+  })
   const contextReader = options.contextReader !== undefined && options.contextReader !== null ? options.contextReader : ABSENT_CONTEXT_READER
   const modelProvider = options.modelProvider !== undefined && options.modelProvider !== null ? options.modelProvider : null
   const ledger = options.ledger !== undefined && options.ledger !== null ? options.ledger : null
@@ -172,7 +184,6 @@ export function createPredictorService(options) {
   const resultCache = new Map()
   const dismissedIds = boundedSet()
   const acceptedIds = boundedSet()
-  const dismissedTurns = boundedSet()
   const releasedRequests = boundedSet()
   /** suggestionId -> dispatchKey（B05/O01 关联；有界）。 */
   const suggestionDispatches = boundedMap()
@@ -220,7 +231,9 @@ export function createPredictorService(options) {
   }
 
   function predictResponse(request, result) {
-    return { requestId: request.requestId, anchor: request.anchor, configRevision: revision, result }
+    const { hostId, pauseRevision, turnRevision } = request.sessionVersion
+    return { requestId: request.requestId, anchor: request.anchor, configRevision: revision,
+      sessionVersion: { hostId, pauseRevision, turnRevision }, result }
   }
 
   function remember(requestId, response) {
@@ -270,6 +283,8 @@ export function createPredictorService(options) {
       revision,
       PROMPT_VERSION,
       providerMode(effective.config),
+      request.sessionVersion?.pauseRevision ?? 0,
+      request.sessionVersion?.turnRevision ?? 0,
     ].join('\u0000')
   }
 
@@ -671,6 +686,13 @@ export function createPredictorService(options) {
       return { status: 400, body: { ok: false, error: { code: 'bad-request', message: validation.error } } }
     }
     const request = validation.request
+    const sessionId = request.anchor.sessionId
+    const turn = sessionTurnIdentity(request.anchor)
+    const initialState = sessionState.snapshot(sessionId, turn)
+    const expected = request.sessionVersion
+    // Requests from pre-synchronization clients remain usable until the
+    // session first changes pause state. Every modern client supplies its generation.
+    request.sessionVersion = initialState
     // 后台重启后，窗口不知道这一回合之前手动预测过几次，会从第 0 次重新数；
     // 但持久账本还记得，原样处理会回一个“已预测过”，用户白按一次。
     // 账本记得、内存里又没有对应结果或进行中的任务时，顺延到下一个没用过的次数。
@@ -690,6 +712,9 @@ export function createPredictorService(options) {
     /** 这条请求实际等到的那个生产任务的计量信息；没有经过生产任务时为空。 */
     let meta
     const respond = (result, extra) => {
+      if (result.kind === RESULT_OFFER && !sessionState.registerOffer(result, sessionId, turn, initialState)) {
+        result = { kind: RESULT_UNAVAILABLE, reason: 'session-state-capacity' }
+      }
       recordResult(result, request, dispatchKey, requestStartedAt, meta, extra)
       const response = predictResponse(request, result)
       if (result.reason !== 'cancelled') remember(request.requestId, response)
@@ -704,6 +729,20 @@ export function createPredictorService(options) {
       diagnostics.record('stale', { reason: 'config-changed' })
       return respond({ kind: RESULT_STALE, reason: 'config-changed' })
     }
+    const sessionStaleReason = () => {
+      const state = sessionState.snapshot(sessionId, turn)
+      if (state.paused) return 'session-paused'
+      if (state.terminal === 'accepted') return 'turn-accepted'
+      if (state.terminal === 'dismissed' && request.trigger !== 'manual') return 'turn-dismissed'
+      if (state.pauseRevision !== initialState.pauseRevision || state.turnRevision !== initialState.turnRevision) return 'session-state-changed'
+      if (expected === undefined) return state.pauseRevision === 0 ? '' : 'session-state-changed'
+      if (state.hostId !== expected.hostId || state.pauseRevision !== expected.pauseRevision || state.turnRevision !== expected.turnRevision) {
+        return 'session-state-changed'
+      }
+      return ''
+    }
+    const initialBlock = sessionStaleReason()
+    if (initialBlock) return respond({ kind: RESULT_STALE, reason: initialBlock })
     const isReleased = () => signal?.aborted || releasedRequests.has(request.requestId)
     if (isReleased()) return respond({ kind: RESULT_UNAVAILABLE, reason: 'cancelled' })
     const requestRevision = revision
@@ -713,13 +752,15 @@ export function createPredictorService(options) {
       diagnostics.record('stale', { reason: verification.reason })
       return respond({ kind: RESULT_STALE, reason: verification.reason })
     }
+    const resumedAt = sessionState.resumedAt(sessionId)
+    if (request.trigger === 'auto' && resumedAt > 0 && (verification.completedAt ?? 0) <= resumedAt) {
+      return respond({ kind: RESULT_STALE, reason: 'session-state-changed' })
+    }
     const turnKey = turnKeyFor(request)
     const staleReason = () => {
       if (disposed || !effective.config.enabled || requestRevision !== revision) return 'config-changed'
       if (!verification.isCurrent()) return 'stale-context'
-      // 按过 Esc 的回合不再自动预测；用户主动按 Alt+\ 仍然可以。
-      if (request.trigger !== 'manual' && dismissedTurns.has(turnKey)) return 'turn-dismissed'
-      return ''
+      return sessionStaleReason()
     }
     const before = staleReason()
     if (before) return respond({ kind: RESULT_STALE, reason: before })
@@ -733,14 +774,14 @@ export function createPredictorService(options) {
         oldAnchor.turnId !== request.anchor.turnId || oldAnchor.branchEpoch !== request.anchor.branchEpoch ||
         oldAnchor.contextRevision !== request.anchor.contextRevision
       ) return operationError(OPERATION_PREDICT, 'request-id-reused', 'request id already belongs to a different anchor', 400)
-      if (remembered.result.kind === RESULT_OFFER && acceptedIds.has(remembered.result.suggestionId)) {
-        return respond({ kind: RESULT_STALE, reason: 'turn-accepted' })
+      if (remembered.sessionVersion?.pauseRevision !== initialState.pauseRevision ||
+        remembered.sessionVersion?.turnRevision !== initialState.turnRevision) {
+        return respond({ kind: RESULT_STALE, reason: 'session-state-changed' })
       }
       return { status: 200, body: remembered }
     }
     const cached = cachedOffer(cacheKey)
     if (cached !== undefined) {
-      if (acceptedIds.has(cached.suggestionId)) return respond({ kind: RESULT_STALE, reason: 'turn-accepted' })
       diagnostics.count('cacheHits')
       diagnostics.record('offer', { trigger: request.trigger, source: 'cache' })
       return respond(cached, { cached: true })
@@ -757,7 +798,8 @@ export function createPredictorService(options) {
         // The user asked, the model will not be called again on this reply: their own phrases still can be offered.
         const fallback = await localFallback(request, refused, staleReason)
         if (isReleased()) return respond({ kind: RESULT_UNAVAILABLE, reason: 'cancelled' })
-        return respond(fallback ?? refused)
+        const after = staleReason()
+        return respond(after ? { kind: RESULT_STALE, reason: after } : fallback ?? refused)
       }
       if (registry.activeCount() >= 1) {
         diagnostics.count('unavailable')
@@ -805,7 +847,7 @@ export function createPredictorService(options) {
         }
         if (result.kind === RESULT_OFFER) cacheOffer(cacheKey, result)
         return result
-      })
+      }, { sessionId, turn })
     }
     const result = await registry.attach(production, request.requestId, signal)
     meta = productionMeta.get(cacheKey)
@@ -845,6 +887,9 @@ export function createPredictorService(options) {
         return handleOutcome(body)
       case OPERATION_RESULTS:
         return handleResults()
+      case OPERATION_SESSION_STATE:
+      case OPERATION_SESSION_PAUSE:
+        return handleSessionState(operation, body)
       case OPERATION_STATUS:
         return operationResult(operation, statusValue())
       case OPERATION_CONFIG_GET:
@@ -871,23 +916,52 @@ export function createPredictorService(options) {
   function handleDismiss(body) {
     const suggestionId = typeof body.suggestionId === 'string' ? body.suggestionId : ''
     if (suggestionId === '') return operationError(OPERATION_DISMISS, 'bad-request', 'suggestionId is required', 400)
+    const finished = sessionState.finishOffer(suggestionId, body.sessionId, 'dismissed')
+    if (finished === null) return operationResult(OPERATION_DISMISS, { dismissed: false })
     dismissedIds.add(suggestionId)
-    if (typeof body.turnKey === 'string' && body.turnKey !== '') dismissedTurns.add(body.turnKey)
     if (results !== null) void results.recordOutcome(suggestionId, 'dismissed').catch(() => {})
     diagnostics.count('dismisses')
-    return operationResult(OPERATION_DISMISS, { dismissed: true })
+    return operationResult(OPERATION_DISMISS, { dismissed: true, sessionState: finished.state, turn: finished.turn })
   }
 
   function handleAccepted(body) {
     const suggestionId = typeof body.suggestionId === 'string' ? body.suggestionId : ''
     if (suggestionId === '') return operationError(OPERATION_ACCEPTED, 'bad-request', 'suggestionId is required', 400)
-    acceptedIds.add(suggestionId)
+    const finished = sessionState.finishOffer(suggestionId, body.sessionId, 'accepted')
+    // Legacy reports omitted sessionId. Keep their statistics-only behavior for
+    // a past offer whose in-memory association is no longer present.
+    if (finished === null && body.sessionId !== undefined) return operationResult(OPERATION_ACCEPTED, { accepted: false })
+    if (finished !== null) acceptedIds.add(suggestionId)
     // Which ring entry was taken (index, and the source the page saw). A page
     // older than this Host sends neither; the results log then assumes the first entry.
     const choice = acceptedChoice(body)
     if (results !== null) void Promise.resolve(results.recordOutcome(suggestionId, 'accepted', '', choice)).catch(() => {})
     diagnostics.count('accepts')
-    return operationResult(OPERATION_ACCEPTED, { accepted: true })
+    return operationResult(OPERATION_ACCEPTED, {
+      accepted: finished !== null,
+      ...(finished === null ? {} : { sessionState: finished.state, turn: finished.turn }),
+    })
+  }
+
+  function handleSessionState(operation, body) {
+    const { sessionId, anchor, paused, expectedHostId, expectedPauseRevision } = body
+    if (body.schemaVersion !== SCHEMA_VERSION || !isSessionId(sessionId) ||
+      (anchor !== undefined && (validateTurnAnchor(anchor) !== '' || anchor.sessionId !== sessionId))) {
+      return operationError(operation, 'bad-request', 'invalid session state request', 400)
+    }
+    const sessionAllowed = adapter.sessionManageable ?? adapter.sessionKnown
+    if (sessionAllowed?.(sessionId) !== true) {
+      return operationError(operation, 'unknown-session', 'session is unavailable', 404)
+    }
+    const turn = sessionTurnIdentity(anchor)
+    if (operation === OPERATION_SESSION_STATE) return operationResult(operation, sessionState.snapshot(sessionId, turn))
+    if (typeof paused !== 'boolean' || typeof expectedHostId !== 'string' || expectedHostId.length === 0 || expectedHostId.length > 200 ||
+      !isSessionRevision(expectedPauseRevision)) {
+      return operationError(operation, 'bad-request', 'invalid pause state or revision', 400)
+    }
+    const result = sessionState.changePause(sessionId, turn, paused, expectedHostId, expectedPauseRevision)
+    if (result.reason) return operationError(operation, result.reason, 'session pause update refused', 409)
+    return operationResult(operation, result.state)
   }
 
   /** O01 + B05：客户端回报展示/覆盖/过期/关闭；展示后账本标记 shown。 */
@@ -982,7 +1056,7 @@ export function createPredictorService(options) {
       route,
       modelMode: effective.config.modelMode,
       promptVersion: PROMPT_VERSION,
-      capabilities,
+      capabilities: { ...capabilities, sessionState: true },
       budget: ledger !== null && typeof ledger.snapshot === 'function' ? ledger.snapshot() : null,
       diagnostics: diagnostics.snapshot(),
       offerTtlMs: OFFER_TTL_MS,
@@ -994,6 +1068,7 @@ export function createPredictorService(options) {
 
   function dispose() {
     disposed = true
+    unsubscribeSessionState()
     registry.dispose()
     diagnostics.record('service-dispose')
   }

@@ -27,7 +27,7 @@ function createClient(react) {
       // also knows the language chosen in this plugin's Settings.
       ctx.effect(() => locale.register(NS, nmpHostDictionaries()), 'next-message-predictor: locale')
 
-      const runtime = createClientRuntime({ rpc: createRouteRpc() })
+      const runtime = createClientRuntime({ rpc: createRouteRpc(), requireSessionState: true })
 
       /** The language DSH is showing, read back through the probe key; '' when unknown. */
       const hostLanguage = () => {
@@ -73,6 +73,7 @@ function createClient(react) {
 
       void runtime.loadStatus()
       const GhostOverlay = createOverlayComponent(react, runtime, t)
+      const SessionPause = createSessionPauseComponent(react, runtime, t)
       const SettingsSection = createSettingsComponent(react, runtime, t)
       const SettingsIcon = createSettingsIconComponent(react)
       const PanelPage = createPanelComponent(react, SettingsSection)
@@ -176,6 +177,15 @@ function createClient(react) {
             ),
           ),
         'next-message-predictor: overlay',
+      )
+      ctx.effect(
+        () => slots.inject('conversation.input.left', () => slots.register({
+          name: 'conversation.input.left',
+          id: 'next-message-predictor-session-pause',
+          order: 100,
+          locale: NS,
+        }, SessionPause)),
+        'next-message-predictor: session pause',
       )
 
       // DSH may read a label once, when the entry is registered. When the

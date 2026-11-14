@@ -8,6 +8,7 @@ scratch/logs/
 scratch/evidence/
 scratch/data-home*/
 scratch/asar-copy/
+scratch/desktop-isolated/
 
 # Editor and OS noise
 .vscode/
