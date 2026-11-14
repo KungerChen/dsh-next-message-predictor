@@ -133,7 +133,7 @@ dev_c2: exécute les tests unitaires et d’intégration
 dev_c3: construction + tests + vérification de la syntaxe
 dev_p: Pas de `npm install`, pas d’outil d’assemblage ; Node.js 22 ou une version ultérieure est requis. Pour ajouter ou corriger une traduction, modifiez `src/client/locales/<langue>.js` ; les tests vérifient que toutes les langues ont les mêmes clés.
 lim_h: Limites connues
-l1: Vérifié dans l’interface web de DSH `0.2.2-rc.1` et `0.2.2-rc.3`. Les méthodes de saisie et les raccourcis de l’application de bureau demandent une vérification distincte.
+l1: Vérifié dans l’interface web de DSH `0.2.2-rc.1` et `0.2.2-rc.3`. Sur DSH Desktop `0.2.2-rc.3` sous Windows, un utilisateur a testé avec succès une méthode de saisie chinoise et les raccourcis `Tab`, `Ctrl+Z` et `Ctrl+Shift+Z`. Les autres méthodes de saisie et versions de DSH restent à tester.
 l2: Enregistrer un réglage amène l’hôte à redémarrer la partie en arrière-plan du plugin ; une prédiction en cours est annulée.
 l3: Les fenêtres connectées au même hôte DSH vérifient les mises en pause, les adoptions et les masquages toutes les 800 ms lorsqu’elles sont visibles et toutes les 5 secondes lorsqu’elles sont masquées.
 l4: Le module détecte les fenêtres surgissantes grâce aux marqueurs de menus et de boîtes de dialogue de DSH. Une modification de ces marqueurs peut affecter l’affichage des suggestions.

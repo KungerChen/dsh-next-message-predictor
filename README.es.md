@@ -281,7 +281,7 @@ No hace falta `npm install` ni empaquetador; se requiere Node.js 22 o posterior.
 
 ## Limitaciones conocidas
 
-- Verificado en la interfaz web de DSH `0.2.2-rc.1` y `0.2.2-rc.3`. Los métodos de entrada y los atajos de la aplicación de escritorio requieren una verificación aparte.
+- Verificado en la interfaz web de DSH `0.2.2-rc.1` y `0.2.2-rc.3`. En DSH Desktop `0.2.2-rc.3` para Windows, un usuario probó con éxito un método de entrada chino y los atajos `Tab`, `Ctrl+Z` y `Ctrl+Shift+Z`. Queda por probar otros métodos de entrada y otras versiones de DSH.
 - Guardar un ajuste hace que el host reinicie la parte en segundo plano del plugin; la predicción en curso se cancela.
 - Las ventanas conectadas al mismo servidor DSH consultan los cambios de pausa, aceptación y ocultación cada 800 ms si están visibles y cada 5 segundos si están ocultas.
 - El complemento reconoce las ventanas emergentes mediante los marcadores de menús y diálogos de DSH. Los cambios en estos marcadores pueden afectar a la aparición de sugerencias.

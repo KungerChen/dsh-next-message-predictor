@@ -281,7 +281,7 @@ Não precisa de `npm install` nem de empacotador; é necessário o Node.js 22 ou
 
 ## Limitações conhecidas
 
-- Verificado na interface web do DSH `0.2.2-rc.1` e `0.2.2-rc.3`. Os métodos de entrada e atalhos do aplicativo para desktop exigem uma verificação separada.
+- Verificado na interface web do DSH `0.2.2-rc.1` e `0.2.2-rc.3`. No DSH Desktop `0.2.2-rc.3` para Windows, um usuário testou com sucesso um método de entrada em chinês e os atalhos `Tab`, `Ctrl+Z` e `Ctrl+Shift+Z`. Outros métodos de entrada e versões do DSH ainda precisam ser testados.
 - Salvar uma configuração faz o host reiniciar a parte em segundo plano do plugin; uma previsão em andamento é cancelada.
 - As janelas conectadas ao mesmo host DSH consultam pausas, aceitações e dispensas a cada 800 ms quando visíveis e a cada 5 segundos quando ocultas.
 - O plugin detecta janelas pop-up pelos marcadores de menus e caixas de diálogo do DSH. Mudanças nesses marcadores podem afetar a exibição de sugestões.

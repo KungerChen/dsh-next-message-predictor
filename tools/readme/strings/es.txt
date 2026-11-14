@@ -133,7 +133,7 @@ dev_c2: ejecuta las pruebas unitarias y de integración
 dev_c3: compilación + pruebas + comprobación de sintaxis
 dev_p: No hace falta `npm install` ni empaquetador; se requiere Node.js 22 o posterior. Para añadir o corregir una traducción, edita `src/client/locales/<idioma>.js`; las pruebas comprueban que todos los idiomas tengan las mismas claves.
 lim_h: Limitaciones conocidas
-l1: Verificado en la interfaz web de DSH `0.2.2-rc.1` y `0.2.2-rc.3`. Los métodos de entrada y los atajos de la aplicación de escritorio requieren una verificación aparte.
+l1: Verificado en la interfaz web de DSH `0.2.2-rc.1` y `0.2.2-rc.3`. En DSH Desktop `0.2.2-rc.3` para Windows, un usuario probó con éxito un método de entrada chino y los atajos `Tab`, `Ctrl+Z` y `Ctrl+Shift+Z`. Queda por probar otros métodos de entrada y otras versiones de DSH.
 l2: Guardar un ajuste hace que el host reinicie la parte en segundo plano del plugin; la predicción en curso se cancela.
 l3: Las ventanas conectadas al mismo servidor DSH consultan los cambios de pausa, aceptación y ocultación cada 800 ms si están visibles y cada 5 segundos si están ocultas.
 l4: El complemento reconoce las ventanas emergentes mediante los marcadores de menús y diálogos de DSH. Los cambios en estos marcadores pueden afectar a la aparición de sugerencias.

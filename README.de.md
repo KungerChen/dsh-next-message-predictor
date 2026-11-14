@@ -281,7 +281,7 @@ Kein `npm install`, kein Bundler; erforderlich ist Node.js 22 oder neuer. Um ein
 
 ## Bekannte Einschränkungen
 
-- In der Web-Oberfläche von DSH `0.2.2-rc.1` und `0.2.2-rc.3` geprüft. Eingabemethoden und Tastenkürzel der Desktop-App müssen separat geprüft werden.
+- In der Web-Oberfläche von DSH `0.2.2-rc.1` und `0.2.2-rc.3` geprüft. In DSH Desktop `0.2.2-rc.3` unter Windows hat ein Nutzer die chinesische Eingabemethode sowie `Tab`, `Ctrl+Z` und `Ctrl+Shift+Z` manuell erfolgreich getestet. Weitere Eingabemethoden und DSH-Versionen stehen noch zur Prüfung aus.
 - Das Speichern einer Einstellung veranlasst den Host, den Hintergrundteil des Plugins neu zu starten; eine laufende Vorhersage wird abgebrochen.
 - Fenster am selben DSH-Host gleichen Pausen, Übernahmen und ausgeblendete Vorschläge sichtbar alle 800 ms und verborgen alle 5 Sekunden ab.
 - Das Plugin erkennt Pop-ups anhand der Menü- und Dialogmarkierungen von DSH. Änderungen an diesen Markierungen können beeinflussen, wann Vorschläge angezeigt werden.

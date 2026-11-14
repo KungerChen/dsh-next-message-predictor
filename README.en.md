@@ -281,7 +281,7 @@ No `npm install` and no bundler; Node.js 22 or later is required. To add or corr
 
 ## Known limitations
 
-- Verified in the Web UI of DSH `0.2.2-rc.1` and `0.2.2-rc.3`. Native desktop input methods and shortcuts need separate verification.
+- Verified in the Web UI of DSH `0.2.2-rc.1` and `0.2.2-rc.3`. On DSH Desktop `0.2.2-rc.3` for Windows, a user successfully tested a Chinese input method and the `Tab`, `Ctrl+Z`, and `Ctrl+Shift+Z` shortcuts. Other input methods and DSH versions still need testing.
 - Saving a setting makes the host restart the background half of the plugin; a prediction in progress is cancelled.
 - Windows connected to the same DSH Host poll for pauses, adoption and dismissal every 800 ms when visible and every 5 seconds when hidden.
 - The plugin detects pop-ups through DSH’s menu and dialog markers. Changes to these markers may affect when suggestions appear.

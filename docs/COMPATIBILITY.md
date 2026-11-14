@@ -2,9 +2,9 @@
 
 ## 版本与实测范围
 
-`package.json` 的安装范围为 `>=0.2.2-rc.1 <0.3.0`。`0.2.2-rc.1` 是 P0 宿主契约基线，`0.2.2-rc.3` 的回归在 Windows 安装包的隔离 Web profile 上执行。具体版本、场景和结果见 [发布与启用](RELEASE.md)。原生桌面窗口的输入法和快捷键需单独验收。
+`package.json` 的安装范围为 `>=0.2.2-rc.1 <0.3.0`。`0.2.2-rc.1` 是 P0 宿主契约基线，`0.2.2-rc.3` 的回归在 Windows 安装包的隔离 Web profile 上执行。具体版本、场景和结果见 [发布与启用](RELEASE.md)。
 
-0.6.0 在隔离的 Windows DSH 桌面版 `0.2.2-rc.3` 上验证了预测显示、采纳、撤销与重做及中英文原生窄窗口布局。页面 150% 缩放通过 Electron 的页面缩放接口验证。键鼠自动化、输入法、物理显示缩放及跨视图验证的场景和结果见 [验证报告](VALIDATION-DISPLAY-SESSION.md)。
+0.6.0 在隔离的 Windows DSH 桌面版 `0.2.2-rc.3` 上验证了预测显示、采纳、撤销与重做及中英文原生窄窗口布局。页面 150% 缩放通过 Electron 的页面缩放接口验证。用户在该桌面版手测了 Windows 中文输入法及 `Tab`、`Ctrl+Z`、`Ctrl+Shift+Z`，结果均符合预期。其他输入法、DSH 桌面版本、系统 DPI 档位和原生多窗口仍待覆盖。各层级的场景和结果见 [验证报告](VALIDATION-DISPLAY-SESSION.md)。
 
 截至 2026-11-14，npm 的 `latest` 指向 `0.2.2-rc.1`，`next` 指向 `0.2.2-rc.3`。用 npm 验证特定版本可以固定 `@deepseek-ai/dsh@0.2.2-rc.3`。见 [npm 发布标签](https://registry.npmjs.org/-/package/@deepseek-ai%2Fdsh/dist-tags)。
 
