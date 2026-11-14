@@ -34,7 +34,7 @@
 
 ## 设计原则
 
-1. **浏览器不提供对话内容。** 请求里只有会话、回合的标识和配置版本。Host 从自己的会话存储读取要发给模型的内容，所以页面无法让 Host 发送任意文本。
+1. **预测上下文由 Host 读取。** 预测请求带有会话和回合标识、配置版本、触发方式等元数据。Host 从自己的会话存储读取要发给模型的对话片段。
 2. **插件没有发送路径。** 采纳建议使用宿主输入框的原生插入接口（`captureInsertion()` + `insertText()`），结果只是草稿里的一段文字。适配层可为支持的编辑器准备撤销前态，具体边界见 [DSH 兼容性](COMPATIBILITY.md#首次采纳的撤销)。
 3. **失败时让位。** 任何一步不满足条件，按键都交还给宿主原有行为；只有插入确实成功才吞掉 Tab。
 4. **宁可沉默。** 模型输出不是严格 JSON、超长、多行、像助手口吻或像错误信息时一律丢弃，不修复、不截断。
@@ -46,7 +46,7 @@
 2. 控制器观察到“运行中 → 空闲”且出现了新的已完成回合，检查资格（`eligibility()`），等待 `triggerDelayMs` 后发出 `predict` 请求，带上回合锚点（`sessionId`、`turnId`、`completedEventSeq`、`contextRevision`）和配置版本。
 3. **Host**：`predictor-service.handlePredict()` 校验请求；`context-builder.verifyAnchor()` 用自己观察到的 `turn/end` 事件（或读取会话日志）确认这个回合确实正常完成，且之后没有新回合、新用户消息、压缩或回退。
 4. 同一回合的相同请求共用一个生产任务（`request-registry`），全局同时只运行一个。
-5. 生产任务（第一条建议总是来自模型，常用短句不再代替模型调用）：
+5. 生产任务（模型建议排在本机候选之前）：
    - 读取上下文 → 脱敏 → 按配额裁剪 → 解析模型路由 → 账本预留（含本回合次数）→ 调用模型一次 → 结算用量（见“额度记账”）；
    - 输出经严格 JSON 解析（`output-validation`）和语义过滤（`semantic-filter`）；
    - 得到建议后，`localPhrases()` 在模型候选后面接上本机短语（见“候选环”）；手动预测没有得到建议时，`localFallback()` 改为只给本机短语。
@@ -71,7 +71,7 @@ Host 在发出建议时记住建议标识关联的会话和经过核验的回合
 2. 本次会话里重复发过的短消息（`habitSuggestions` 开启时，`context-builder.findHabitPhrases`，只读本机会话）；
 3. 固定短语（`pinnedPhrases`）。
 
-后两类统称本机短语，由 Host 的 `localPhrases()` 组装：每一条都过 `validateSuggestionText`；和模型候选、彼此之间按 `normalizePhraseKey`（与常用短句检测相同：去首尾空白、合并空格、去结尾标点、忽略大小写）去重；合计最多 `LOCAL_PHRASES_MAX`（5）条；放在 offer 的 `local` 字段里，每条带 `source`（`habit` / `pinned`）。本机短语从不发给模型：它们不进入提示词，也不进入 `offeredTexts`（那份列表在“换一条”时告诉模型它已经说过什么）。
+后两类统称本机短语，由 Host 的 `localPhrases()` 组装。各条经过 `validateSuggestionText`，并和已有候选按 `normalizePhraseKey` 去重（去首尾空白、合并空格、去结尾标点、忽略大小写）。合计最多 `LOCAL_PHRASES_MAX`（5）条，放入 offer 的 `local` 字段。每条带 `source`（`habit` / `pinned`）。本机候选不加入 `offeredTexts`（“换一条”时提供给模型的历史候选列表）。作为已发送消息出现的相同文本仍可能包含在最近对话片段中。
 
 两类短语都在 Host 接上，而不是由页面按配置追加固定短语，原因：
 

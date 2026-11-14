@@ -1,12 +1,8 @@
-<!-- readme:langbar:start -->
-
 <div align="center">
 
 **简体中文** · [English](README.en.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Русский](README.ru.md) · [Português](README.pt.md)
 
 </div>
-
-<!-- readme:langbar:end -->
 
 <p align="center">
   <img src="icon.svg" width="88" alt="">
@@ -16,179 +12,51 @@
 
 <p align="center">
   <b>DeepSeek Harness 输入框插件</b><br>
-  助手答完，你要说的下一句已经在输入框里等着。<br>
-  <kbd>Tab</kbd> 填入，<kbd>Esc</kbd> 忽略，<b>绝不替你发送</b>。
+  助手答完后，可在输入框里预览下一条消息的建议。<br>
+  聚焦输入框后按 <kbd>Tab</kbd> 填入草稿，发送由你决定。
 </p>
-
-<!-- readme:badges:start -->
 
 <p align="center">
   <img src="https://img.shields.io/badge/%E7%89%88%E6%9C%AC-0.6.0-4d6bfe" alt="版本 0.6.0">
-  <img src="https://img.shields.io/badge/DeepSeek%20Harness-0.2.2--rc.1-1f2937" alt="DeepSeek Harness 0.2.2-rc.1">
-  <img src="https://img.shields.io/badge/%E7%95%8C%E9%9D%A2%E8%AF%AD%E8%A8%80-9%20%E7%A7%8D-8250df" alt="界面语言 9 种">
+  <img src="https://img.shields.io/badge/DeepSeek%20Harness-%3E%3D0.2.2--rc.1%20%3C0.3.0-1f2937" alt="DeepSeek Harness &gt;=0.2.2-rc.1 &lt;0.3.0">
+  <img src="https://img.shields.io/badge/%E7%95%8C%E9%9D%A2%E8%AF%AD%E8%A8%80-9-8250df" alt="界面语言 9">
   <img src="https://img.shields.io/badge/%E7%AC%AC%E4%B8%89%E6%96%B9%E4%BE%9D%E8%B5%96-0-2ea44f" alt="第三方依赖 0">
   <a href="https://github.com/KungerChen/dsh-next-message-predictor/actions/workflows/ci.yml"><img src="https://github.com/KungerChen/dsh-next-message-predictor/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <img src="https://img.shields.io/badge/%E8%AE%B8%E5%8F%AF-MIT-blue" alt="许可 MIT">
 </p>
 
-<!-- readme:badges:end -->
+<div align="center">
+
+[快速开始](#quick-start) · [预览和采纳](#suggestions) · [暂停当前会话](#session-pause) · [预测模式](#modes) · [隐私和模型请求](#privacy) · [文档](#documentation)
+
+</div>
 
 <p align="center">
-  <img src="docs/images/demo.png" width="760" alt="演示：助手回答结束后，输入框里出现灰色建议；换一条；按 Tab 填入">
+  <img src="docs/images/demo.png" width="760" alt="DSH 输入框中的失焦预览、聚焦后切换建议以及填入草稿">
 </p>
 
-<p align="center">
-  <sub>建议出现 → 不满意就换一条 → <kbd>Tab</kbd> 填入，可以继续修改再发送</sub>
-</p>
+<a name="quick-start"></a>
 
----
+## 快速开始
 
-## 为什么用它
-
-和助手协作时，很多回复其实很短，也很容易猜到：“继续”“跑一下测试”“把改动给我看看”。这个插件把这类跟进提前写好，放在输入框里。
-
-<table>
-<tr>
-<td width="33%" valign="top">
-
-### ⌨️ 少打字
-
-常见的跟进一键填入，填入后可以继续修改。
-
-</td>
-<td width="33%" valign="top">
-
-### 🤫 不打扰
-
-你一开始打字，建议立刻让位；输入法组词、菜单打开时不出现。模型没把握时宁可不给。
-
-</td>
-<td width="33%" valign="top">
-
-### 🛡️ 不越权
-
-只把文字放进输入框。插件里没有任何“发送消息”的代码，发不发永远由你决定。
-
-</td>
-</tr>
-<tr>
-<td valign="top">
-
-### 💰 费用可控
-
-默认用低成本模型，有每日次数和 token 上限。你自己的短语（重复发过的短消息和固定短语）按一下“换一条”就能取到，不花费用，也不离开你的电脑。
-
-</td>
-<td valign="top">
-
-### 🔒 注重隐私
-
-发送前遮蔽疑似密钥、令牌、邮箱和手机号。浏览器不上传草稿。本机统计只记数字，不记文字。
-
-</td>
-<td valign="top">
-
-### 📊 用量透明
-
-近 7 天的请求数、采纳率、响应时间和 token 用量都在设置页里，一眼看清值不值。
-
-</td>
-</tr>
-</table>
-
-## 功能一览
-
-### 建议就在输入框里
-
-助手回答结束后，灰色建议会出现在前台窗口的空输入框里。默认无需聚焦输入框，采纳时先点击输入框。可以在设置中开启“仅在输入框获得焦点时显示预测”。
-
-<p align="center">
-  <img src="docs/images/suggestion.png" width="720" alt="输入框中的灰色建议，右侧有“Tab 采纳”和“换一条”">
-</p>
-
-| 操作 | 效果 |
-|---|---|
-| <kbd>Tab</kbd> 或 <kbd>→</kbd> | 输入框聚焦时填入建议，可继续修改 |
-| 点击“Tab 采纳” | 输入框聚焦时，用按钮填入建议 |
-| <kbd>Esc</kbd> | 隐藏这条建议 |
-| <kbd>Alt</kbd>+<kbd>\\</kbd>（可改） | 立即预测；已有建议时换一条，一次调用带回多条候选，切换不用等 |
-| 直接打字 | 建议立刻消失；清空输入框后它会回来 |
-
-点击输入框工具栏的暂停按钮，可以暂停本会话的自动和手动预测。恢复后可手动预测，或等下一次回答结束。连接同一 DSH 后台的窗口共享暂停状态，刷新页面和保存设置后仍然有效，直到手动恢复或重启 DSH。
-
-### 三种模式，一键切换
-
-不想研究每个选项？选一种模式就行，随时可以撤销或再微调。
-
-<p align="center">
-  <img src="docs/images/modes.png" width="720" alt="预测模式卡片：均衡、省流、高质量">
-</p>
-
-| 模式 | 什么时候预测 | 用什么模型 | 上下文 | 每日上限 | 适合 |
-|---|---|---|---|---|---|
-| **均衡**（推荐） | 每次回答后自动 | 指定的低成本模型 | 12 条 | 200 次 | 日常使用 |
-| **省流** | 只在你点“预测”或按快捷键时 | 指定的低成本模型 | 6 条 | 60 次 | 严格控制费用 |
-| **高质量** | 每次回答后自动 | 跟随会话模型 | 20 条 | 200 次 | 想要更贴合的建议 |
-
-模式只调整触发方式、模型策略、上下文和上限，不动总开关、快捷键、界面语言和隐私选项，也不会覆盖你填好的模型。
-
-### 你自己的短语，随手可取
-
-把常发的话（“继续”“跑一下测试”）加到 **设置 → 消息预测 → 建议来源 → 固定短语**，排好顺序，点一次“保存”。它们跟在模型的建议后面：按“换一条”（或 <kbd>Alt</kbd>+<kbd>\\</kbd>）会依次看到模型的建议、你在本次对话里重复发过的短消息、你的固定短语，走完才再请求模型。按钮上的小图标标明这是你自己的短语。它们不花费用，不离开你的电脑；手动预测时模型没有给出建议，会改为给出它们，而不是“本次没有建议”。
-
-<p align="center">
-  <img src="docs/images/phrases.png" width="720" alt="输入框中一条固定短语作为灰色建议，“换一条”按钮里有图钉标记和它在列表中的位置">
-</p>
-
-### 九种界面语言
-
-设置页、输入框里的按钮和它们的提示支持 简体中文、English、日本語、한국어、Español、Français、Deutsch、Русский、Português。默认跟随 DeepSeek Harness 的语言，也可以在 **设置 → 消息预测 → 界面语言** 里单独指定，选中即生效。建议本身使用哪种语言不受这个选项影响，它始终跟随对话的语言。
-
-<p align="center">
-  <img src="docs/images/languages.png" width="720" alt="设置页顶部在英语、日语、西班牙语和俄语下的样子">
-</p>
-
-### 放进左侧栏，一点即达
-
-点一下“添加侧栏入口”，即可从 DSH 左侧栏打开“消息预测”，查看状态或切换模式。取消固定后，从左侧栏的“更多”打开或重新固定。标题旁显示当前安装的版本。
-
-<table>
-<tr>
-<td width="30%" align="center" valign="middle">
-  <img src="docs/images/sidebar-entry.png" width="230" alt="左侧栏中的“消息预测”入口">
-</td>
-<td width="70%" align="center" valign="middle">
-  <img src="docs/images/page-header.png" width="560" alt="页面标题旁的版本号和移除侧栏入口的按钮">
-</td>
-</tr>
-</table>
-
-### 用了多少，一目了然
-
-<details>
-<summary><b>展开查看完整的设置页</b>（基础开关、模式、建议来源、预测模型、近 7 天统计）</summary>
-<br>
-<p align="center">
-  <img src="docs/images/settings.png" width="640" alt="完整的设置页">
-</p>
-</details>
-
-> 以上截图来自一段演示对话，由仓库里的脚本自动生成，使用的是本地模拟模型，所以模型名显示为 Mock、统计数字很小。实际使用时，建议由你在 DSH 中配置的模型生成。
-
-## 安装
-
-DeepSeek Harness 的安装版本范围为 `>=0.2.2-rc.1 <0.3.0`。插件没有第三方依赖，也不需要构建，一条命令装好：
+DeepSeek Harness 安装版本范围为 `>=0.2.2-rc.1 <0.3.0`。从 GitHub 安装即可使用，无需构建。
 
 ```powershell
 dsh plugin --profile desktop add github:KungerChen/dsh-next-message-predictor
 ```
 
-`--profile` 后面是你日常使用的 profile：桌面版是 `desktop`，Web 版是 `web`。装好后**完全退出并重新打开 DSH**。
+使用日常打开的 profile（默认桌面版为 `desktop`，Web 版为 `web`）。安装后**完全退出并重新打开 DSH**。
+
+1. 打开 **设置 → 消息预测**。首次安装时，预测默认关闭。
+2. 在“预测模式”中选一种模式，到“预测模型”确认 DSH 中已配置所填的服务商与模型，或者选择“跟随会话模型”。修改模型文本框后请保存。
+3. 打开“启用预测”，等助手答完后保持输入框为空。也可以点“预测”，或聚焦空输入框后按 <kbd>Alt</kbd>+<kbd>\</kbd> 手动试用。
+
+均衡和省流默认使用 `deepseek-official / deepseek-flash`。想使用其他指定模型时，请填写 DSH 中对应的服务商 ID 和模型 ID。指定模型无法解析时，本次预测可能改用可用的 DSH 默认模型。
 
 <details>
-<summary>找不到 <code>dsh</code> 命令，或者想从本地目录安装</summary>
+<summary>找不到 <code>dsh</code> 命令，或要从本地目录安装</summary>
 
-`dsh` 命令行在 DeepSeek Harness 的安装目录里，可以写全路径来调用。想自己改代码，就先克隆再从本地目录安装：
+可直接调用 DeepSeek Harness 安装目录中的命令行。要修改代码，先克隆仓库，再从本地目录安装。
 
 ```powershell
 git clone https://github.com/KungerChen/dsh-next-message-predictor.git
@@ -196,125 +64,168 @@ $dsh = '<DSH 安装目录>\resources\runtime\cli\bin\dsh.cmd'
 & $dsh plugin --profile desktop add '<插件目录>'
 ```
 
-`<DSH 安装目录>` 是 DeepSeek Harness 的安装位置，`<插件目录>` 是刚才克隆下来的文件夹。
-
 </details>
-
-然后三步开始使用：
-
-1. 打开 **设置 → 消息预测**，打开“启用预测”。默认是关闭的：不启用就不会显示建议，也不会调用模型。
-2. 在“预测模式”里选一种，默认是“均衡”。
-3. 想从左侧栏打开设置页，就点右上角“添加侧栏入口”。
 
 <details>
 <summary>更新与卸载</summary>
 
-**更新**：从 GitHub 安装的，先卸载再重新执行上面的安装命令；从本地目录安装的，在插件目录里 `git pull`。然后重启 DSH。只刷新页面不够，那样页面是新版而后台还是旧版，设置页会提示版本不一致。
+**更新**。从 GitHub 安装的插件可先卸载，再执行安装命令。本地目录安装的插件可在该目录执行 `git pull`。更新后完全退出并重新打开 DSH。
 
-**卸载**：
+**卸载**。
 
 ```powershell
 dsh plugin --profile desktop remove dsh-next-message-predictor
 ```
 
-同一个 profile 里只启用一个输入框预测插件。检测到另一个同类插件时，本插件会自动暂停，并在设置页说明原因。
+同一个 profile 只启用一个输入框预测插件。检测到另一个同类插件时，本插件会暂停，并在设置页说明原因。
 
 </details>
 
-## 它会发送什么
+<a name="suggestions"></a>
 
-每次预测向模型发送一次请求，不自动重试。内容是当前会话最近的**用户消息和助手的最终文字回答**的片段，默认最多 12 条、约 2,000 token。
+## 预览和采纳
 
-- 不包含工具调用的参数和输出、推理过程、系统提示。
-- 发送前把疑似私钥、API 密钥、令牌、密码、邮箱、手机号、身份证号，以及个人文件夹路径中的用户名替换成占位符（基于规则，不能保证识别全部）。
-- 浏览器页面只发送会话和回合的编号，不发送草稿、附件或任何对话文字；要发给模型的内容由后台从 DSH 自己的会话记录里读取。
-- 你自己的短语（会话里重复发过的短消息和“固定短语”）只在本机使用，不调用模型，也从不发给模型。
+有建议时，前台窗口的空输入框会显示灰字预览。默认即使输入框失焦也能看到。开启“仅在输入框获得焦点时显示预测”后，只有输入框聚焦时才显示。此选项只控制已有建议的显示。
 
-完整说明和删除本机数据的方法见 [隐私与数据边界](docs/PRIVACY.md)。
+<p align="center">
+  <img src="docs/images/suggestion.png" width="720" alt="失焦的输入框显示灰字建议，以及点击输入框后按 Tab 采纳的提示">
+</p>
+
+| 输入框操作 | 效果 |
+|---|---|
+| <kbd>Tab</kbd>、光标在开头时按 <kbd>→</kbd>，或点击“Tab 采纳” | 先聚焦输入框。采纳后建议成为草稿，可继续修改再发送。 |
+| <kbd>Esc</kbd> | 聚焦输入框时隐藏当前建议，之后仍可手动请求新的建议。 |
+| <kbd>Alt</kbd>+<kbd>\</kbd>（可改）、“预测”或“换一条” | 输入框为空时手动预测或换一条。使用快捷键还需聚焦输入框。 |
+| 直接打字 | 开始输入后，预览会隐藏。清空草稿时，如果原建议仍然有效，它可以再次显示。 |
+
+采纳后用 <kbd>Ctrl</kbd>+<kbd>Z</kbd> 撤销、<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> 重做。0.6.0 修复了已验证的 DSH Desktop `0.2.2-rc.3` 编辑器中发送后首次采纳的撤销问题。其他编辑器版本沿用 DSH 的原生撤销行为。 [验证报告](docs/VALIDATION-DISPLAY-SESSION.md)
+
+<a name="session-pause"></a>
+
+## 暂停当前会话
+
+输入框工具栏的暂停按钮会停止本会话的自动和手动预测，并清除当前建议。点击 ▶ 恢复后，可以手动预测或等待新一轮回答结束。
+
+<p align="center">
+  <img src="docs/images/pause.png" width="720" alt="已暂停预测的会话及输入框工具栏中的恢复按钮">
+</p>
+
+连接同一 DSH 后台的窗口共享暂停状态。刷新页面或保存设置后仍会保留，直到你恢复预测或重启 DSH。在一个窗口采纳或隐藏建议时，同会话其他视图也会隐藏同一回合的建议。
+
+<a name="modes"></a>
+
+## 预测模式
+
+<p align="center">
+  <img src="docs/images/modes.png" width="720" alt="预测模式卡片中的均衡、省流和高质量选项">
+</p>
+
+| 模式 | 何时预测 | 模型 | 上下文消息上限 | 每日请求上限 |
+|---|---|---|---|---|
+| **均衡** (推荐) | 满足条件的回答结束后自动 | 指定模型 | 12 | 200 |
+| **省流** | 仅手动 | 指定模型 | 6 | 60 |
+| **高质量** | 满足条件的回答结束后自动 | 跟随会话模型 | 20 | 200 |
+
+模式调整触发方式、模型策略、上下文和上限，保留总开关、快捷键、界面语言、隐私选项和已填的模型 ID。
+
+### 模型建议和自己的短语
+
+模型候选之后，可以接上你在本会话中重复发过的短消息和固定短语。在 **设置 → 消息预测 → 建议来源 → 固定短语** 添加或排序后保存。点击“换一条”可在已有候选中切换，无需再次调用模型。已有候选用完后，再换一条可能请求模型，仍受额度限制。
+
+手动预测没有可用的模型结果时，如果有自己的短语，插件可以直接提供这些短语。提供本机回退候选无需额外调用模型。
+
+<p align="center">
+  <img src="docs/images/phrases.png" width="720" alt="输入框中的固定短语候选，“换一条”按钮显示图钉和候选位置">
+</p>
+
+## 设置与用量
+
+插件支持九种界面语言，默认跟随 DSH。也可在插件设置中单独选择“界面语言”。该选项控制界面文案的语言。
+
+点击“添加侧栏入口”，即可从 DSH 左侧栏打开“消息预测”。取消固定后，可以在“更多”中打开或重新固定。设置标题旁显示已安装的版本。
+
+<table>
+<tr>
+<td width="30%" align="center" valign="middle">
+  <img src="docs/images/sidebar-entry.png" width="230" alt="DSH 左侧栏中的“消息预测”入口">
+</td>
+<td width="70%" align="center" valign="middle">
+  <img src="docs/images/page-header.png" width="560" alt="消息预测标题、版本号和侧栏入口设置">
+</td>
+</tr>
+</table>
+
+“近 7 天统计”显示请求次数、已展示和已采纳的建议、响应时间及 token 用量，可用来查看每日额度和建议的使用情况。
+
+<details>
+<summary>展开查看完整设置页和多语言示例</summary>
+
+<p align="center">
+  <img src="docs/images/settings.png" width="640" alt="包含基础、模式、建议来源、模型和统计的设置页">
+</p>
+
+<p align="center">
+  <img src="docs/images/languages.png" width="720" alt="插件设置页顶部的多语言界面示例">
+</p>
+
+</details>
+
+> 截图取自隔离的 Web 界面，使用合成会话和本机模拟模型，设置为示例配置。图中的用量和耗时仅供演示。
+
+<a name="privacy"></a>
+
+## 隐私和模型请求
+
+模型预测将当前会话分支最近的**用户消息和助手最终回答**片段发送给 DSH 配置的模型服务商。默认上限为 12 条消息、约 2000 token，包含预测任务说明。
+
+- 默认附带上一回合的简短活动计数摘要。工具调用参数、输出、推理和系统提示不包含在内。
+- 默认开启规则遮蔽，替换疑似密钥及部分个人标识。规则可能漏掉敏感文字。
+- 浏览器的预测与会话状态请求携带标识和元数据。后台从 DSH 读取已发送的消息；草稿、附件和引用不包含在内。本地统计记录次数、耗时和标识，不保存对话或建议正文。
+- 本机候选与固定短语列表不会附加到模型提示中。已经作为消息发出的短语仍可能出现在最近对话片段里。
+
+完整数据范围和删除方法见 [隐私与数据边界](docs/PRIVACY.md)。
 
 ## 常见问题
 
 <details>
-<summary><b>会不会替我把消息发出去？</b></summary>
+<summary><b>为什么没有建议？</b></summary>
 
-不会。采纳建议只是把文字填进输入框，用的是输入框自己的插入接口；插件代码里不存在提交或发送的调用。
-
-</details>
-
-<details>
-<summary><b>会花多少钱？</b></summary>
-
-每次预测是一次很短的模型调用（默认输出上限 96 token）。默认每日最多 200 次、50 万 token，达到上限当天就不再调用。想更省就选“省流”模式，只在你主动要的时候预测。实际用量在设置页的“近 7 天统计”里。
+先看设置页的“当前状态”。会话暂停、窗口不在前台、草稿非空、菜单打开或输入法正在组词都可能阻止显示。模型也可能不给可用建议。满足条件时，可在聚焦的空输入框中手动预测。
 
 </details>
 
 <details>
-<summary><b>为什么有时候没有建议？</b></summary>
+<summary><b>预测什么时候会计费？</b></summary>
 
-设计如此：模型没有把握时会选择不给，输出不符合要求（太长、多行、像助手的口吻）的也会被丢弃。设置页“当前状态”一行会说明此刻为什么没有建议。想要一条的时候按 <kbd>Alt</kbd>+<kbd>\\</kbd>。
-
-</details>
-
-<details>
-<summary><b>建议准吗？</b></summary>
-
-它擅长的是短而明确的跟进：确认继续、要求验证、追问细节。它猜不到只有你自己知道的事，这种情况下它应当保持沉默。
+费用取决于实际调用的服务商及 token 用量。切换已有候选或生成本机回退候选不会新增模型请求。希望只在需要的时候预测，可以使用省流模式。
 
 </details>
+
+<a name="documentation"></a>
 
 ## 文档
 
+宿主版本和桌面验证范围见 [0.6.0 验证报告](docs/VALIDATION-DISPLAY-SESSION.md)。
+
 | 文档 | 内容 |
 |---|---|
-| [使用指南](docs/USER-GUIDE.md) | 按键、设置页每一项、模式、左侧栏入口、常见问题 |
-| [配置参考](docs/CONFIGURATION.md) | 全部配置项的默认值与范围，三种模式的取值 |
-| [隐私与数据边界](docs/PRIVACY.md) | 发送范围、本机文件、删除数据的方法 |
-| [架构](docs/ARCHITECTURE.md) | Host 与浏览器两半的结构、请求流程、协议 |
-| [开发与验证](docs/DEVELOPMENT.md) | 构建、测试、端到端验证、重新生成截图 |
-| [兼容性](docs/COMPATIBILITY.md) | DSH 版本、实测范围与宿主接口 |
-| [更新日志](CHANGELOG.md) | 版本变更 |
-| [文档索引](docs/README.md) | 全部文档，含历史验证与优化记录 |
+| [使用指南](docs/USER-GUIDE.md) | 设置、按键、模式与排查方法 |
+| [配置参考](docs/CONFIGURATION.md) | 配置项默认值、取值范围和模式预设 |
+| [隐私与数据边界](docs/PRIVACY.md) | 发送范围、本地文件和数据删除 |
+| [兼容性](docs/COMPATIBILITY.md) | 安装范围、实测宿主与原生编辑器行为 |
+| [更新日志](CHANGELOG.md) | 各版本变更 |
+| [文档索引](docs/README.md) | 当前文档和历史验证记录 |
 
 ## 参与开发
 
 ```powershell
-npm run build   # 由 src/shared + src/client 生成 lib/client.js
-npm test        # 运行单元与集成测试
-npm run check   # build + test + 语法检查
+npm run build
+npm test
+npm run check
 ```
 
-不需要 `npm install`，没有打包器，需要 Node.js 22 或更高版本。补充或修正某种语言的文案，改 `src/client/locales/<语言>.js` 即可，测试会检查各语言的键是否一致。
-
-<details>
-<summary>目录结构</summary>
-
-```text
-dsh-next-message-predictor/
-  package.json          包信息与 dsh.client 声明
-  cordis.patch.yml      loader 条目：next-message-predictor
-  lib/index.js          Host 入口（转出 src/host）
-  lib/client.js         生成的浏览器 bundle（npm run build，勿手改）
-  src/shared/           Host 与浏览器共用：配置、模式、协议、提示词、输出校验、版本号
-  src/host/             路由、预测服务、上下文、模型调用、预算账本、结果记录
-  src/client/           控制器、输入框覆盖层、设置页与面板、语言切换
-  src/client/locales/   九种语言的界面文案，每种语言一个文件
-  test/                 node:test 单元与集成测试（含对 lib/client.js 的冒烟测试）
-  tools/                隔离 profile 启停、浏览器驱动、端到端脚本、mock 模型、截图脚本
-  eval/                 去标识评测样本、评测脚本与报告
-  docs/                 文档与截图
-  scratch/              隔离测试 profile 用的配置片段（日志和测试截图不入库）
-```
-
-</details>
-
-## 已知限制
-
-- 已在 DSH `0.2.2-rc.1` 和 `0.2.2-rc.3` 的 Web 界面中验证。用户在 Windows DSH 桌面版 `0.2.2-rc.3` 手测了中文输入法及 `Tab`、`Ctrl+Z`、`Ctrl+Shift+Z`，结果均符合预期。其他输入法和 DSH 版本仍待验证。
-- 保存设置会让宿主重启插件的后台实例，进行中的预测会被取消。
-- 连接同一 DSH 后台的窗口通过轮询同步暂停、采纳和隐藏。页面可见时每 800 毫秒查询一次，页面隐藏时每 5 秒查询一次。
-- 插件通过 DSH 的菜单和对话框标记判断何时避让弹层。宿主如果变更这些标记，可能影响建议显示。
-- 插件修复了 DSH 桌面版 `0.2.2-rc.3` 中发送后首次采纳缺少撤销前态的问题。其他编辑器版本沿用 DSH 的原生撤销行为。见 [验证报告](docs/VALIDATION-DISPLAY-SESSION.md)。
+开发需要 Node.js 22 或更高版本，无需安装运行依赖。`npm run check` 检查客户端包、生成的 README、测试和 JavaScript 语法。 [开发与验证](docs/DEVELOPMENT.md) · [架构](docs/ARCHITECTURE.md)
 
 ## 许可
 
-以 [MIT 许可证](LICENSE) 发布。扩展点的选择和“灰色建议 + Tab 采纳 + Esc 隐藏”的交互方式参考了同为 MIT 许可的 `dsh-composer-prediction`，未复制其代码，来源说明见 [NOTICE](NOTICE)。
+以 [MIT 许可证](LICENSE) 发布。扩展点和键盘交互参考了同为 MIT 许可的 `dsh-composer-prediction`。来源说明见 [NOTICE](NOTICE)。

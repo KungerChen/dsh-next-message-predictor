@@ -12,170 +12,46 @@
 
 <p align="center">
   <b>A composer plugin for DeepSeek Harness</b><br>
-  When the assistant finishes, your likely next message is already waiting in the input box.<br>
-  <kbd>Tab</kbd> fills it in, <kbd>Esc</kbd> ignores it, and it <b>never sends anything for you</b>.
+  See a suggested follow-up in the composer after an eligible reply.<br>
+  Focus the input and press <kbd>Tab</kbd> to fill your draft. You decide when to send it.
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/version-0.6.0-4d6bfe" alt="version 0.6.0">
-  <img src="https://img.shields.io/badge/DeepSeek%20Harness-0.2.2--rc.1-1f2937" alt="DeepSeek Harness 0.2.2-rc.1">
+  <img src="https://img.shields.io/badge/DeepSeek%20Harness-%3E%3D0.2.2--rc.1%20%3C0.3.0-1f2937" alt="DeepSeek Harness &gt;=0.2.2-rc.1 &lt;0.3.0">
   <img src="https://img.shields.io/badge/languages-9-8250df" alt="languages 9">
   <img src="https://img.shields.io/badge/third--party%20deps-0-2ea44f" alt="third-party deps 0">
   <a href="https://github.com/KungerChen/dsh-next-message-predictor/actions/workflows/ci.yml"><img src="https://github.com/KungerChen/dsh-next-message-predictor/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <img src="https://img.shields.io/badge/license-MIT-blue" alt="license MIT">
 </p>
 
-<p align="center">
-  <img src="docs/images/demo.png" width="760" alt="Demo: after the assistant answers, a grey suggestion appears in the input box; another one is requested; Tab fills it in">
-</p>
+<div align="center">
+
+[Quick start](#quick-start) · [Preview and adopt](#suggestions) · [Pause a conversation](#session-pause) · [Prediction modes](#modes) · [Privacy and model requests](#privacy) · [Documentation](#documentation)
+
+</div>
 
 <p align="center">
-  <sub>A suggestion appears → ask for another if it does not fit → <kbd>Tab</kbd> fills it in, and you can still edit before sending</sub>
+  <img src="docs/images/demo.png" width="760" alt="DSH composer preview with the input unfocused, cycling suggestions and inserting one into the draft after focusing">
 </p>
 
----
+<a name="quick-start"></a>
 
-## Why use it
+## Quick start
 
-When you work with an assistant, many replies are short and easy to guess: “continue”, “run the tests”, “show me the changes”. This plugin writes that follow-up ahead of time and leaves it in the input box.
-
-<table>
-<tr>
-<td width="33%" valign="top">
-
-### ⌨️ Less typing
-
-Common follow-ups are one key away. You can edit a suggestion after inserting it.
-
-</td>
-<td width="33%" valign="top">
-
-### 🤫 No interruptions
-
-The moment you start typing, the suggestion steps aside. It stays away during IME composition and while a menu is open. When the model is not confident, it offers nothing.
-
-</td>
-<td width="33%" valign="top">
-
-### 🛡️ Never oversteps
-
-It only puts text into the input box. There is no “send message” code anywhere in the plugin; sending is always your decision.
-
-</td>
-</tr>
-<tr>
-<td valign="top">
-
-### 💰 Cost under control
-
-A low-cost model by default, with daily limits on requests and tokens. Your own phrases (the short messages you repeat and the ones you pin) are one “Another” away, cost nothing and never leave your computer.
-
-</td>
-<td valign="top">
-
-### 🔒 Privacy first
-
-Likely keys, tokens, e-mail addresses and phone numbers are masked before sending. The browser never uploads your draft. Local statistics store numbers, not text.
-
-</td>
-<td valign="top">
-
-### 📊 Transparent usage
-
-Requests, acceptance rate, response time and token usage for the last 7 days are on the settings page, so you can see whether it is worth it.
-
-</td>
-</tr>
-</table>
-
-## Features
-
-### The suggestion is right in the input box
-
-After the assistant finishes, if the input box is empty, a grey suggestion appears exactly where you are about to type. No pop-up, no extra space taken. In the active window, suggestions appear even when the input is unfocused by default. You can turn on “Show predictions only when the input is focused” in settings. Click the input before accepting a suggestion.
-
-<p align="center">
-  <img src="docs/images/suggestion.png" width="720" alt="A grey suggestion in the input box, with “Tab accept” and “Another” on the right">
-</p>
-
-| Key | What it does |
-|---|---|
-| <kbd>Tab</kbd> or <kbd>→</kbd> | Inserts the suggestion when the input is focused. You can keep editing. |
-| <kbd>Esc</kbd> | Hides the suggestion |
-| <kbd>Alt</kbd>+<kbd>\\</kbd> (configurable) | Predicts right now; with a suggestion showing, switches to another one. One call brings back several alternatives, so switching is instant |
-| Just type | The suggestion disappears at once; it comes back when you clear the input box |
-| Click “Tab accept” | Inserts the suggestion while the input is focused |
-
-Click the pause button in the composer toolbar to pause predictions for this conversation until you resume them or restart DSH. After resuming, predict manually or wait for the next reply. Refreshing the page or saving settings retains the pause.
-
-### Three modes, one click
-
-Do not want to study every option? Pick a mode. You can undo it or fine-tune it afterwards.
-
-<p align="center">
-  <img src="docs/images/modes.png" width="720" alt="The mode card: Balanced, Saver, Quality">
-</p>
-
-| Mode | Predicts | Model | Context | Daily limit | Good for |
-|---|---|---|---|---|---|
-| **Balanced** (Recommended) | Automatically after every reply | A specific low-cost model | 12 messages | 200 requests | Everyday use |
-| **Saver** | Only when you click “Predict” or press the shortcut | A specific low-cost model | 6 messages | 60 requests | Strict cost control |
-| **Quality** | Automatically after every reply | The session model | 20 messages | 200 requests | Closer-fitting suggestions |
-
-A mode only changes the trigger, the model strategy, the context size and the limits. It never touches the master switch, the shortcut, the language or the privacy options, and it keeps the model you entered.
-
-### Your own phrases, one step away
-
-Add the lines you send again and again (“continue”, “run the tests”) under **Settings → Prediction → Suggestion sources → Pinned phrases**, put them in the order you like, and press “Save” once. They follow the model’s suggestion: “Another” (or <kbd>Alt</kbd>+<kbd>\\</kbd>) steps through the model’s suggestion, the short messages you have repeated in this conversation and then your pinned phrases, and asks the model again only after the last one. A small mark on the button shows that a phrase is your own. They cost nothing, never leave your computer, and when a manual prediction gets nothing from the model they are offered instead of “No suggestion this time”.
-
-<p align="center">
-  <img src="docs/images/phrases.png" width="720" alt="A pinned phrase as the grey suggestion; the “Another” button carries a pin mark and the position in the list">
-</p>
-
-### Nine interface languages
-
-The settings page, the buttons in the input box and their tooltips are available in 简体中文, English, 日本語, 한국어, Español, Français, Deutsch, Русский, Português. By default the plugin follows the language DeepSeek Harness is set to; you can also pick one under **Settings → Prediction → Language**, and it applies at once. The suggestions themselves always follow the language of your conversation.
-
-<p align="center">
-  <img src="docs/images/languages.png" width="720" alt="The top of the settings page in English, Japanese, Spanish and Russian">
-</p>
-
-### One click away in the sidebar
-
-Click “Add sidebar entry” to open Prediction from the DSH left sidebar. If you unpin the entry, you can open it or pin it again from More. The version next to the title shows which release is installed.
-
-<table>
-<tr>
-<td width="30%" align="center" valign="middle">
-  <img src="docs/images/sidebar-entry.png" width="230" alt="The “Prediction” entry in the left sidebar">
-</td>
-<td width="70%" align="center" valign="middle">
-  <img src="docs/images/page-header.png" width="560" alt="The sidebar entry button next to the page title and version">
-</td>
-</tr>
-</table>
-
-### See how much you use
-
-<details>
-<summary><b>Show the whole settings page</b> (basics, modes, suggestion sources, model, last 7 days)</summary>
-<br>
-<p align="center">
-  <img src="docs/images/settings.png" width="640" alt="The whole settings page">
-</p>
-</details>
-
-> Most screenshots show the Chinese interface. They come from a demo conversation and are generated by a script in this repository against a local mock model, which is why the model is named Mock and the numbers are small. In real use the suggestions come from the model you configured in DSH.
-
-## Installation
-
-The DeepSeek Harness installation range is `>=0.2.2-rc.1 <0.3.0`. The plugin has no third-party dependencies and needs no build step. One command installs it:
+Installation requires DeepSeek Harness `>=0.2.2-rc.1 <0.3.0`. The GitHub package is ready to install without a build step.
 
 ```powershell
 dsh plugin --profile desktop add github:KungerChen/dsh-next-message-predictor
 ```
 
-The name after `--profile` is the profile you use every day: `desktop` for the desktop app, `web` for the web version. Afterwards **quit DSH completely and start it again**.
+Use the profile you open in DSH (`desktop` or `web` by default). Then **quit DSH completely and reopen it**.
+
+1. Open **Settings → Prediction**. Prediction is off on a fresh install.
+2. Choose a mode under “Mode”. In “Prediction model”, check that your DSH setup can use the proposed provider and model, or select “Follow the session model”. Save changes to the model fields.
+3. Turn on “Enable prediction”. After the assistant replies, leave the input empty. To try it manually, click “Predict” or focus the empty input and press <kbd>Alt</kbd>+<kbd>\</kbd>.
+
+Balanced and Saver default to `deepseek-official / deepseek-flash`. To use a different specific model, enter its DSH provider and model IDs. If DSH cannot resolve the configured model, a usable DSH default model may be used for that prediction.
 
 <details>
 <summary>The <code>dsh</code> command is not found, or you want to install from a local folder</summary>
@@ -188,15 +64,7 @@ $dsh = '<DSH install folder>\resources\runtime\cli\bin\dsh.cmd'
 & $dsh plugin --profile desktop add '<plugin folder>'
 ```
 
-`<DSH install folder>` is where DeepSeek Harness is installed; `<plugin folder>` is the folder you just cloned.
-
 </details>
-
-Then three steps to get going:
-
-1. Open **Settings → Prediction** and switch on “Enable prediction”. It is off by default: until you enable it, no suggestion is shown and no model is called.
-2. Pick one under “Mode”. The default is “Balanced”.
-3. For quicker access, click “Add sidebar entry” in the top right corner.
 
 <details>
 <summary>Updating and uninstalling</summary>
@@ -213,46 +81,127 @@ Enable only one composer-prediction plugin per profile. When another one is dete
 
 </details>
 
-## What it sends
+<a name="suggestions"></a>
 
-Each prediction is a single request to the model, with no automatic retry. It contains excerpts of the most recent **user messages and the assistant’s final text answers** in the current session: at most 12 messages and about 2,000 tokens by default.
+## Preview and adopt
 
-- No tool-call arguments or output, no reasoning, no system prompt.
-- Before sending, likely private keys, API keys, tokens, passwords, e-mail addresses, mobile and identity numbers, and the user name in home-folder paths are replaced with placeholders (rule-based; it cannot promise to catch everything).
-- The browser page sends only session and turn identifiers, never the draft, attachments or any conversation text; the content for the model is read by the background half from DSH’s own session records.
-- Your own phrases (the short messages you repeat in a session and your pinned phrases, “Pinned phrases”) stay on this computer: no model is called for them and they are never sent to the model.
+An available suggestion appears as grey text in the empty composer of the active window. By default it can appear while the input is unfocused. Turn on “Show predictions only when the input is focused” to display it only while the input is focused. This option controls how existing suggestions are displayed.
+
+<p align="center">
+  <img src="docs/images/suggestion.png" width="720" alt="A grey suggestion in the unfocused composer with a prompt to focus the input before pressing Tab">
+</p>
+
+| Action in the composer | What it does |
+|---|---|
+| <kbd>Tab</kbd>, <kbd>→</kbd> at the start, or click “Tab accept” | Focus the input first. This fills the draft so you can edit it before sending. |
+| <kbd>Esc</kbd> | With focus in the input, hide the current suggestion. You can still ask for another manually. |
+| <kbd>Alt</kbd>+<kbd>\</kbd> (configurable), “Predict” or “Another” | With the input empty, request a prediction or cycle through suggestions. The shortcut also requires input focus. |
+| Just type | Writing a draft hides the preview. Clearing the draft can restore the same suggestion while it is still valid. |
+
+After adopting, use <kbd>Ctrl</kbd>+<kbd>Z</kbd> to undo and <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> to redo. Version 0.6.0 fixes undo for the first adoption after sending on the editor tested with DSH Desktop `0.2.2-rc.3`. Other editor versions use DSH’s native history. [Validation report](docs/VALIDATION-DISPLAY-SESSION.md)
+
+<a name="session-pause"></a>
+
+## Pause a conversation
+
+Use the pause control in the composer toolbar to stop automatic and manual prediction for this conversation and clear its current suggestion. Click ▶ to resume, then request a prediction manually or wait for a new reply.
+
+<p align="center">
+  <img src="docs/images/pause.png" width="720" alt="The composer of a paused conversation, with the control to resume predictions">
+</p>
+
+Windows connected to the same DSH host share the pause state. It survives page reloads and saving settings until you resume or restart DSH. Adopting or dismissing a suggestion also hides that turn’s suggestions in other views of the same conversation.
+
+<a name="modes"></a>
+
+## Prediction modes
+
+<p align="center">
+  <img src="docs/images/modes.png" width="720" alt="The mode card: Balanced, Saver, Quality">
+</p>
+
+| Mode | Predicts | Model | Max. context messages | Daily request limit |
+|---|---|---|---|---|
+| **Balanced** (Recommended) | Automatically after an eligible reply | Specific model | 12 | 200 |
+| **Saver** | Manual only | Specific model | 6 | 60 |
+| **Quality** | Automatically after an eligible reply | The session model | 20 | 200 |
+
+Modes change when prediction runs, the model strategy, context and limits. They preserve the master switch, shortcut, language, privacy options and model IDs you entered.
+
+### Model suggestions and your own phrases
+
+A prediction can offer model suggestions, followed by short messages you repeated in this conversation and your pinned phrases. Add or reorder pinned phrases in **Settings → Prediction → Suggestion sources → Pinned phrases** and save. “Another” cycles through available choices without an additional model call. After the existing choices run out, asking for another may call the model, subject to the limits.
+
+When the model has no usable result for a manual request, the plugin can offer your own phrases if available. Generating that fallback makes no additional model call.
+
+<p align="center">
+  <img src="docs/images/phrases.png" width="720" alt="A pinned phrase as the grey suggestion; the “Another” button carries a pin mark and the position in the list">
+</p>
+
+## Settings and usage
+
+The plugin has nine interface languages. It follows DSH by default. To override it, use “Language” in the plugin settings. This setting controls the interface language.
+
+Click “Add sidebar entry” to open Prediction from the DSH left sidebar. If you unpin the entry, you can open it or pin it again from More. The version next to the title shows which release is installed.
+
+<table>
+<tr>
+<td width="30%" align="center" valign="middle">
+  <img src="docs/images/sidebar-entry.png" width="230" alt="The “Prediction” entry in the left sidebar">
+</td>
+<td width="70%" align="center" valign="middle">
+  <img src="docs/images/page-header.png" width="560" alt="The sidebar entry button next to the page title and version">
+</td>
+</tr>
+</table>
+
+The “Last 7 days” section shows requests, displayed and accepted suggestions, latency and token usage. Use it to check daily limits and how often suggestions are useful.
+
+<details>
+<summary><b>Show the whole settings page</b> (basics, modes, suggestion sources, model, last 7 days)</summary>
+
+<p align="center">
+  <img src="docs/images/settings.png" width="640" alt="The whole settings page">
+</p>
+
+<p align="center">
+  <img src="docs/images/languages.png" width="720" alt="The top of the settings page in English, Japanese, Spanish and Russian">
+</p>
+
+</details>
+
+> Screenshots use an isolated Web UI, a synthetic conversation and a local mock model. The settings show an example configuration. The usage and timing figures are for illustration.
+
+<a name="privacy"></a>
+
+## Privacy and model requests
+
+A model prediction sends recent excerpts of **user messages and final assistant replies** from the active conversation branch to a model provider configured in DSH. The default input budget is 12 messages and about 2000 tokens, including the prediction instructions.
+
+- A short summary of the previous turn’s activity counts is included by default. Tool arguments, tool output, reasoning and system prompts are excluded.
+- Rule-based masking is enabled by default and replaces likely secrets and some personal identifiers. It can miss sensitive text.
+- Prediction and session-state requests from the browser carry identifiers and metadata. The backend reads sent messages from DSH. Drafts, attachments and references are excluded. Local statistics store counts, timings and identifiers without conversation or suggestion text.
+- Local candidates and the pinned-phrase list are not added to the model prompt. A phrase you already sent as a message can still appear as recent conversation context.
 
 The full description, and how to delete the local data, is in [Privacy and data boundaries](docs/PRIVACY.md).
 
 ## FAQ
 
 <details>
-<summary><b>Will it send a message for me?</b></summary>
+<summary><b>Why did no suggestion appear?</b></summary>
 
-No. Accepting a suggestion only puts text into the input box, through the input box’s own insertion interface; the plugin contains no call that submits or sends.
-
-</details>
-
-<details>
-<summary><b>How much does it cost?</b></summary>
-
-Each prediction is one very short model call (at most 96 output tokens by default). The default daily limits are 200 requests and 500,000 tokens; once reached, no more calls are made that day. To spend less, choose the “Saver” mode, which predicts only when you ask. Actual usage is shown under “Last 7 days” on the settings page.
+Check the current status in the settings. A paused conversation, an inactive window, a nonempty draft, a menu or active IME composition can block display. The model can also return no usable suggestion. Try manual prediction from the focused, empty input when the conversation is eligible.
 
 </details>
 
 <details>
-<summary><b>Why is there sometimes no suggestion?</b></summary>
+<summary><b>When are requests charged?</b></summary>
 
-By design: when the model is not confident it offers nothing, and output that breaks the rules (too long, several lines, written in the assistant’s voice) is discarded. The state line on the settings page says why there is none right now. When you want one, press <kbd>Alt</kbd>+<kbd>\\</kbd>.
-
-</details>
-
-<details>
-<summary><b>Are the suggestions accurate?</b></summary>
-
-It is good at short, clear follow-ups: confirming, asking for verification, asking for details. It cannot guess what only you know, and in that case it should stay silent.
+Usage depends on the model provider and the tokens used in each dispatched request. Cycling through existing choices and building a local fallback add no model request. Use Saver mode to request predictions only when you need one.
 
 </details>
+
+<a name="documentation"></a>
 
 ## Documentation
 
@@ -260,32 +209,22 @@ The detailed documentation is written in Chinese.
 
 | Document | Contents |
 |---|---|
-| [User guide](docs/USER-GUIDE.md) | Keys, every item on the settings page, modes, the sidebar entry, FAQ |
+| [User guide](docs/USER-GUIDE.md) | Settings, keyboard controls, modes and troubleshooting |
 | [Configuration reference](docs/CONFIGURATION.md) | Defaults and ranges of all options, the values of the three modes |
 | [Privacy and data boundaries](docs/PRIVACY.md) | What is sent, local files, how to delete data |
-| [Architecture](docs/ARCHITECTURE.md) | The Host and browser halves, the request flow, the protocol |
-| [Development and verification](docs/DEVELOPMENT.md) | Build, tests, end-to-end verification, regenerating the screenshots |
-| [Compatibility](docs/COMPATIBILITY.md) | DSH versions, test coverage and host interfaces |
+| [Compatibility](docs/COMPATIBILITY.md) | Supported installation range, tested hosts and native editor behavior |
 | [Changelog](CHANGELOG.md) | Changes in each version |
 | [Documentation index](docs/README.md) | All documents, including earlier verification and optimisation notes |
 
 ## Contributing
 
 ```powershell
-npm run build   # generates lib/client.js from src/shared + src/client
-npm test        # runs the unit and integration tests
-npm run check   # build + test + syntax check
+npm run build
+npm test
+npm run check
 ```
 
-No `npm install` and no bundler; Node.js 22 or later is required. To add or correct a translation, edit `src/client/locales/<language>.js`; the tests check that every language has the same keys.
-
-## Known limitations
-
-- Verified in the Web UI of DSH `0.2.2-rc.1` and `0.2.2-rc.3`. On DSH Desktop `0.2.2-rc.3` for Windows, a user successfully tested a Chinese input method and the `Tab`, `Ctrl+Z`, and `Ctrl+Shift+Z` shortcuts. Other input methods and DSH versions still need testing.
-- Saving a setting makes the host restart the background half of the plugin; a prediction in progress is cancelled.
-- Windows connected to the same DSH Host poll for pauses, adoption and dismissal every 800 ms when visible and every 5 seconds when hidden.
-- The plugin detects pop-ups through DSH’s menu and dialog markers. Changes to these markers may affect when suggestions appear.
-- The plugin restores Undo for the first accepted suggestion after sending on DSH Desktop `0.2.2-rc.3`. Other editor versions use DSH’s native Undo behavior. [Validation report](docs/VALIDATION-DISPLAY-SESSION.md)
+Development requires Node.js 22 or later. The repository has no runtime dependencies to install. `npm run check` checks the bundle, generated READMEs, tests and JavaScript syntax. [Development and verification](docs/DEVELOPMENT.md) · [Architecture](docs/ARCHITECTURE.md)
 
 ## License
 

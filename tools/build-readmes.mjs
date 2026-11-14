@@ -1,19 +1,19 @@
-// Regenerates the translated READMEs (README.<lang>.md) from
-// tools/readme/template.md and tools/readme/strings/<lang>.txt, and refreshes
-// the two generated regions of the hand-written Chinese README.md (the
-// language bar and the badge block, delimited by HTML comment markers).
+// Regenerates all language editions of the README from a shared template
+// and the corresponding tools/readme/strings/<lang>.txt file.
 //
 //   node tools/build-readmes.mjs            write the files
 //   node tools/build-readmes.mjs --check    exit 1 if any file on disk differs
 //
 // Inside a string, {ui:<key>} is that language's interface text from
-// src/client/locales, {langs} the list of language names, and {ph_dsh} /
-// {ph_plugin} the two placeholder strings of the same language file.
+// src/client/locales. {ph_dsh} and {ph_plugin} are localized path placeholders.
+// {fact:<key>} reads a project value such as a version range or preset limit.
 // No dependencies.
 
 import { readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { DEFAULT_CONFIG } from '../src/shared/config.js'
+import { PRESETS } from '../src/shared/presets.js'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const readmeDir = join(root, 'tools', 'readme')
@@ -32,17 +32,31 @@ async function loadFacts() {
   const pkg = JSON.parse(await read(join(root, 'package.json')))
   const repoMatch = /github\.com\/([^/]+\/[^/.]+)(?:\.git)?$/.exec(pkg.repository?.url ?? '')
   assert(repoMatch, 'package.json: repository.url is not a GitHub URL')
-  const dshMatch = /(?:>=|^)\s*(\d[^\s<>=]*)/.exec(pkg.engines?.dsh ?? '')
-  assert(dshMatch, 'package.json: engines.dsh has no minimum version')
+  const dshRange = pkg.engines?.dsh
+  assert(typeof dshRange === 'string' && dshRange !== '', 'package.json: engines.dsh is missing')
   const i18n = await import(pathToFileURL(join(root, 'src', 'client', 'i18n.js')).href)
   assert(JSON.stringify(Object.keys(i18n.NMP_DICTIONARIES)) === JSON.stringify(ORDER), 'the language order here differs from NMP_DICTIONARIES')
   return {
     version: pkg.version,
-    dsh: dshMatch[1],
+    dshRange,
     dependencies: Object.keys(pkg.dependencies ?? {}).length,
+    license: pkg.license,
     repo: repoMatch[1],
     dict: i18n.NMP_DICTIONARIES,
     names: i18n.NMP_LANGUAGE_NAMES,
+    inline: {
+      repo: repoMatch[1],
+      package: pkg.name,
+      dsh_range: dshRange,
+      default_provider: DEFAULT_CONFIG.provider,
+      default_model: DEFAULT_CONFIG.model,
+      default_context_messages: DEFAULT_CONFIG.contextMessages,
+      default_input_tokens: DEFAULT_CONFIG.targetInputTokens,
+      ...Object.fromEntries(Object.entries(PRESETS).flatMap(([id, preset]) => [
+        [`${id}_messages`, preset.contextMessages],
+        [`${id}_requests`, preset.dailyRequestLimit],
+      ])),
+    },
   }
 }
 
@@ -54,7 +68,8 @@ function langBar(facts, current) {
 function shield(label, message, color) {
   const enc = (text) =>
     encodeURIComponent(text.replace(/-/g, '--').replace(/_/g, '__')).replace(/[!'()*]/g, (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase())
-  return `  <img src="https://img.shields.io/badge/${enc(label)}-${enc(message)}-${color}" alt="${label} ${message}">`
+  const alt = `${label} ${message}`.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;')
+  return `  <img src="https://img.shields.io/badge/${enc(label)}-${enc(message)}-${color}" alt="${alt}">`
 }
 
 function ciBadge(facts) {
@@ -65,11 +80,11 @@ function ciBadge(facts) {
 function badgeLines(facts, labels) {
   return [
     shield(labels.version, facts.version, '4d6bfe'),
-    shield('DeepSeek Harness', facts.dsh, '1f2937'),
+    shield('DeepSeek Harness', facts.dshRange, '1f2937'),
     shield(labels.languages, labels.languageCount, '8250df'),
     shield(labels.dependencies, String(facts.dependencies), '2ea44f'),
     ciBadge(facts),
-    shield(labels.license, 'MIT', 'blue'),
+    shield(labels.license, facts.license, 'blue'),
   ].join('\n')
 }
 
@@ -91,8 +106,11 @@ function fillInline(facts, lang, strings, text) {
     assert(key in facts.dict[lang], `${lang}: no interface text ${key}`)
     return facts.dict[lang][key]
   })
+  text = text.replace(/\{fact:([a-z_]+)\}/g, (_, key) => {
+    assert(Object.hasOwn(facts.inline, key), `${lang}: no project fact ${key}`)
+    return String(facts.inline[key])
+  })
   text = text.replaceAll('{ph_dsh}', strings.ph_dsh).replaceAll('{ph_plugin}', strings.ph_plugin)
-  text = text.replaceAll('{langs}', ORDER.map((id) => facts.names[id]).join(lang === 'ja' ? '、' : ', '))
   const left = /\{[a-z_:.]+\}/.exec(text)
   assert(!left, `${lang}: unresolved ${left?.[0]} in: ${text.slice(0, 80)}`)
   return text
@@ -100,16 +118,18 @@ function fillInline(facts, lang, strings, text) {
 
 const LABEL_KEYS = ['b_version', 'b_deps', 'b_langs', 'b_license']
 
-async function translated(facts) {
+/** Map of README file name -> the text it should contain. */
+export async function generateReadmes() {
+  const facts = await loadFacts()
   const template = await read(join(readmeDir, 'template.md'))
   const templateKeys = new Set([...template.matchAll(/\{\{([a-z0-9_]+)\}\}/g)].map((m) => m[1]))
   const out = new Map()
   let reference = null
-  for (const lang of ORDER.slice(1)) {
+  for (const lang of ORDER) {
     const strings = await loadStrings(lang)
     const keys = Object.keys(strings)
     reference ??= keys
-    assert(JSON.stringify(keys) === JSON.stringify(reference), `${lang}.txt: keys differ from ${ORDER[1]}.txt`)
+    assert(JSON.stringify(keys) === JSON.stringify(reference), `${lang}.txt: keys differ from ${ORDER[0]}.txt`)
     const values = Object.fromEntries(keys.map((key) => [key, fillInline(facts, lang, strings, strings[key])]))
     values.langbar = langBar(facts, lang)
     values.badges = badgeLines(facts, {
@@ -132,33 +152,6 @@ async function translated(facts) {
     }
     out.set(FILES[lang], text)
   }
-  return out
-}
-
-function replaceRegion(text, name, body) {
-  const pattern = new RegExp(`(<!-- readme:${name}:start -->\\n\\n)[\\s\\S]*?(\\n\\n<!-- readme:${name}:end -->)`)
-  assert(pattern.test(text), `README.md: the <!-- readme:${name}:start/end --> markers are missing`)
-  return text.replace(pattern, (_, head, tail) => head + body + tail)
-}
-
-async function chinese(facts) {
-  let text = await read(join(root, FILES.zh))
-  text = replaceRegion(text, 'langbar', `<div align="center">\n\n${langBar(facts, 'zh')}\n\n</div>`)
-  const badges = badgeLines(facts, {
-    version: '版本',
-    languages: '界面语言',
-    languageCount: `${ORDER.length} 种`,
-    dependencies: '第三方依赖',
-    license: '许可',
-  })
-  return replaceRegion(text, 'badges', `<p align="center">\n${badges}\n</p>`)
-}
-
-/** Map of README file name -> the text it should contain. */
-export async function generateReadmes() {
-  const facts = await loadFacts()
-  const out = await translated(facts)
-  out.set(FILES.zh, await chinese(facts))
   return out
 }
 

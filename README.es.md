@@ -12,170 +12,46 @@
 
 <p align="center">
   <b>Un plugin para el cuadro de entrada de DeepSeek Harness</b><br>
-  Cuando el asistente termina, tu siguiente mensaje más probable ya te espera en el cuadro de entrada.<br>
-  <kbd>Tab</kbd> lo inserta, <kbd>Esc</kbd> lo descarta y <b>nunca envía nada por ti</b>.
+  Después de una respuesta que cumple las condiciones, puedes ver una sugerencia para tu próximo mensaje en el cuadro de texto.<br>
+  Enfoca el cuadro y pulsa <kbd>Tab</kbd> para pasar la sugerencia al borrador. Tú decides cuándo enviarlo.
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/versi%C3%B3n-0.6.0-4d6bfe" alt="versión 0.6.0">
-  <img src="https://img.shields.io/badge/DeepSeek%20Harness-0.2.2--rc.1-1f2937" alt="DeepSeek Harness 0.2.2-rc.1">
+  <img src="https://img.shields.io/badge/DeepSeek%20Harness-%3E%3D0.2.2--rc.1%20%3C0.3.0-1f2937" alt="DeepSeek Harness &gt;=0.2.2-rc.1 &lt;0.3.0">
   <img src="https://img.shields.io/badge/idiomas-9-8250df" alt="idiomas 9">
   <img src="https://img.shields.io/badge/dependencias%20externas-0-2ea44f" alt="dependencias externas 0">
   <a href="https://github.com/KungerChen/dsh-next-message-predictor/actions/workflows/ci.yml"><img src="https://github.com/KungerChen/dsh-next-message-predictor/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <img src="https://img.shields.io/badge/licencia-MIT-blue" alt="licencia MIT">
 </p>
 
-<p align="center">
-  <img src="docs/images/demo.png" width="760" alt="Demostración: cuando el asistente responde, aparece una sugerencia gris en el cuadro de entrada; se pide otra; Tab la inserta">
-</p>
+<div align="center">
+
+[Inicio rápido](#quick-start) · [Previsualizar y aceptar](#suggestions) · [Pausar una conversación](#session-pause) · [Modos de predicción](#modes) · [Privacidad y solicitudes al modelo](#privacy) · [Documentación](#documentation)
+
+</div>
 
 <p align="center">
-  <sub>Aparece una sugerencia → pide otra si no encaja → <kbd>Tab</kbd> la inserta y puedes seguir editando antes de enviar</sub>
+  <img src="docs/images/demo.png" width="760" alt="Sugerencia en el cuadro de DSH, cambio de opción e inserción en el borrador tras enfocar el cuadro">
 </p>
 
----
+<a name="quick-start"></a>
 
-## Por qué usarlo
+## Inicio rápido
 
-Al trabajar con un asistente, muchas respuestas son cortas y fáciles de adivinar: «continúa», «ejecuta las pruebas», «enséñame los cambios». Este plugin escribe ese seguimiento por adelantado y lo deja en el cuadro de entrada.
-
-<table>
-<tr>
-<td width="33%" valign="top">
-
-### ⌨️ Menos tecleo
-
-Inserta mensajes de seguimiento habituales con una tecla. Puedes editar el texto después de insertarlo.
-
-</td>
-<td width="33%" valign="top">
-
-### 🤫 Sin interrupciones
-
-En cuanto empiezas a escribir, la sugerencia se aparta. No aparece durante la composición del IME ni con un menú abierto. Si el modelo no está seguro, no ofrece nada.
-
-</td>
-<td width="33%" valign="top">
-
-### 🛡️ No se extralimita
-
-Solo pone texto en el cuadro de entrada. En el plugin no hay ningún código de «enviar mensaje»; enviar es siempre decisión tuya.
-
-</td>
-</tr>
-<tr>
-<td valign="top">
-
-### 💰 Coste bajo control
-
-Por defecto usa un modelo de bajo coste, con límites diarios de solicitudes y de tokens. Tus propias frases (los mensajes cortos que repites y las que fijas) están a un «Otra» de distancia, no cuestan nada y nunca salen de tu equipo.
-
-</td>
-<td valign="top">
-
-### 🔒 La privacidad primero
-
-Antes de enviar se ocultan las posibles claves, tokens, direcciones de correo y números de teléfono. El navegador nunca sube tu borrador. Las estadísticas locales guardan números, no texto.
-
-</td>
-<td valign="top">
-
-### 📊 Uso transparente
-
-Las solicitudes, la tasa de aceptación, el tiempo de respuesta y el uso de tokens de los últimos 7 días están en la página de ajustes, para que veas si merece la pena.
-
-</td>
-</tr>
-</table>
-
-## Funciones
-
-### La sugerencia está en el propio cuadro de entrada
-
-Cuando el asistente termina, si el cuadro de entrada está vacío, aparece una sugerencia gris justo donde ibas a escribir. Sin ventanas emergentes y sin ocupar espacio. En la ventana activa, las sugerencias se muestran de forma predeterminada aunque el campo no tenga el foco. Puedes activar «Mostrar predicciones solo cuando el campo de entrada tiene el foco» en la configuración. Haz clic en el campo antes de aceptar una sugerencia.
-
-<p align="center">
-  <img src="docs/images/suggestion.png" width="720" alt="Una sugerencia gris en el cuadro de entrada, con «Tab: aceptar» y «Otra» a la derecha">
-</p>
-
-| Tecla | Qué hace |
-|---|---|
-| <kbd>Tab</kbd> o <kbd>→</kbd> | Inserta la sugerencia cuando el campo tiene el foco. Puedes seguir editándola. |
-| <kbd>Esc</kbd> | Oculta la sugerencia |
-| <kbd>Alt</kbd>+<kbd>\\</kbd> (configurable) | Predice al instante; si ya hay una sugerencia, pasa a otra. Una sola llamada trae varias alternativas, así que cambiar es inmediato |
-| Escribir sin más | La sugerencia desaparece al momento; vuelve cuando vacías el cuadro de entrada |
-| Haz clic en «Tab: aceptar» | Inserta la sugerencia cuando el campo tiene el foco |
-
-Usa el botón de pausa de la barra de escritura para pausar las predicciones de esta conversación hasta que las reanudes o reinicies DSH. Al reanudarlas, pide una predicción manualmente o espera la siguiente respuesta. La pausa se conserva al recargar la página o guardar la configuración.
-
-### Tres modos, un clic
-
-¿No quieres estudiar cada opción? Elige un modo. Puedes deshacerlo o afinarlo después.
-
-<p align="center">
-  <img src="docs/images/modes.png" width="720" alt="La tarjeta de modos: Equilibrado, Ahorro, Calidad">
-</p>
-
-| Modo | Cuándo predice | Modelo | Contexto | Límite diario | Indicado para |
-|---|---|---|---|---|---|
-| **Equilibrado** (Recomendado) | Automáticamente tras cada respuesta | Un modelo concreto de bajo coste | 12 mensajes | 200 solicitudes | El uso diario |
-| **Ahorro** | Solo cuando pulsas «Predecir» o el atajo | Un modelo concreto de bajo coste | 6 mensajes | 60 solicitudes | Controlar el coste al máximo |
-| **Calidad** | Automáticamente tras cada respuesta | El modelo de la sesión | 20 mensajes | 200 solicitudes | Sugerencias más ajustadas |
-
-Un modo solo cambia el disparador, la estrategia de modelo, el tamaño del contexto y los límites. No toca el interruptor principal, el atajo, el idioma ni las opciones de privacidad, y conserva el modelo que hayas introducido.
-
-### Tus propias frases, a un paso
-
-Añade las frases que envías una y otra vez («continúa», «ejecuta las pruebas») en **Ajustes → Predicción → Origen de las sugerencias → Frases fijadas**, ordénalas como quieras y pulsa «Guardar» una sola vez. Van detrás de la sugerencia del modelo: «Otra» (o <kbd>Alt</kbd>+<kbd>\\</kbd>) recorre la sugerencia del modelo, los mensajes cortos que has repetido en esta conversación y después tus frases fijadas, y solo vuelve a preguntar al modelo cuando se acaban. Una pequeña marca en el botón indica que la frase es tuya. No cuestan nada, no salen de tu equipo y, cuando una predicción manual no obtiene nada del modelo, se ofrecen en lugar de «Esta vez no hay sugerencia».
-
-<p align="center">
-  <img src="docs/images/phrases.png" width="720" alt="Una frase fijada como sugerencia gris; el botón «Otra» lleva una chincheta y la posición en la lista">
-</p>
-
-### Nueve idiomas de interfaz
-
-La página de ajustes, los botones del cuadro de entrada y sus descripciones están disponibles en 简体中文, English, 日本語, 한국어, Español, Français, Deutsch, Русский, Português. Por defecto el plugin sigue el idioma configurado en DeepSeek Harness; también puedes elegir uno en **Ajustes → Predicción → Idioma**, y se aplica al instante. Las sugerencias, en cambio, siguen siempre el idioma de tu conversación.
-
-<p align="center">
-  <img src="docs/images/languages.png" width="720" alt="La parte superior de la página de ajustes en inglés, japonés, español y ruso">
-</p>
-
-### A un clic en la barra lateral
-
-Pulsa «Añadir acceso a la barra lateral» para abrir Predicción desde la barra lateral izquierda de DSH. Si quitas la fijación, puedes abrir el acceso o volver a fijarlo desde «Más». La versión instalada aparece junto al título.
-
-<table>
-<tr>
-<td width="30%" align="center" valign="middle">
-  <img src="docs/images/sidebar-entry.png" width="230" alt="La entrada «Predicción» en la barra lateral izquierda">
-</td>
-<td width="70%" align="center" valign="middle">
-  <img src="docs/images/page-header.png" width="560" alt="El botón de acceso a la barra lateral junto al título de la página y la versión">
-</td>
-</tr>
-</table>
-
-### Cuánto usas, de un vistazo
-
-<details>
-<summary><b>Ver la página de ajustes completa</b> (básico, modos, origen de las sugerencias, modelo, últimos 7 días)</summary>
-<br>
-<p align="center">
-  <img src="docs/images/settings.png" width="640" alt="La página de ajustes completa">
-</p>
-</details>
-
-> La mayoría de las capturas muestran la interfaz en chino. Proceden de una conversación de demostración y las genera un script de este repositorio con un modelo simulado local; por eso el modelo aparece como Mock y las cifras son pequeñas. En el uso real, las sugerencias las genera el modelo que hayas configurado en DSH.
-
-## Instalación
-
-El rango de instalación de DeepSeek Harness es `>=0.2.2-rc.1 <0.3.0`. El plugin no tiene dependencias externas ni necesita compilarse. Se instala con un solo comando:
+Se instala en DeepSeek Harness `>=0.2.2-rc.1 <0.3.0`. El paquete de GitHub está listo para instalar y no requiere compilación.
 
 ```powershell
 dsh plugin --profile desktop add github:KungerChen/dsh-next-message-predictor
 ```
 
-Lo que va tras `--profile` es el perfil que usas a diario: `desktop` en la aplicación de escritorio, `web` en la versión web. Después, **cierra DSH por completo y vuelve a abrirlo**.
+Indica el perfil que usas en DSH (por defecto, `desktop` para la aplicación y `web` para la versión web). Después **cierra DSH por completo y vuelve a abrirlo**.
+
+1. Abre **Ajustes → Predicción**. La predicción está desactivada tras la primera instalación.
+2. Elige un modo en «Modo». En «Modelo de predicción», comprueba el proveedor y el modelo configurados en DSH, o selecciona «Seguir el modelo de la sesión». Guarda los cambios en los campos del modelo.
+3. Activa «Activar la predicción». Deja vacío el cuadro después de la respuesta. Para probarlo manualmente, pulsa «Predecir» o enfoca el cuadro vacío y pulsa <kbd>Alt</kbd>+<kbd>\</kbd>.
+
+Los modos equilibrado y ahorro usan por defecto `deepseek-official / deepseek-flash`. Para otro modelo específico, introduce sus ID de proveedor y modelo en DSH. Si DSH no puede resolver el modelo configurado, puede usar su modelo predeterminado disponible para esa predicción.
 
 <details>
 <summary>No se encuentra el comando <code>dsh</code>, o quieres instalar desde una carpeta local</summary>
@@ -188,15 +64,7 @@ $dsh = '<carpeta de instalación de DSH>\resources\runtime\cli\bin\dsh.cmd'
 & $dsh plugin --profile desktop add '<carpeta del plugin>'
 ```
 
-`<carpeta de instalación de DSH>` es donde está instalado DeepSeek Harness; `<carpeta del plugin>` es la carpeta que acabas de clonar.
-
 </details>
-
-Después, tres pasos para empezar:
-
-1. Abre **Ajustes → Predicción** y activa «Activar la predicción». Viene desactivado: hasta que lo actives no se muestra ninguna sugerencia ni se llama a ningún modelo.
-2. Elige uno en «Modo». El predeterminado es «Equilibrado».
-3. Para tenerlo más a mano, pulsa «Añadir acceso a la barra lateral» en la esquina superior derecha.
 
 <details>
 <summary>Actualizar y desinstalar</summary>
@@ -213,46 +81,127 @@ Activa un solo plugin de predicción para el cuadro de entrada por perfil. Si se
 
 </details>
 
-## Qué envía
+<a name="suggestions"></a>
 
-Cada predicción es una única solicitud al modelo, sin reintentos automáticos. Contiene fragmentos de los **mensajes del usuario y las respuestas finales de texto del asistente** más recientes de la sesión actual: por defecto, como máximo 12 mensajes y unos 2.000 tokens.
+## Previsualizar y aceptar
 
-- No incluye argumentos ni resultados de herramientas, razonamiento ni el prompt del sistema.
-- Antes de enviar, las posibles claves privadas, claves de API, tokens, contraseñas, direcciones de correo, números de móvil y de identidad, y el nombre de usuario en las rutas de la carpeta personal se sustituyen por marcadores (se basa en reglas; no puede garantizar que lo detecte todo).
-- La página del navegador solo envía identificadores de sesión y de turno, nunca el borrador, los adjuntos ni texto de la conversación; el contenido para el modelo lo lee la parte en segundo plano de los registros de sesión del propio DSH.
-- Tus propias frases (los mensajes cortos que repites en una conversación y las «Frases fijadas») solo se usan en este equipo: no se llama a ningún modelo por ellas y nunca se envían al modelo.
+Las sugerencias disponibles se muestran en gris en el cuadro vacío de la ventana activa. Por defecto aparecen incluso sin el foco en el cuadro. Activa «Mostrar predicciones solo cuando el campo de entrada tiene el foco» para verlas solo cuando el cuadro tiene el foco. Esta opción controla la visualización de las sugerencias disponibles.
+
+<p align="center">
+  <img src="docs/images/suggestion.png" width="720" alt="Sugerencia gris con el cuadro desenfocado y un aviso para enfocarlo antes de pulsar Tab">
+</p>
+
+| Acción en el cuadro de texto | Qué hace |
+|---|---|
+| <kbd>Tab</kbd>, <kbd>→</kbd> al inicio o clic en «Tab: aceptar» | Enfoca primero el cuadro. La sugerencia pasa al borrador y puedes editarla antes de enviarlo. |
+| <kbd>Esc</kbd> | Con el cuadro enfocado, oculta la sugerencia actual. Después puedes pedir otra manualmente. |
+| <kbd>Alt</kbd>+<kbd>\</kbd> (configurable), «Predecir» o «Otra» | Con el cuadro vacío, pide una predicción o cambia de sugerencia. El atajo también requiere que el cuadro tenga el foco. |
+| Escribir sin más | Al escribir se oculta la sugerencia. Si vacías el borrador y la sugerencia sigue vigente, puede volver a mostrarse. |
+
+Después de aceptar, pulsa <kbd>Ctrl</kbd>+<kbd>Z</kbd> para deshacer y <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> para rehacer. La versión 0.6.0 corrige el deshacer de la primera inserción tras enviar un mensaje en el editor probado de DSH Desktop `0.2.2-rc.3`. Las otras versiones usan el historial nativo de DSH. [Informe de validación](docs/VALIDATION-DISPLAY-SESSION.md)
+
+<a name="session-pause"></a>
+
+## Pausar una conversación
+
+El botón de pausa de la barra del cuadro detiene la predicción automática y manual en esta conversación y oculta la sugerencia. Para reanudar, pulsa ▶. Luego puedes pedir una predicción o esperar a la siguiente respuesta.
+
+<p align="center">
+  <img src="docs/images/pause.png" width="720" alt="Conversación en pausa con el botón triangular para reanudar las predicciones">
+</p>
+
+Las ventanas conectadas al mismo host de DSH comparten el estado de pausa. Se conserva al recargar la página y guardar los ajustes, hasta que reanudes las predicciones o reinicies DSH. Aceptar u ocultar una sugerencia también oculta las de ese turno en las demás vistas de la conversación.
+
+<a name="modes"></a>
+
+## Modos de predicción
+
+<p align="center">
+  <img src="docs/images/modes.png" width="720" alt="La tarjeta de modos: Equilibrado, Ahorro, Calidad">
+</p>
+
+| Modo | Cuándo predice | Modelo | Máx. mensajes de contexto | Límite diario de solicitudes |
+|---|---|---|---|---|
+| **Equilibrado** (Recomendado) | Automática tras una respuesta apta | Modelo específico | 12 | 200 |
+| **Ahorro** | Solo manual | Modelo específico | 6 | 60 |
+| **Calidad** | Automática tras una respuesta apta | El modelo de la sesión | 20 | 200 |
+
+Los modos cambian el disparador, la estrategia de modelo, el contexto y los límites. Conservan el interruptor general, el atajo, el idioma, los ajustes de privacidad y los ID de modelo que hayas introducido.
+
+### Sugerencias del modelo y frases propias
+
+Después de las sugerencias del modelo pueden aparecer los mensajes cortos que repetiste en esta conversación y las frases fijadas. Añade u ordena las frases en **Ajustes → Predicción → Origen de las sugerencias → Frases fijadas** y guarda. «Otra» recorre las opciones disponibles sin hacer otra llamada al modelo. Al agotar las opciones, pedir otra puede generar una solicitud al modelo, sujeta a los límites.
+
+Si el modelo no da un resultado utilizable en una petición manual, el complemento puede ofrecer tus frases si las hay. Generar esta alternativa no requiere otra llamada al modelo.
+
+<p align="center">
+  <img src="docs/images/phrases.png" width="720" alt="Una frase fijada como sugerencia gris; el botón «Otra» lleva una chincheta y la posición en la lista">
+</p>
+
+## Ajustes y uso
+
+La interfaz está disponible en nueve idiomas. Por defecto sigue el de DSH. Puedes elegir otro en «Idioma» en los ajustes del complemento.
+
+Pulsa «Añadir acceso a la barra lateral» para abrir Predicción desde la barra lateral izquierda de DSH. Si quitas la fijación, puedes abrir el acceso o volver a fijarlo desde «Más». La versión instalada aparece junto al título.
+
+<table>
+<tr>
+<td width="30%" align="center" valign="middle">
+  <img src="docs/images/sidebar-entry.png" width="230" alt="La entrada «Predicción» en la barra lateral izquierda">
+</td>
+<td width="70%" align="center" valign="middle">
+  <img src="docs/images/page-header.png" width="560" alt="El botón de acceso a la barra lateral junto al título de la página y la versión">
+</td>
+</tr>
+</table>
+
+«Últimos 7 días» muestra solicitudes, sugerencias mostradas y aceptadas, tiempos de respuesta y uso de tokens.
+
+<details>
+<summary><b>Ver la página de ajustes completa</b> (básico, modos, origen de las sugerencias, modelo, últimos 7 días)</summary>
+
+<p align="center">
+  <img src="docs/images/settings.png" width="640" alt="La página de ajustes completa">
+</p>
+
+<p align="center">
+  <img src="docs/images/languages.png" width="720" alt="La parte superior de la página de ajustes en inglés, japonés, español y ruso">
+</p>
+
+</details>
+
+> Las capturas se tomaron en una interfaz web aislada con una conversación sintética y un modelo simulado local. Los ajustes son de ejemplo. Las cifras de uso y tiempo son ilustrativas.
+
+<a name="privacy"></a>
+
+## Privacidad y solicitudes al modelo
+
+La predicción envía fragmentos recientes de **mensajes del usuario y respuestas finales del asistente** de la rama actual a un proveedor configurado en DSH. El límite de entrada predeterminado es de 12 mensajes y unos 2000 tokens, incluidas las instrucciones de predicción.
+
+- Por defecto se incluye un breve resumen de los recuentos de actividad del turno anterior. Se excluyen los argumentos y resultados de herramientas, el razonamiento y las instrucciones del sistema.
+- El enmascarado por reglas está activado por defecto. Sustituye posibles secretos y algunos identificadores personales. Puede pasar por alto texto sensible.
+- Las solicitudes de predicción y estado enviadas desde el navegador incluyen identificadores y metadatos. El backend lee los mensajes enviados desde DSH. Se excluyen borradores, adjuntos y referencias. Las estadísticas locales guardan recuentos, tiempos e identificadores y omiten el texto de conversaciones y sugerencias.
+- Las opciones locales y la lista de frases fijadas no se añaden a las instrucciones del modelo. Una frase ya enviada como mensaje sí puede aparecer en el contexto reciente.
 
 La descripción completa, y cómo borrar los datos locales, está en [Privacidad y límites de los datos](docs/PRIVACY.md).
 
 ## Preguntas frecuentes
 
 <details>
-<summary><b>¿Enviará un mensaje por mí?</b></summary>
+<summary><b>¿Por qué no aparece una sugerencia?</b></summary>
 
-No. Aceptar una sugerencia solo pone texto en el cuadro de entrada, mediante la interfaz de inserción del propio cuadro; el plugin no contiene ninguna llamada que envíe o confirme.
-
-</details>
-
-<details>
-<summary><b>¿Cuánto cuesta?</b></summary>
-
-Cada predicción es una llamada muy breve al modelo (por defecto, 96 tokens de salida como máximo). Los límites diarios predeterminados son 200 solicitudes y 500.000 tokens; una vez alcanzados, ese día no se hacen más llamadas. Para gastar menos, elige el modo «Ahorro», que solo predice cuando lo pides. El uso real aparece en «Últimos 7 días», en la página de ajustes.
+Consulta el estado en los ajustes. Una conversación en pausa, una ventana inactiva, un borrador con texto, un menú abierto o un IME en composición pueden impedir que aparezca una sugerencia. El modelo también puede devolver un resultado inutilizable. Si se cumplen las condiciones, prueba la predicción manual con el cuadro vacío y enfocado.
 
 </details>
 
 <details>
-<summary><b>¿Por qué a veces no hay sugerencia?</b></summary>
+<summary><b>¿Cuándo se cobra una solicitud?</b></summary>
 
-Es deliberado: cuando el modelo no está seguro no ofrece nada, y la salida que incumple las reglas (demasiado larga, de varias líneas, con el tono del asistente) se descarta. La línea de estado de la página de ajustes indica por qué no hay ninguna ahora mismo. Cuando quieras una, pulsa <kbd>Alt</kbd>+<kbd>\\</kbd>.
-
-</details>
-
-<details>
-<summary><b>¿Son precisas las sugerencias?</b></summary>
-
-Se le dan bien los seguimientos cortos y claros: confirmar, pedir una verificación, preguntar un detalle. No puede adivinar lo que solo tú sabes, y en ese caso lo correcto es que guarde silencio.
+El coste depende del proveedor que recibe la solicitud y de los tokens que usa. Cambiar entre opciones disponibles y generar una alternativa local no añade solicitudes al modelo. Con el modo de ahorro, puedes pedir predicciones cuando las necesites.
 
 </details>
+
+<a name="documentation"></a>
 
 ## Documentación
 
@@ -263,8 +212,6 @@ La documentación detallada está escrita en chino.
 | [Guía de uso](docs/USER-GUIDE.md) | Teclas, cada elemento de la página de ajustes, modos, la entrada de la barra lateral, preguntas frecuentes |
 | [Referencia de configuración](docs/CONFIGURATION.md) | Valores predeterminados e intervalos de todas las opciones, valores de los tres modos |
 | [Privacidad y límites de los datos](docs/PRIVACY.md) | Qué se envía, archivos locales, cómo borrar los datos |
-| [Arquitectura](docs/ARCHITECTURE.md) | Las mitades Host y navegador, el flujo de las solicitudes, el protocolo |
-| [Desarrollo y verificación](docs/DEVELOPMENT.md) | Compilación, pruebas, verificación de extremo a extremo, regenerar las capturas |
 | [Compatibilidad](docs/COMPATIBILITY.md) | Versiones de DSH, cobertura de pruebas e interfaces del host |
 | [Registro de cambios](CHANGELOG.md) | Cambios de cada versión |
 | [Índice de la documentación](docs/README.md) | Todos los documentos, incluidas las notas anteriores de verificación y optimización |
@@ -272,20 +219,12 @@ La documentación detallada está escrita en chino.
 ## Contribuir
 
 ```powershell
-npm run build   # genera lib/client.js a partir de src/shared + src/client
-npm test        # ejecuta las pruebas unitarias y de integración
-npm run check   # compilación + pruebas + comprobación de sintaxis
+npm run build
+npm test
+npm run check
 ```
 
-No hace falta `npm install` ni empaquetador; se requiere Node.js 22 o posterior. Para añadir o corregir una traducción, edita `src/client/locales/<idioma>.js`; las pruebas comprueban que todos los idiomas tengan las mismas claves.
-
-## Limitaciones conocidas
-
-- Verificado en la interfaz web de DSH `0.2.2-rc.1` y `0.2.2-rc.3`. En DSH Desktop `0.2.2-rc.3` para Windows, un usuario probó con éxito un método de entrada chino y los atajos `Tab`, `Ctrl+Z` y `Ctrl+Shift+Z`. Queda por probar otros métodos de entrada y otras versiones de DSH.
-- Guardar un ajuste hace que el host reinicie la parte en segundo plano del plugin; la predicción en curso se cancela.
-- Las ventanas conectadas al mismo servidor DSH consultan los cambios de pausa, aceptación y ocultación cada 800 ms si están visibles y cada 5 segundos si están ocultas.
-- El complemento reconoce las ventanas emergentes mediante los marcadores de menús y diálogos de DSH. Los cambios en estos marcadores pueden afectar a la aparición de sugerencias.
-- El complemento restablece la opción de deshacer la primera sugerencia aceptada después de enviar un mensaje en DSH Desktop `0.2.2-rc.3`. Las demás versiones del editor utilizan la función nativa de DSH. [Informe de validación](docs/VALIDATION-DISPLAY-SESSION.md)
+Para desarrollar necesitas Node.js 22 o posterior. No hay dependencias de ejecución que instalar. `npm run check` comprueba el paquete cliente, los README generados, las pruebas y la sintaxis de JavaScript. [Desarrollo y verificación](docs/DEVELOPMENT.md) · [Arquitectura](docs/ARCHITECTURE.md)
 
 ## Licencia
 

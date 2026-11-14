@@ -1,6 +1,6 @@
 # 开发与验证
 
-适用版本：0.5.0。
+适用版本：0.6.0。
 
 ## 环境
 
@@ -51,11 +51,10 @@ npm run readme  # 重新生成各语言 README
 
 ## README 的生成
 
-除中文的 `README.md` 外，其余八份 `README.<语言>.md` 都是生成的，不要直接改：
+中文 `README.md` 和其余八份 `README.<语言>.md` 都通过同一个模板生成：
 
-- `tools/readme/template.md` 是共同的版式，`{{键}}` 由 `tools/readme/strings/<语言>.txt` 中每行一条的 `键: 文字` 填入。文字里 `{ui:<界面文案键>}` 取该语言的界面文案（`src/client/locales/<语言>.js`），`{langs}` 是语言名称列表，`{ph_dsh}` / `{ph_plugin}` 是两个占位符文字。
-- 版本徽章读 `package.json` 的版本，DeepSeek Harness 徽章读 `engines.dsh` 的下限，不要手写版本号或测试数量。
-- 中文 `README.md` 手写，只有 `<!-- readme:langbar:start/end -->`（语言栏）和 `<!-- readme:badges:start/end -->`（徽章）两段由 `tools/build-readmes.mjs` 维护，标记之间的内容会被覆盖。标记放在居中的 `<div>` / `<p>` 块外面，不影响 GitHub 的渲染。
+- 修改版式时编辑 `tools/readme/template.md`。调整文字时编辑 `tools/readme/strings/<语言>.txt`。模板的 `{{键}}` 对应文案文件中一行 `键: 文字`，`{ui:<界面文案键>}` 取对应的设置或按钮文案。
+- 版本徽章和 DSH 安装范围来自 `package.json`。`{fact:<键>}` 可引用仓库名称、安装范围、默认模型、上下文和模式限额。配置默认值和预设取自 `src/shared/config.js` 与 `src/shared/presets.js`。
 
 ```powershell
 npm run readme                        # 重新生成
@@ -199,24 +198,34 @@ node tools/phrases-e2e.mjs --url $u --out scratch/evidence --tag phrases   # 会
 
 ### 重新生成 README 的截图
 
-`docs/images/` 里的图片由 `tools/capture-screenshots.mjs` 从真实界面截取：它在隔离 profile 里用 mock 模型跑一段两轮的演示对话（只有模型的候选：常用短句关闭、固定短语为空），截下输入框里的建议和动图的各帧；然后保存三条固定短语，截下输入框里一条固定短语作建议的 `phrases.png`，再截模式卡片、左侧栏入口和完整的设置页（设置页里能看到固定短语）；最后把界面语言依次切到英语、日语、西班牙语和俄语，拼成 `languages.png`。界面有变化时重新运行即可。
+`docs/images/` 的内容图由 `tools/capture-screenshots.mjs` 从隔离的 DSH **Web 界面**截取，模型和对话均由本机 mock 合成；这些截图不代表原生桌面交互验证。`suggestion.png` 展示默认失焦状态；`demo.png` 的五帧依次展示失焦提示、聚焦、切换两条候选和 Tab 填入；`phrases.png` 展示固定短语；`pause.png` 展示本会话已暂停时的恢复按钮。脚本还截取模式卡片、侧栏入口、含版本与焦点开关的设置页，并把英文、日文、西班牙文和俄文页面拼成 `languages.png`。
+
+在单独的 PowerShell 会话中运行下例；每次使用新的隔离目录，避免读写日常工作区、会话、统计或配置。先按上文“本机环境”配置 `DSH_INSTALL_DIR` 和 Playwright；`3090` 与 `3091` 需空闲。
 
 ```powershell
-# 用一个空的统计目录启动，截图里的“近 7 天统计”才只包含这次演示
-$env:NMP_DATA_HOME = "$PWD\scratch\data-home-demo"
-Remove-Item -Recurse -Force $env:NMP_DATA_HOME -ErrorAction SilentlyContinue
-.\tools\launch-scratch-web.ps1 -ForceRestart
-.\tools\mock-llm-control.ps1 -Action start
-$u = (Get-Content scratch\logs\web-3090.url.txt -Raw).Trim()
+$captureRun = Join-Path $PWD ("scratch\data-home-screenshots-" + [guid]::NewGuid())
+$env:USERPROFILE = Join-Path $captureRun 'user'
+$env:DSH_HOME = Join-Path $captureRun 'home'
+$env:APPDATA = Join-Path $captureRun 'appdata'
+$env:LOCALAPPDATA = Join-Path $captureRun 'localappdata'
+$env:NMP_DATA_HOME = Join-Path $captureRun 'predictor'
+$captureLogs = Join-Path $captureRun 'logs'
+New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\Documents", $env:DSH_HOME, $env:APPDATA, $env:LOCALAPPDATA, $env:NMP_DATA_HOME, $captureLogs | Out-Null
+$dsh = Join-Path $env:DSH_INSTALL_DIR 'resources\runtime\cli\bin\dsh.cmd'
+& $dsh --profile homepage-scratch --from-default-profile web --dump-config *> (Join-Path $captureLogs 'profile.log')
+& $dsh plugin --profile homepage-scratch add $PWD.Path *> (Join-Path $captureLogs 'plugin.log')
 
-node tools/capture-screenshots.mjs --url $u
-
-.\tools\mock-llm-control.ps1 -Action stop
-.\tools\stop-scratch-web.ps1
-Remove-Item Env:NMP_DATA_HOME
+# 只在新建的 homepage-scratch profile 的 cordis.patch.yml 中配置本地 mock；
+# 配置内容见 docs/p0-load-verification.md 的“local mock route”。
+.\tools\mock-llm-control.ps1 -Action start -LogDir $captureLogs
+.\tools\launch-scratch-web.ps1 -Profile homepage-scratch -LogDir $captureLogs | Out-Null
+$captureUrlFile = Join-Path $captureLogs 'web-3090.url.txt'
+node tools/capture-screenshots.mjs --url-file $captureUrlFile --isolated-profile --frames (Join-Path $captureRun 'frames')
+.\tools\stop-scratch-web.ps1 -Profile homepage-scratch -LogDir $captureLogs
+.\tools\mock-llm-control.ps1 -Action stop -LogDir $captureLogs
 ```
 
-脚本只截取属于本插件或演示对话的区域，侧栏里的会话列表不会进入图片。结束时它会把隔离 profile 的插件配置和 mock 的回复恢复原样；演示对话本身会留在会话列表里。`demo.png` 是动画 PNG（APNG），不支持动画的查看器会显示第一帧。提交前请逐张看一遍，确认没有不该公开的内容。
+截图脚本只截取插件或合成演示对话区域，侧栏会话列表不入图；结束时恢复该隔离 profile 的插件配置及 mock 回复，演示会话仍留在隔离目录。URL 含访问令牌，不要公开日志或 URL。`demo.png` 是 APNG，不支持动画的查看器显示第一帧；提交前还需逐张检查每个静态图片和 `--frames` 输出的每帧，确认行为、版本和隐私内容正确。
 
 其他脚本：
 

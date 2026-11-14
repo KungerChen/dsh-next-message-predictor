@@ -13,8 +13,9 @@
  * sidebar is never part of an image.
  *
  * Output (default docs/images/):
- *   demo.png            animated PNG: suggestion appears -> another one -> Tab fills it in
- *   suggestion.png      the conversation with a suggestion in the empty input box
+ *   demo.png            animated PNG: unfocused offer -> focus -> another one -> Tab fills it in
+ *   suggestion.png      the default unfocused suggestion and focus hint
+ *   pause.png           the same isolated conversation with this session paused
  *   phrases.png         the same input box with one of the user's pinned phrases as the grey suggestion
  *   modes.png           the "mode" card of the settings page
  *   sidebar-entry.png   the entry in the left sidebar
@@ -23,7 +24,7 @@
  *   languages.png       the top of the settings page in four other languages, side by side
  *
  * Usage (scratch profile and mock model already running, see docs/DEVELOPMENT.md):
- *   node tools/capture-screenshots.mjs --url "<scratch URL>" [--out docs/images] [--mock http://127.0.0.1:3091]
+ *   node tools/capture-screenshots.mjs --url-file "<scratch URL file>" --isolated-profile [--out docs/images] [--mock http://127.0.0.1:3091]
  *                                      [--frames <dir>]   also write the animation frames one by one
  *
  * The plugin config of the scratch profile and the mock's replies are put back
@@ -36,19 +37,29 @@ import { crc32 } from 'node:zlib'
 
 import { browserPath, loadChromium, repoRoot } from './lib/local-env.mjs'
 import { PRESETS, RECOMMENDED_ROUTE } from '../src/shared/presets.js'
+import { PLUGIN_VERSION } from '../src/shared/version.js'
 
 const args = process.argv.slice(2)
 const argOf = (name, fallback) => {
   const i = args.indexOf(name)
   return i >= 0 && i + 1 < args.length ? args[i + 1] : fallback
 }
-const url = argOf('--url', '')
-if (url === '') {
-  console.error('--url is required (the scratch Web GUI URL, including its token)')
+const urlFile = argOf('--url-file', '')
+const inlineUrl = argOf('--url', '')
+if (urlFile !== '' && inlineUrl !== '') throw new Error('Choose either --url-file or --url')
+const url = urlFile === '' ? inlineUrl : (await readFile(urlFile, 'utf8')).replace(/^\uFEFF/u, '').trim()
+if (url === '' || !args.includes('--isolated-profile')) {
+  console.error('--url-file (or --url) and --isolated-profile are required for a disposable scratch Web GUI')
   process.exit(2)
 }
 const outDir = path.resolve(argOf('--out', path.join(repoRoot, 'docs', 'images')))
 const mockBase = argOf('--mock', 'http://127.0.0.1:3091')
+for (const address of [url, mockBase]) {
+  const parsed = new URL(address)
+  if (parsed.protocol !== 'http:' || !['127.0.0.1', 'localhost', '[::1]'].includes(parsed.hostname)) {
+    throw new Error('Screenshot capture requires loopback HTTP for both DSH and mock')
+  }
+}
 /** Optional: also write the animation's frames as separate files, to look at them one by one. */
 const framesDir = argOf('--frames', '')
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -235,7 +246,7 @@ try {
   // Follow the session model (the mock), predict automatically, three candidates on request.
   await setConfig({
     language: 'zh',
-    enabled: true, manualOnly: false, showPredictButton: true, modelMode: 'session', reasoningEffort: '',
+    enabled: true, manualOnly: false, showPredictButton: true, requireInputFocus: false, modelMode: 'session', reasoningEffort: '',
     multiCandidates: true, candidateCount: 3, manualLimit: 3, habitSuggestions: false, pinnedPhrases: [], sidebarEntry: true, triggerDelayMs: 250,
   })
   // The scratch profile also loads a marker plugin used by the load test; it is not part of DSH or of this plugin.
@@ -271,8 +282,16 @@ try {
     frames.push(await page.screenshot({ clip }))
     delays.push(delayMs)
   }
+  // The default shows the suggestion without input focus; only the hint is
+  // available until the composer is focused again.
+  await page.locator('[data-composer-input]').evaluate((input) => input.blur())
+  await page.waitForSelector('[data-nmp-focus-hint]')
+  if (await page.locator('[data-nmp-adopt]').count() !== 0) throw new Error('unfocused offer unexpectedly exposes adopt button')
   await page.screenshot({ path: path.join(outDir, 'suggestion.png'), clip })
   await frame(2200)
+  await page.locator('[data-composer-input]').first().click()
+  await page.waitForSelector('[data-nmp-adopt]')
+  await frame(1600)
 
   // "Another one": the first manual prediction brings three candidates, then stepping is local.
   await page.keyboard.press('Alt+Backslash')
@@ -326,12 +345,23 @@ try {
   await page.keyboard.press('Escape')
   await sleep(300)
 
+  // Capture the actual paused state; resuming does not rerun the old turn.
+  const pause = page.locator('[data-nmp-session-toggle]')
+  await pause.click()
+  await waitFor('session pause', async () => (await pause.getAttribute('aria-pressed')) === 'true')
+  if (await page.locator('[data-nmp-ghost]').count() !== 0) throw new Error('a suggestion remained visible while paused')
+  await page.screenshot({ path: path.join(outDir, 'pause.png'), clip: await exchangeClip(SUGGESTIONS[2]) })
+  await pause.click()
+  await waitFor('session resume', async () => (await pause.getAttribute('aria-pressed')) === 'false')
+
   // ── settings page, in the recommended mode ──
   await page.setViewportSize(VIEWPORT)
   await setConfig({ ...PRESETS.balanced, provider: RECOMMENDED_ROUTE.provider, model: RECOMMENDED_ROUTE.model, reasoningEffort: RECOMMENDED_ROUTE.reasoningEffort, habitSuggestions: true, sidebarEntry: true })
   await page.evaluate(() => window.__nextMessagePredictor.openPanel())
   await page.waitForSelector('[data-nmp-panel] [data-nmp-setting="presets"]')
   await sleep(600)
+  const headerText = await page.locator('[data-nmp-panel] [data-nmp-setting="header"]').innerText()
+  if (!headerText.includes(`v${PLUGIN_VERSION}`)) throw new Error('settings version does not match the current plugin')
 
   // The entry in the left sidebar: the navigation rows only, never the session list below them.
   const entryClip = await page.evaluate(() => {
@@ -348,7 +378,9 @@ try {
       const header = document.querySelector('[data-nmp-panel] [data-nmp-setting="header"]').getBoundingClientRect()
       const basics = document.querySelector('[data-nmp-panel] [data-nmp-setting="keys"]').parentElement.getBoundingClientRect()
       const margin = 16
-      return { x: header.left - margin, y: Math.max(0, header.top - margin), width: header.width + margin * 2, height: basics.bottom - Math.max(0, header.top - margin) + margin }
+      // End just below the basics card; a larger bottom margin includes the
+      // top edge of the next card in the page and in every language tile.
+      return { x: header.left - margin, y: Math.max(0, header.top - margin), width: header.width + margin * 2, height: basics.bottom - Math.max(0, header.top - margin) + 3 }
     })
   await page.screenshot({ path: path.join(outDir, 'page-header.png'), clip: await pageTopClip() })
 
@@ -385,7 +417,7 @@ try {
   await sheet.locator('#sheet').screenshot({ path: path.join(outDir, 'languages.png') })
   await sheet.close()
 
-  for (const name of ['demo.png', 'suggestion.png', 'phrases.png', 'sidebar-entry.png', 'page-header.png', 'modes.png', 'settings.png', 'languages.png']) {
+  for (const name of ['demo.png', 'suggestion.png', 'pause.png', 'phrases.png', 'sidebar-entry.png', 'page-header.png', 'modes.png', 'settings.png', 'languages.png']) {
     const size = (await readFile(path.join(outDir, name))).length
     console.log(`${name}  ${(size / 1024).toFixed(0)} KB`)
   }
@@ -395,7 +427,7 @@ try {
     if (originalConfig !== null) {
       const restore = {}
       for (const key of [
-        'enabled', 'manualOnly', 'showPredictButton', 'modelMode', 'provider', 'model', 'reasoningEffort', 'multiCandidates', 'candidateCount',
+        'enabled', 'manualOnly', 'showPredictButton', 'requireInputFocus', 'modelMode', 'provider', 'model', 'reasoningEffort', 'multiCandidates', 'candidateCount',
         'manualLimit', 'habitSuggestions', 'pinnedPhrases', 'sidebarEntry', 'triggerDelayMs', 'contextMessages', 'targetInputTokens', 'maxContextCodePoints',
         'maxOutputTokens', 'timeoutMs', 'dailyRequestLimit', 'dailyTokenBudget', 'language',
       ]) restore[key] = originalConfig[key]

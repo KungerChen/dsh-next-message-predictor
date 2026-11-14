@@ -1,113 +1,84 @@
 title: Prédiction du prochain message
 product: Un plugin pour la zone de saisie de DeepSeek Harness
-tagline1: Quand l’assistant a terminé, votre prochain message le plus probable vous attend déjà dans la zone de saisie.
-tagline2: <kbd>Tab</kbd> l’insère, <kbd>Échap</kbd> l’ignore, et <b>rien n’est jamais envoyé à votre place</b>.
+tagline1: Après une réponse éligible, une suggestion peut s’afficher dans le champ de saisie.
+tagline2: Placez le curseur dans le champ et appuyez sur <kbd>Tab</kbd> pour insérer la suggestion dans le brouillon. Vous choisissez quand l’envoyer.
 b_version: version
 b_deps: dépendances tierces
 b_langs: langues
 b_license: licence
-demo_alt: Démonstration : après la réponse de l’assistant, une suggestion grise apparaît dans la zone de saisie ; une autre est demandée ; Tab l’insère
-demo_caption: Une suggestion apparaît → demandez-en une autre si elle ne convient pas → <kbd>Tab</kbd> l’insère, et vous pouvez encore la modifier avant d’envoyer
-why_h: Pourquoi l’utiliser
-why_p: Quand on travaille avec un assistant, beaucoup de réponses sont courtes et faciles à deviner : « continue », « lance les tests », « montre-moi les modifications ». Ce plugin rédige cette relance à l’avance et la dépose dans la zone de saisie.
-c1_h: Moins de frappe
-c1_p: Insérez une relance courante d’une touche. Le texte inséré reste modifiable.
-c2_h: Sans interruption
-c2_p: Dès que vous commencez à taper, la suggestion s’efface. Elle n’apparaît ni pendant une composition IME ni lorsqu’un menu est ouvert. Si le modèle n’est pas sûr de lui, il ne propose rien.
-c3_h: Jamais d’excès de zèle
-c3_p: Il se contente de placer du texte dans la zone de saisie. Le plugin ne contient aucun code d’« envoi de message » ; envoyer reste toujours votre décision.
-c4_h: Un coût maîtrisé
-c4_p: Un modèle économique par défaut, avec des limites quotidiennes de requêtes et de jetons. Vos propres phrases (les messages courts que vous répétez et celles que vous épinglez) sont à un clic sur « {ui:ghost.another} », ne coûtent rien et ne quittent jamais votre ordinateur.
-c5_h: La confidentialité d’abord
-c5_p: Avant l’envoi, les clés, jetons, adresses e-mail et numéros de téléphone probables sont masqués. Le navigateur ne transmet jamais votre brouillon. Les statistiques locales enregistrent des chiffres, pas du texte.
-c6_h: Une consommation transparente
-c6_p: Les requêtes, le taux d’acceptation, le temps de réponse et la consommation de jetons des 7 derniers jours figurent sur la page des paramètres : vous voyez tout de suite si cela vaut le coup.
-feat_h: Fonctionnalités
-f1_h: La suggestion est directement dans la zone de saisie
-f1_p: Une fois la réponse de l’assistant terminée, si la zone de saisie est vide, une suggestion grise apparaît exactement là où vous alliez taper. Pas de fenêtre surgissante, pas de place perdue. Dans la fenêtre active, les suggestions apparaissent par défaut même si la zone de saisie n’a pas le focus. Vous pouvez activer « {ui:settings.requireInputFocus} » dans les paramètres. Cliquez dans la zone de saisie avant d’adopter une suggestion.
-f1_alt: Une suggestion grise dans la zone de saisie, avec « {ui:ghost.adopt} » et « {ui:ghost.another} » à droite
-k_th1: Touche
-k_th2: Effet
-k1a: <kbd>Tab</kbd> ou <kbd>→</kbd>
-k1b: Insère la suggestion lorsque la zone de saisie a le focus. Vous pouvez continuer à la modifier.
-k2a: <kbd>Échap</kbd>
-k2b: Masque la suggestion
-k3a: <kbd>Alt</kbd>+<kbd>\\</kbd> (modifiable)
-k3b: Prédit immédiatement ; si une suggestion est affichée, passe à une autre. Un seul appel rapporte plusieurs propositions : le changement est instantané
-k4a: Taper, tout simplement
-k4b: La suggestion disparaît aussitôt ; elle revient quand vous videz la zone de saisie
-k5a: Cliquer sur « {ui:ghost.adopt} »
-k5b: Insère la suggestion lorsque la zone de saisie a le focus
-f1_pause: Le bouton de pause de la barre de saisie suspend les prédictions de cette conversation jusqu’à leur reprise ou au redémarrage de DSH. Après la reprise, lancez une prédiction manuellement ou attendez la prochaine réponse. La pause est conservée lors de l’actualisation de la page ou de l’enregistrement des paramètres.
-f2_h: Trois modes, un clic
-f2_p: Pas envie d’étudier chaque option ? Choisissez un mode. Vous pourrez l’annuler ou l’affiner ensuite.
-f2_alt: La carte des modes : {ui:preset.balanced.name}, {ui:preset.saver.name}, {ui:preset.quality.name}
-m_th1: Mode
-m_th2: Quand prédit-il
-m_th3: Modèle
-m_th4: Contexte
-m_th5: Limite quotidienne
-m_th6: Pour qui
-m_auto: Automatiquement après chaque réponse
-m_manual: Uniquement quand vous cliquez sur « {ui:ghost.predict} » ou utilisez le raccourci
-m_fixed: Un modèle précis et économique
-m_session: Le modèle de la session
-m_ctx12: 12 messages
-m_ctx6: 6 messages
-m_ctx20: 20 messages
-m_cap200: 200 requêtes
-m_cap60: 60 requêtes
-m_fit1: L’usage quotidien
-m_fit2: Un contrôle strict des coûts
-m_fit3: Des suggestions plus justes
-f2_note: Un mode ne modifie que le déclenchement, la stratégie de modèle, la taille du contexte et les limites. Il ne touche ni à l’interrupteur principal, ni au raccourci, ni à la langue, ni aux options de confidentialité, et il conserve le modèle que vous avez saisi.
-fp_h: Vos propres phrases, à portée de main
-fp_p: Ajoutez les phrases que vous envoyez sans cesse (« continue », « lance les tests ») dans **Paramètres → {ui:settings.nav} → {ui:settings.sourcesTitle} → {ui:settings.pinned}**, classez-les dans l’ordre voulu et cliquez une seule fois sur « {ui:settings.save} ». Elles suivent la suggestion du modèle : « {ui:ghost.another} » (ou <kbd>Alt</kbd>+<kbd>\\</kbd>) parcourt la suggestion du modèle, les messages courts que vous avez répétés dans cette conversation, puis vos phrases épinglées, et ne redemande au modèle qu’après la dernière. Une petite marque sur le bouton indique qu’une phrase est la vôtre. Elles ne coûtent rien, ne quittent jamais votre ordinateur et, quand une prédiction manuelle ne donne rien du côté du modèle, elles sont proposées à la place de « {ui:ghost.none} ».
-fp_alt: Une phrase épinglée comme suggestion grise ; le bouton « {ui:ghost.another} » porte une épingle et la position dans la liste
-fl_h: Neuf langues d’interface
-fl_p: La page des paramètres, les boutons de la zone de saisie et leurs infobulles sont disponibles en {langs}. Par défaut, le plugin suit la langue réglée dans DeepSeek Harness ; vous pouvez aussi en choisir une dans **Paramètres → {ui:settings.nav} → {ui:settings.language}**, et elle s’applique aussitôt. Les suggestions, elles, suivent toujours la langue de votre conversation.
-fl_alt: Le haut de la page des paramètres en anglais, japonais, espagnol et russe
-f3_h: À un clic dans la barre latérale
-f3_p: Cliquez sur « {ui:settings.sidebarAdd} » pour ouvrir Prédiction depuis la barre latérale gauche de DSH. Si vous désépinglez l’accès, vous pouvez l’ouvrir ou le réépingler depuis « Plus ». La version installée s’affiche à côté du titre.
-f3_alt1: L’entrée « {ui:settings.nav} » dans la barre latérale gauche
-f3_alt2: Le bouton d’accès à la barre latérale à côté du titre et de la version
-f4_h: Votre consommation en un coup d’œil
-f4_sum: <b>Afficher toute la page des paramètres</b> (bases, modes, origine des suggestions, modèle, 7 derniers jours)
-f4_alt: La page des paramètres complète
-shots: La plupart des captures montrent l’interface en chinois. Elles proviennent d’une conversation de démonstration et sont générées par un script de ce dépôt avec un modèle simulé local ; c’est pourquoi le modèle s’appelle Mock et les chiffres sont faibles. En usage réel, les suggestions viennent du modèle que vous avez configuré dans DSH.
-inst_h: Installation
-inst_p: La plage de versions de DeepSeek Harness pour l’installation est `>=0.2.2-rc.1 <0.3.0`. Le plugin n’a aucune dépendance tierce et ne demande aucune compilation. Une seule commande suffit :
-inst_profile: Le nom qui suit `--profile` est le profil que vous utilisez au quotidien : `desktop` pour l’application de bureau, `web` pour la version web. Ensuite, **quittez complètement DSH puis relancez-le**.
+inst_h: Démarrage rapide
+f1_h: Prévisualiser et accepter
+pause_h: Mettre une conversation en pause
+f2_h: Modes de prédiction
+send_h: Confidentialité et requêtes au modèle
+docs_h: Documentation
+demo_alt: Aperçu dans le champ DSH, défilement des suggestions et insertion dans le brouillon après la mise au point
+inst_p: Installez le module sur DeepSeek Harness `{fact:dsh_range}`. Le paquet GitHub est prêt à l’emploi, sans compilation.
+inst_profile: Indiquez votre profil DSH (`desktop` par défaut pour l’application, `web` pour la version web). Ensuite, **quittez complètement DSH et rouvrez-le**.
+s1: Ouvrez **Paramètres → {ui:settings.nav}**. La prédiction est désactivée à la première installation.
+s2: Choisissez un mode dans « {ui:preset.title} ». Dans « {ui:settings.routeTitle} », vérifiez le fournisseur et le modèle configurés dans DSH, ou choisissez « {ui:settings.routeModeSession} ». Enregistrez les modifications apportées aux champs du modèle.
+s3: Activez « {ui:settings.enabled} » et laissez le champ vide après la réponse. Pour un essai manuel, cliquez sur « {ui:ghost.predict} » ou placez le curseur dans le champ vide et appuyez sur <kbd>Alt</kbd>+<kbd>\</kbd>.
+route_note: Les modes équilibré et économie utilisent par défaut `{fact:default_provider} / {fact:default_model}`. Pour choisir un autre modèle précis, saisissez ses identifiants de fournisseur et de modèle dans DSH. Si le modèle configuré est introuvable, DSH peut utiliser son modèle par défaut disponible pour cette prédiction.
 inst_d_sum: La commande <code>dsh</code> est introuvable, ou vous voulez installer depuis un dossier local
 inst_d_p: La ligne de commande `dsh` se trouve dans le dossier d’installation de DeepSeek Harness et peut être appelée par son chemin complet. Pour modifier le code vous-même, clonez le dépôt puis installez depuis le dossier local :
 ph_dsh: dossier d’installation de DSH
 ph_plugin: dossier du plugin
-inst_d_tail: `<{ph_dsh}>` est l’emplacement où DeepSeek Harness est installé ; `<{ph_plugin}>` est le dossier que vous venez de cloner.
-steps_p: Puis trois étapes pour commencer :
-s1: Ouvrez **Paramètres → {ui:settings.nav}** et activez « {ui:settings.enabled} ». C’est désactivé par défaut : tant que vous ne l’activez pas, aucune suggestion n’est affichée et aucun modèle n’est appelé.
-s2: Choisissez-en un sous « {ui:preset.title} ». Par défaut, c’est « {ui:preset.balanced.name} ».
-s3: Pour y accéder plus vite, cliquez sur « {ui:settings.sidebarAdd} » en haut à droite.
 upd_sum: Mise à jour et désinstallation
 upd_p: **Mise à jour** : si vous avez installé depuis GitHub, désinstallez puis relancez la commande d’installation ; si vous avez installé depuis un dossier local, exécutez-y `git pull`. Redémarrez ensuite DSH. Actualiser la page ne suffit pas : la page serait à jour alors que la partie en arrière-plan resterait ancienne, et la page des paramètres signalerait un écart de version.
 unin: **Désinstallation** :
 conflict: N’activez qu’un seul plugin de prédiction pour la zone de saisie par profil. Si un autre est détecté, ce plugin se met en pause de lui-même et en donne la raison sur la page des paramètres.
-send_h: Ce qu’il envoie
-send_p: Chaque prédiction est une seule requête au modèle, sans nouvelle tentative automatique. Elle contient des extraits des **messages de l’utilisateur et des réponses textuelles finales de l’assistant** les plus récents de la session en cours : par défaut, 12 messages et environ 2 000 jetons au maximum.
-sb1: Ni arguments ni résultats d’outils, ni raisonnement, ni prompt système.
-sb2: Avant l’envoi, les clés privées, clés d’API, jetons, mots de passe, adresses e-mail, numéros de mobile et d’identité probables, ainsi que le nom d’utilisateur dans les chemins du dossier personnel, sont remplacés par des substituts (fondé sur des règles ; il ne peut pas garantir de tout repérer).
-sb3: La page du navigateur n’envoie que des identifiants de session et de tour, jamais le brouillon, les pièces jointes ni le texte de la conversation ; le contenu destiné au modèle est lu par la partie en arrière-plan dans les enregistrements de session de DSH.
-sb4: Vos propres phrases (les messages courts que vous répétez dans une conversation et les « {ui:settings.pinned} ») ne sont utilisées que sur cet ordinateur : aucun modèle n’est appelé pour elles et elles ne lui sont jamais envoyées.
+f1_p: Une suggestion disponible apparaît en gris dans le champ vide de la fenêtre active. Par défaut, le champ peut l’afficher même sans le focus. Activez « {ui:settings.requireInputFocus} » pour limiter l’affichage au champ actif. Cette option règle l’affichage des suggestions déjà obtenues.
+f1_alt: Suggestion grise dans le champ inactif, avec l’indication de cliquer dans le champ avant d’appuyer sur Tab
+k_th1: Action dans le champ de saisie
+k_th2: Effet
+k1a: <kbd>Tab</kbd>, <kbd>→</kbd> au début ou clic sur « {ui:ghost.adopt} »
+k1b: Placez d’abord le curseur dans le champ. Le texte s’ajoute au brouillon et reste modifiable avant l’envoi.
+k2a: <kbd>Échap</kbd>
+k2b: Masque la suggestion quand le champ a le focus. Vous pouvez ensuite en demander une autre manuellement.
+k3a: <kbd>Alt</kbd>+<kbd>\</kbd> (configurable), « {ui:ghost.predict} » ou « {ui:ghost.another} »
+k3b: Quand le champ est vide, demande une prédiction ou passe à une autre suggestion. Le raccourci exige aussi le focus dans le champ.
+k4a: Taper, tout simplement
+k4b: La saisie masque l’aperçu. En effaçant le brouillon, la suggestion peut réapparaître si elle est encore valable.
+undo: Après l’insertion, <kbd>Ctrl</kbd>+<kbd>Z</kbd> annule et <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> rétablit. La version 0.6.0 répare l’annulation de la première insertion après un envoi dans l’éditeur testé de DSH Desktop `0.2.2-rc.3`. Les autres versions utilisent l’historique natif de DSH. [Rapport de validation](docs/VALIDATION-DISPLAY-SESSION.md)
+f1_pause: Le bouton Pause de la barre du champ arrête les prédictions automatiques et manuelles pour cette conversation et masque la suggestion. Cliquez sur ▶ pour reprendre, puis demandez une prédiction ou attendez la prochaine réponse.
+pause_alt: Conversation en pause et bouton triangulaire de reprise des prédictions
+f1_sync: Les fenêtres connectées au même hôte DSH partagent l’état de pause. Il persiste après un rechargement de page ou une sauvegarde des réglages, jusqu’à la reprise ou au redémarrage de DSH. Accepter ou masquer une suggestion fait aussi disparaître les suggestions de ce tour dans les autres vues de la conversation.
+f2_alt: La carte des modes : {ui:preset.balanced.name}, {ui:preset.saver.name}, {ui:preset.quality.name}
+m_th1: Mode
+m_th2: Quand prédit-il
+m_th3: Modèle
+m_th4: Messages de contexte max.
+m_th5: Limite de requêtes par jour
+m_auto: Automatique après une réponse éligible
+m_fixed: Modèle précis
+m_manual: Sur demande
+m_session: Le modèle de la session
+f2_note: Un mode définit le déclenchement, la stratégie de modèle, le contexte et les limites. Il conserve l’interrupteur général, le raccourci, la langue, les réglages de confidentialité et les identifiants de modèle saisis.
+fp_h: Suggestions du modèle et phrases personnelles
+fp_p: Après les suggestions du modèle peuvent suivre des messages courts répétés dans cette conversation et vos phrases épinglées. Ajoutez ou réordonnez les phrases dans **Paramètres → {ui:settings.nav} → {ui:settings.sourcesTitle} → {ui:settings.pinned}**, puis enregistrez. « {ui:ghost.another} » parcourt les choix disponibles sans nouvel appel au modèle. Une fois les choix épuisés, en demander un autre peut déclencher une requête au modèle dans la limite des quotas.
+fp_fallback: Si une demande manuelle ne donne aucun résultat exploitable, le module peut proposer vos phrases s’il y en a. Ce choix de secours ne déclenche aucun appel supplémentaire au modèle.
+fp_alt: Une phrase épinglée comme suggestion grise ; le bouton « {ui:ghost.another} » porte une épingle et la position dans la liste
+settings_h: Paramètres et utilisation
+fl_p: L’interface est disponible en neuf langues et suit par défaut celle de DSH. Vous pouvez en choisir une autre via « {ui:settings.language} ».
+f3_p: Cliquez sur « {ui:settings.sidebarAdd} » pour ouvrir Prédiction depuis la barre latérale gauche de DSH. Si vous désépinglez l’accès, vous pouvez l’ouvrir ou le réépingler depuis « Plus ». La version installée s’affiche à côté du titre.
+f3_alt1: L’entrée « {ui:settings.nav} » dans la barre latérale gauche
+f3_alt2: Le bouton d’accès à la barre latérale à côté du titre et de la version
+usage: « {ui:settings.resultTitle} » affiche les requêtes, les suggestions affichées et acceptées, le temps de réponse et l’utilisation des jetons.
+f4_sum: <b>Afficher toute la page des paramètres</b> (bases, modes, origine des suggestions, modèle, 7 derniers jours)
+f4_alt: La page des paramètres complète
+fl_alt: Le haut de la page des paramètres en anglais, japonais, espagnol et russe
+shots: Les captures proviennent d’une interface web isolée, avec une conversation de synthèse et un modèle simulé en local. Les réglages sont fournis à titre d’exemple. Les chiffres d’utilisation et de latence sont illustratifs.
+send_p: Pour prédire, le module envoie des extraits des **messages de l’utilisateur et des réponses finales de l’assistant** de la branche actuelle à un fournisseur configuré dans DSH. Le budget d’entrée par défaut est de {fact:default_context_messages} messages et d’environ {fact:default_input_tokens} jetons, consignes comprises.
+sb1: Un court résumé des compteurs d’activité du tour précédent est inclus par défaut. Les arguments et sorties des outils, le raisonnement et les instructions système sont exclus.
+sb2: Le masquage par règles est activé par défaut. Il remplace les secrets probables et certains identifiants personnels. Des informations sensibles peuvent lui échapper.
+sb3: Les requêtes de prédiction et d’état du navigateur contiennent des identifiants et des métadonnées. Le serveur lit les messages envoyés dans DSH. Les brouillons, pièces jointes et références sont exclus. Les statistiques locales conservent compteurs, durées et identifiants, sans le texte des conversations ni des suggestions.
+sb4: Les candidats locaux et la liste des phrases épinglées ne sont pas ajoutés à l’invite du modèle. Une phrase déjà envoyée comme message peut figurer dans les extraits récents.
 send_more: La description complète, et la manière de supprimer les données locales, se trouvent dans [Confidentialité et périmètre des données](docs/PRIVACY.md).
 faq_h: Questions fréquentes
-q1: Va-t-il envoyer un message à ma place ?
-a1: Non. Accepter une suggestion place seulement du texte dans la zone de saisie, par l’interface d’insertion de celle-ci ; le plugin ne contient aucun appel qui valide ou envoie.
-q2: Combien cela coûte-t-il ?
-a2: Chaque prédiction est un appel très court au modèle (96 jetons de sortie au maximum par défaut). Les limites quotidiennes par défaut sont de 200 requêtes et 500 000 jetons ; une fois atteintes, plus aucun appel n’est fait ce jour-là. Pour dépenser moins, choisissez le mode « {ui:preset.saver.name} », qui ne prédit que sur demande. La consommation réelle figure sous « {ui:settings.resultTitle} » sur la page des paramètres.
-q3: Pourquoi n’y a-t-il parfois aucune suggestion ?
-a3: C’est voulu : quand le modèle n’est pas sûr de lui, il ne propose rien, et une sortie qui enfreint les règles (trop longue, sur plusieurs lignes, écrite sur le ton de l’assistant) est écartée. La ligne d’état de la page des paramètres indique pourquoi il n’y en a pas à cet instant. Quand vous en voulez une, appuyez sur <kbd>Alt</kbd>+<kbd>\\</kbd>.
-q4: Les suggestions sont-elles justes ?
-a4: Il est à l’aise avec les relances courtes et claires : confirmer, demander une vérification, demander un détail. Il ne peut pas deviner ce que vous seul savez, et dans ce cas il doit se taire.
-docs_h: Documentation
+q1: Pourquoi n’y a-t-il pas de suggestion ?
+a1: Vérifiez l’état dans les paramètres. Une conversation en pause, une fenêtre inactive, un brouillon, un menu ouvert ou une composition IME peuvent bloquer l’affichage. Le modèle peut aussi ne rien proposer d’utilisable. Lorsque les conditions sont réunies, essayez une prédiction manuelle depuis le champ vide et actif.
+q2: Quand une requête est-elle facturée ?
+a2: Le coût dépend du fournisseur sollicité et des jetons consommés. Parcourir les choix disponibles et générer une suggestion de secours en local n’ajoute aucune requête au modèle. Le mode économie permet de demander une prédiction au besoin.
 docs_note: La documentation détaillée est rédigée en chinois.
 d_th1: Document
 d_th2: Contenu
@@ -117,10 +88,6 @@ d2: Référence de configuration
 d2c: Valeurs par défaut et plages de toutes les options, valeurs des trois modes
 d3: Confidentialité et périmètre des données
 d3c: Ce qui est envoyé, fichiers locaux, suppression des données
-d4: Architecture
-d4c: Les moitiés Host et navigateur, le parcours d’une requête, le protocole
-d5: Développement et vérification
-d5c: Construction, tests, vérification de bout en bout, régénération des captures
 d6: Compatibilité
 d6c: Versions de DSH, périmètre des tests et interfaces de l’hôte
 d7: Journal des modifications
@@ -128,16 +95,8 @@ d7c: Changements de chaque version
 d8: Index de la documentation
 d8c: Tous les documents, y compris les notes antérieures de vérification et d’optimisation
 dev_h: Contribuer
-dev_c1: génère lib/client.js à partir de src/shared + src/client
-dev_c2: exécute les tests unitaires et d’intégration
-dev_c3: construction + tests + vérification de la syntaxe
-dev_p: Pas de `npm install`, pas d’outil d’assemblage ; Node.js 22 ou une version ultérieure est requis. Pour ajouter ou corriger une traduction, modifiez `src/client/locales/<langue>.js` ; les tests vérifient que toutes les langues ont les mêmes clés.
-lim_h: Limites connues
-l1: Vérifié dans l’interface web de DSH `0.2.2-rc.1` et `0.2.2-rc.3`. Sur DSH Desktop `0.2.2-rc.3` sous Windows, un utilisateur a testé avec succès une méthode de saisie chinoise et les raccourcis `Tab`, `Ctrl+Z` et `Ctrl+Shift+Z`. Les autres méthodes de saisie et versions de DSH restent à tester.
-l2: Enregistrer un réglage amène l’hôte à redémarrer la partie en arrière-plan du plugin ; une prédiction en cours est annulée.
-l3: Les fenêtres connectées au même hôte DSH vérifient les mises en pause, les adoptions et les masquages toutes les 800 ms lorsqu’elles sont visibles et toutes les 5 secondes lorsqu’elles sont masquées.
-l4: Le module détecte les fenêtres surgissantes grâce aux marqueurs de menus et de boîtes de dialogue de DSH. Une modification de ces marqueurs peut affecter l’affichage des suggestions.
-l5: Le module rétablit la possibilité d’annuler la première suggestion adoptée après un envoi dans DSH Desktop `0.2.2-rc.3`. Les autres versions de l’éditeur utilisent le comportement natif de DSH.
-l5_link: Rapport de validation
+dev_p: Le développement exige Node.js 22 ou ultérieur. Aucune dépendance d’exécution à installer. `npm run check` vérifie le paquet client, les README générés, les tests et la syntaxe JavaScript.
+d5: Développement et vérification
+d4: Architecture
 lic_h: Licence
 lic_p: Publié sous [licence MIT](LICENSE). Le choix des points d’extension et l’interaction « suggestion grise + Tab pour accepter + Échap pour masquer » s’inspirent de `dsh-composer-prediction`, lui aussi sous licence MIT ; aucun code n’en a été copié. Voir [NOTICE](NOTICE).

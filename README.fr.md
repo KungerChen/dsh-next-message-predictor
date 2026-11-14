@@ -12,170 +12,46 @@
 
 <p align="center">
   <b>Un plugin pour la zone de saisie de DeepSeek Harness</b><br>
-  Quand l’assistant a terminé, votre prochain message le plus probable vous attend déjà dans la zone de saisie.<br>
-  <kbd>Tab</kbd> l’insère, <kbd>Échap</kbd> l’ignore, et <b>rien n’est jamais envoyé à votre place</b>.
+  Après une réponse éligible, une suggestion peut s’afficher dans le champ de saisie.<br>
+  Placez le curseur dans le champ et appuyez sur <kbd>Tab</kbd> pour insérer la suggestion dans le brouillon. Vous choisissez quand l’envoyer.
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/version-0.6.0-4d6bfe" alt="version 0.6.0">
-  <img src="https://img.shields.io/badge/DeepSeek%20Harness-0.2.2--rc.1-1f2937" alt="DeepSeek Harness 0.2.2-rc.1">
+  <img src="https://img.shields.io/badge/DeepSeek%20Harness-%3E%3D0.2.2--rc.1%20%3C0.3.0-1f2937" alt="DeepSeek Harness &gt;=0.2.2-rc.1 &lt;0.3.0">
   <img src="https://img.shields.io/badge/langues-9-8250df" alt="langues 9">
   <img src="https://img.shields.io/badge/d%C3%A9pendances%20tierces-0-2ea44f" alt="dépendances tierces 0">
   <a href="https://github.com/KungerChen/dsh-next-message-predictor/actions/workflows/ci.yml"><img src="https://github.com/KungerChen/dsh-next-message-predictor/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <img src="https://img.shields.io/badge/licence-MIT-blue" alt="licence MIT">
 </p>
 
-<p align="center">
-  <img src="docs/images/demo.png" width="760" alt="Démonstration : après la réponse de l’assistant, une suggestion grise apparaît dans la zone de saisie ; une autre est demandée ; Tab l’insère">
-</p>
+<div align="center">
+
+[Démarrage rapide](#quick-start) · [Prévisualiser et accepter](#suggestions) · [Mettre une conversation en pause](#session-pause) · [Modes de prédiction](#modes) · [Confidentialité et requêtes au modèle](#privacy) · [Documentation](#documentation)
+
+</div>
 
 <p align="center">
-  <sub>Une suggestion apparaît → demandez-en une autre si elle ne convient pas → <kbd>Tab</kbd> l’insère, et vous pouvez encore la modifier avant d’envoyer</sub>
+  <img src="docs/images/demo.png" width="760" alt="Aperçu dans le champ DSH, défilement des suggestions et insertion dans le brouillon après la mise au point">
 </p>
 
----
+<a name="quick-start"></a>
 
-## Pourquoi l’utiliser
+## Démarrage rapide
 
-Quand on travaille avec un assistant, beaucoup de réponses sont courtes et faciles à deviner : « continue », « lance les tests », « montre-moi les modifications ». Ce plugin rédige cette relance à l’avance et la dépose dans la zone de saisie.
-
-<table>
-<tr>
-<td width="33%" valign="top">
-
-### ⌨️ Moins de frappe
-
-Insérez une relance courante d’une touche. Le texte inséré reste modifiable.
-
-</td>
-<td width="33%" valign="top">
-
-### 🤫 Sans interruption
-
-Dès que vous commencez à taper, la suggestion s’efface. Elle n’apparaît ni pendant une composition IME ni lorsqu’un menu est ouvert. Si le modèle n’est pas sûr de lui, il ne propose rien.
-
-</td>
-<td width="33%" valign="top">
-
-### 🛡️ Jamais d’excès de zèle
-
-Il se contente de placer du texte dans la zone de saisie. Le plugin ne contient aucun code d’« envoi de message » ; envoyer reste toujours votre décision.
-
-</td>
-</tr>
-<tr>
-<td valign="top">
-
-### 💰 Un coût maîtrisé
-
-Un modèle économique par défaut, avec des limites quotidiennes de requêtes et de jetons. Vos propres phrases (les messages courts que vous répétez et celles que vous épinglez) sont à un clic sur « Une autre », ne coûtent rien et ne quittent jamais votre ordinateur.
-
-</td>
-<td valign="top">
-
-### 🔒 La confidentialité d’abord
-
-Avant l’envoi, les clés, jetons, adresses e-mail et numéros de téléphone probables sont masqués. Le navigateur ne transmet jamais votre brouillon. Les statistiques locales enregistrent des chiffres, pas du texte.
-
-</td>
-<td valign="top">
-
-### 📊 Une consommation transparente
-
-Les requêtes, le taux d’acceptation, le temps de réponse et la consommation de jetons des 7 derniers jours figurent sur la page des paramètres : vous voyez tout de suite si cela vaut le coup.
-
-</td>
-</tr>
-</table>
-
-## Fonctionnalités
-
-### La suggestion est directement dans la zone de saisie
-
-Une fois la réponse de l’assistant terminée, si la zone de saisie est vide, une suggestion grise apparaît exactement là où vous alliez taper. Pas de fenêtre surgissante, pas de place perdue. Dans la fenêtre active, les suggestions apparaissent par défaut même si la zone de saisie n’a pas le focus. Vous pouvez activer « Afficher les prédictions uniquement lorsque la zone de saisie a le focus » dans les paramètres. Cliquez dans la zone de saisie avant d’adopter une suggestion.
-
-<p align="center">
-  <img src="docs/images/suggestion.png" width="720" alt="Une suggestion grise dans la zone de saisie, avec « Tab : accepter » et « Une autre » à droite">
-</p>
-
-| Touche | Effet |
-|---|---|
-| <kbd>Tab</kbd> ou <kbd>→</kbd> | Insère la suggestion lorsque la zone de saisie a le focus. Vous pouvez continuer à la modifier. |
-| <kbd>Échap</kbd> | Masque la suggestion |
-| <kbd>Alt</kbd>+<kbd>\\</kbd> (modifiable) | Prédit immédiatement ; si une suggestion est affichée, passe à une autre. Un seul appel rapporte plusieurs propositions : le changement est instantané |
-| Taper, tout simplement | La suggestion disparaît aussitôt ; elle revient quand vous videz la zone de saisie |
-| Cliquer sur « Tab : accepter » | Insère la suggestion lorsque la zone de saisie a le focus |
-
-Le bouton de pause de la barre de saisie suspend les prédictions de cette conversation jusqu’à leur reprise ou au redémarrage de DSH. Après la reprise, lancez une prédiction manuellement ou attendez la prochaine réponse. La pause est conservée lors de l’actualisation de la page ou de l’enregistrement des paramètres.
-
-### Trois modes, un clic
-
-Pas envie d’étudier chaque option ? Choisissez un mode. Vous pourrez l’annuler ou l’affiner ensuite.
-
-<p align="center">
-  <img src="docs/images/modes.png" width="720" alt="La carte des modes : Équilibré, Économe, Qualité">
-</p>
-
-| Mode | Quand prédit-il | Modèle | Contexte | Limite quotidienne | Pour qui |
-|---|---|---|---|---|---|
-| **Équilibré** (Recommandé) | Automatiquement après chaque réponse | Un modèle précis et économique | 12 messages | 200 requêtes | L’usage quotidien |
-| **Économe** | Uniquement quand vous cliquez sur « Prédire » ou utilisez le raccourci | Un modèle précis et économique | 6 messages | 60 requêtes | Un contrôle strict des coûts |
-| **Qualité** | Automatiquement après chaque réponse | Le modèle de la session | 20 messages | 200 requêtes | Des suggestions plus justes |
-
-Un mode ne modifie que le déclenchement, la stratégie de modèle, la taille du contexte et les limites. Il ne touche ni à l’interrupteur principal, ni au raccourci, ni à la langue, ni aux options de confidentialité, et il conserve le modèle que vous avez saisi.
-
-### Vos propres phrases, à portée de main
-
-Ajoutez les phrases que vous envoyez sans cesse (« continue », « lance les tests ») dans **Paramètres → Prédiction → Origine des suggestions → Phrases épinglées**, classez-les dans l’ordre voulu et cliquez une seule fois sur « Enregistrer ». Elles suivent la suggestion du modèle : « Une autre » (ou <kbd>Alt</kbd>+<kbd>\\</kbd>) parcourt la suggestion du modèle, les messages courts que vous avez répétés dans cette conversation, puis vos phrases épinglées, et ne redemande au modèle qu’après la dernière. Une petite marque sur le bouton indique qu’une phrase est la vôtre. Elles ne coûtent rien, ne quittent jamais votre ordinateur et, quand une prédiction manuelle ne donne rien du côté du modèle, elles sont proposées à la place de « Pas de suggestion cette fois ».
-
-<p align="center">
-  <img src="docs/images/phrases.png" width="720" alt="Une phrase épinglée comme suggestion grise ; le bouton « Une autre » porte une épingle et la position dans la liste">
-</p>
-
-### Neuf langues d’interface
-
-La page des paramètres, les boutons de la zone de saisie et leurs infobulles sont disponibles en 简体中文, English, 日本語, 한국어, Español, Français, Deutsch, Русский, Português. Par défaut, le plugin suit la langue réglée dans DeepSeek Harness ; vous pouvez aussi en choisir une dans **Paramètres → Prédiction → Langue**, et elle s’applique aussitôt. Les suggestions, elles, suivent toujours la langue de votre conversation.
-
-<p align="center">
-  <img src="docs/images/languages.png" width="720" alt="Le haut de la page des paramètres en anglais, japonais, espagnol et russe">
-</p>
-
-### À un clic dans la barre latérale
-
-Cliquez sur « Ajouter un accès à la barre latérale » pour ouvrir Prédiction depuis la barre latérale gauche de DSH. Si vous désépinglez l’accès, vous pouvez l’ouvrir ou le réépingler depuis « Plus ». La version installée s’affiche à côté du titre.
-
-<table>
-<tr>
-<td width="30%" align="center" valign="middle">
-  <img src="docs/images/sidebar-entry.png" width="230" alt="L’entrée « Prédiction » dans la barre latérale gauche">
-</td>
-<td width="70%" align="center" valign="middle">
-  <img src="docs/images/page-header.png" width="560" alt="Le bouton d’accès à la barre latérale à côté du titre et de la version">
-</td>
-</tr>
-</table>
-
-### Votre consommation en un coup d’œil
-
-<details>
-<summary><b>Afficher toute la page des paramètres</b> (bases, modes, origine des suggestions, modèle, 7 derniers jours)</summary>
-<br>
-<p align="center">
-  <img src="docs/images/settings.png" width="640" alt="La page des paramètres complète">
-</p>
-</details>
-
-> La plupart des captures montrent l’interface en chinois. Elles proviennent d’une conversation de démonstration et sont générées par un script de ce dépôt avec un modèle simulé local ; c’est pourquoi le modèle s’appelle Mock et les chiffres sont faibles. En usage réel, les suggestions viennent du modèle que vous avez configuré dans DSH.
-
-## Installation
-
-La plage de versions de DeepSeek Harness pour l’installation est `>=0.2.2-rc.1 <0.3.0`. Le plugin n’a aucune dépendance tierce et ne demande aucune compilation. Une seule commande suffit :
+Installez le module sur DeepSeek Harness `>=0.2.2-rc.1 <0.3.0`. Le paquet GitHub est prêt à l’emploi, sans compilation.
 
 ```powershell
 dsh plugin --profile desktop add github:KungerChen/dsh-next-message-predictor
 ```
 
-Le nom qui suit `--profile` est le profil que vous utilisez au quotidien : `desktop` pour l’application de bureau, `web` pour la version web. Ensuite, **quittez complètement DSH puis relancez-le**.
+Indiquez votre profil DSH (`desktop` par défaut pour l’application, `web` pour la version web). Ensuite, **quittez complètement DSH et rouvrez-le**.
+
+1. Ouvrez **Paramètres → Prédiction**. La prédiction est désactivée à la première installation.
+2. Choisissez un mode dans « Mode ». Dans « Modèle de prédiction », vérifiez le fournisseur et le modèle configurés dans DSH, ou choisissez « Suivre le modèle de la session ». Enregistrez les modifications apportées aux champs du modèle.
+3. Activez « Activer la prédiction » et laissez le champ vide après la réponse. Pour un essai manuel, cliquez sur « Prédire » ou placez le curseur dans le champ vide et appuyez sur <kbd>Alt</kbd>+<kbd>\</kbd>.
+
+Les modes équilibré et économie utilisent par défaut `deepseek-official / deepseek-flash`. Pour choisir un autre modèle précis, saisissez ses identifiants de fournisseur et de modèle dans DSH. Si le modèle configuré est introuvable, DSH peut utiliser son modèle par défaut disponible pour cette prédiction.
 
 <details>
 <summary>La commande <code>dsh</code> est introuvable, ou vous voulez installer depuis un dossier local</summary>
@@ -188,15 +64,7 @@ $dsh = '<dossier d’installation de DSH>\resources\runtime\cli\bin\dsh.cmd'
 & $dsh plugin --profile desktop add '<dossier du plugin>'
 ```
 
-`<dossier d’installation de DSH>` est l’emplacement où DeepSeek Harness est installé ; `<dossier du plugin>` est le dossier que vous venez de cloner.
-
 </details>
-
-Puis trois étapes pour commencer :
-
-1. Ouvrez **Paramètres → Prédiction** et activez « Activer la prédiction ». C’est désactivé par défaut : tant que vous ne l’activez pas, aucune suggestion n’est affichée et aucun modèle n’est appelé.
-2. Choisissez-en un sous « Mode ». Par défaut, c’est « Équilibré ».
-3. Pour y accéder plus vite, cliquez sur « Ajouter un accès à la barre latérale » en haut à droite.
 
 <details>
 <summary>Mise à jour et désinstallation</summary>
@@ -213,46 +81,127 @@ N’activez qu’un seul plugin de prédiction pour la zone de saisie par profil
 
 </details>
 
-## Ce qu’il envoie
+<a name="suggestions"></a>
 
-Chaque prédiction est une seule requête au modèle, sans nouvelle tentative automatique. Elle contient des extraits des **messages de l’utilisateur et des réponses textuelles finales de l’assistant** les plus récents de la session en cours : par défaut, 12 messages et environ 2 000 jetons au maximum.
+## Prévisualiser et accepter
 
-- Ni arguments ni résultats d’outils, ni raisonnement, ni prompt système.
-- Avant l’envoi, les clés privées, clés d’API, jetons, mots de passe, adresses e-mail, numéros de mobile et d’identité probables, ainsi que le nom d’utilisateur dans les chemins du dossier personnel, sont remplacés par des substituts (fondé sur des règles ; il ne peut pas garantir de tout repérer).
-- La page du navigateur n’envoie que des identifiants de session et de tour, jamais le brouillon, les pièces jointes ni le texte de la conversation ; le contenu destiné au modèle est lu par la partie en arrière-plan dans les enregistrements de session de DSH.
-- Vos propres phrases (les messages courts que vous répétez dans une conversation et les « Phrases épinglées ») ne sont utilisées que sur cet ordinateur : aucun modèle n’est appelé pour elles et elles ne lui sont jamais envoyées.
+Une suggestion disponible apparaît en gris dans le champ vide de la fenêtre active. Par défaut, le champ peut l’afficher même sans le focus. Activez « Afficher les prédictions uniquement lorsque la zone de saisie a le focus » pour limiter l’affichage au champ actif. Cette option règle l’affichage des suggestions déjà obtenues.
+
+<p align="center">
+  <img src="docs/images/suggestion.png" width="720" alt="Suggestion grise dans le champ inactif, avec l’indication de cliquer dans le champ avant d’appuyer sur Tab">
+</p>
+
+| Action dans le champ de saisie | Effet |
+|---|---|
+| <kbd>Tab</kbd>, <kbd>→</kbd> au début ou clic sur « Tab : accepter » | Placez d’abord le curseur dans le champ. Le texte s’ajoute au brouillon et reste modifiable avant l’envoi. |
+| <kbd>Échap</kbd> | Masque la suggestion quand le champ a le focus. Vous pouvez ensuite en demander une autre manuellement. |
+| <kbd>Alt</kbd>+<kbd>\</kbd> (configurable), « Prédire » ou « Une autre » | Quand le champ est vide, demande une prédiction ou passe à une autre suggestion. Le raccourci exige aussi le focus dans le champ. |
+| Taper, tout simplement | La saisie masque l’aperçu. En effaçant le brouillon, la suggestion peut réapparaître si elle est encore valable. |
+
+Après l’insertion, <kbd>Ctrl</kbd>+<kbd>Z</kbd> annule et <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> rétablit. La version 0.6.0 répare l’annulation de la première insertion après un envoi dans l’éditeur testé de DSH Desktop `0.2.2-rc.3`. Les autres versions utilisent l’historique natif de DSH. [Rapport de validation](docs/VALIDATION-DISPLAY-SESSION.md)
+
+<a name="session-pause"></a>
+
+## Mettre une conversation en pause
+
+Le bouton Pause de la barre du champ arrête les prédictions automatiques et manuelles pour cette conversation et masque la suggestion. Cliquez sur ▶ pour reprendre, puis demandez une prédiction ou attendez la prochaine réponse.
+
+<p align="center">
+  <img src="docs/images/pause.png" width="720" alt="Conversation en pause et bouton triangulaire de reprise des prédictions">
+</p>
+
+Les fenêtres connectées au même hôte DSH partagent l’état de pause. Il persiste après un rechargement de page ou une sauvegarde des réglages, jusqu’à la reprise ou au redémarrage de DSH. Accepter ou masquer une suggestion fait aussi disparaître les suggestions de ce tour dans les autres vues de la conversation.
+
+<a name="modes"></a>
+
+## Modes de prédiction
+
+<p align="center">
+  <img src="docs/images/modes.png" width="720" alt="La carte des modes : Équilibré, Économe, Qualité">
+</p>
+
+| Mode | Quand prédit-il | Modèle | Messages de contexte max. | Limite de requêtes par jour |
+|---|---|---|---|---|
+| **Équilibré** (Recommandé) | Automatique après une réponse éligible | Modèle précis | 12 | 200 |
+| **Économe** | Sur demande | Modèle précis | 6 | 60 |
+| **Qualité** | Automatique après une réponse éligible | Le modèle de la session | 20 | 200 |
+
+Un mode définit le déclenchement, la stratégie de modèle, le contexte et les limites. Il conserve l’interrupteur général, le raccourci, la langue, les réglages de confidentialité et les identifiants de modèle saisis.
+
+### Suggestions du modèle et phrases personnelles
+
+Après les suggestions du modèle peuvent suivre des messages courts répétés dans cette conversation et vos phrases épinglées. Ajoutez ou réordonnez les phrases dans **Paramètres → Prédiction → Origine des suggestions → Phrases épinglées**, puis enregistrez. « Une autre » parcourt les choix disponibles sans nouvel appel au modèle. Une fois les choix épuisés, en demander un autre peut déclencher une requête au modèle dans la limite des quotas.
+
+Si une demande manuelle ne donne aucun résultat exploitable, le module peut proposer vos phrases s’il y en a. Ce choix de secours ne déclenche aucun appel supplémentaire au modèle.
+
+<p align="center">
+  <img src="docs/images/phrases.png" width="720" alt="Une phrase épinglée comme suggestion grise ; le bouton « Une autre » porte une épingle et la position dans la liste">
+</p>
+
+## Paramètres et utilisation
+
+L’interface est disponible en neuf langues et suit par défaut celle de DSH. Vous pouvez en choisir une autre via « Langue ».
+
+Cliquez sur « Ajouter un accès à la barre latérale » pour ouvrir Prédiction depuis la barre latérale gauche de DSH. Si vous désépinglez l’accès, vous pouvez l’ouvrir ou le réépingler depuis « Plus ». La version installée s’affiche à côté du titre.
+
+<table>
+<tr>
+<td width="30%" align="center" valign="middle">
+  <img src="docs/images/sidebar-entry.png" width="230" alt="L’entrée « Prédiction » dans la barre latérale gauche">
+</td>
+<td width="70%" align="center" valign="middle">
+  <img src="docs/images/page-header.png" width="560" alt="Le bouton d’accès à la barre latérale à côté du titre et de la version">
+</td>
+</tr>
+</table>
+
+« 7 derniers jours » affiche les requêtes, les suggestions affichées et acceptées, le temps de réponse et l’utilisation des jetons.
+
+<details>
+<summary><b>Afficher toute la page des paramètres</b> (bases, modes, origine des suggestions, modèle, 7 derniers jours)</summary>
+
+<p align="center">
+  <img src="docs/images/settings.png" width="640" alt="La page des paramètres complète">
+</p>
+
+<p align="center">
+  <img src="docs/images/languages.png" width="720" alt="Le haut de la page des paramètres en anglais, japonais, espagnol et russe">
+</p>
+
+</details>
+
+> Les captures proviennent d’une interface web isolée, avec une conversation de synthèse et un modèle simulé en local. Les réglages sont fournis à titre d’exemple. Les chiffres d’utilisation et de latence sont illustratifs.
+
+<a name="privacy"></a>
+
+## Confidentialité et requêtes au modèle
+
+Pour prédire, le module envoie des extraits des **messages de l’utilisateur et des réponses finales de l’assistant** de la branche actuelle à un fournisseur configuré dans DSH. Le budget d’entrée par défaut est de 12 messages et d’environ 2000 jetons, consignes comprises.
+
+- Un court résumé des compteurs d’activité du tour précédent est inclus par défaut. Les arguments et sorties des outils, le raisonnement et les instructions système sont exclus.
+- Le masquage par règles est activé par défaut. Il remplace les secrets probables et certains identifiants personnels. Des informations sensibles peuvent lui échapper.
+- Les requêtes de prédiction et d’état du navigateur contiennent des identifiants et des métadonnées. Le serveur lit les messages envoyés dans DSH. Les brouillons, pièces jointes et références sont exclus. Les statistiques locales conservent compteurs, durées et identifiants, sans le texte des conversations ni des suggestions.
+- Les candidats locaux et la liste des phrases épinglées ne sont pas ajoutés à l’invite du modèle. Une phrase déjà envoyée comme message peut figurer dans les extraits récents.
 
 La description complète, et la manière de supprimer les données locales, se trouvent dans [Confidentialité et périmètre des données](docs/PRIVACY.md).
 
 ## Questions fréquentes
 
 <details>
-<summary><b>Va-t-il envoyer un message à ma place ?</b></summary>
+<summary><b>Pourquoi n’y a-t-il pas de suggestion ?</b></summary>
 
-Non. Accepter une suggestion place seulement du texte dans la zone de saisie, par l’interface d’insertion de celle-ci ; le plugin ne contient aucun appel qui valide ou envoie.
-
-</details>
-
-<details>
-<summary><b>Combien cela coûte-t-il ?</b></summary>
-
-Chaque prédiction est un appel très court au modèle (96 jetons de sortie au maximum par défaut). Les limites quotidiennes par défaut sont de 200 requêtes et 500 000 jetons ; une fois atteintes, plus aucun appel n’est fait ce jour-là. Pour dépenser moins, choisissez le mode « Économe », qui ne prédit que sur demande. La consommation réelle figure sous « 7 derniers jours » sur la page des paramètres.
+Vérifiez l’état dans les paramètres. Une conversation en pause, une fenêtre inactive, un brouillon, un menu ouvert ou une composition IME peuvent bloquer l’affichage. Le modèle peut aussi ne rien proposer d’utilisable. Lorsque les conditions sont réunies, essayez une prédiction manuelle depuis le champ vide et actif.
 
 </details>
 
 <details>
-<summary><b>Pourquoi n’y a-t-il parfois aucune suggestion ?</b></summary>
+<summary><b>Quand une requête est-elle facturée ?</b></summary>
 
-C’est voulu : quand le modèle n’est pas sûr de lui, il ne propose rien, et une sortie qui enfreint les règles (trop longue, sur plusieurs lignes, écrite sur le ton de l’assistant) est écartée. La ligne d’état de la page des paramètres indique pourquoi il n’y en a pas à cet instant. Quand vous en voulez une, appuyez sur <kbd>Alt</kbd>+<kbd>\\</kbd>.
-
-</details>
-
-<details>
-<summary><b>Les suggestions sont-elles justes ?</b></summary>
-
-Il est à l’aise avec les relances courtes et claires : confirmer, demander une vérification, demander un détail. Il ne peut pas deviner ce que vous seul savez, et dans ce cas il doit se taire.
+Le coût dépend du fournisseur sollicité et des jetons consommés. Parcourir les choix disponibles et générer une suggestion de secours en local n’ajoute aucune requête au modèle. Le mode économie permet de demander une prédiction au besoin.
 
 </details>
+
+<a name="documentation"></a>
 
 ## Documentation
 
@@ -263,8 +212,6 @@ La documentation détaillée est rédigée en chinois.
 | [Guide d’utilisation](docs/USER-GUIDE.md) | Touches, chaque élément de la page des paramètres, modes, entrée de la barre latérale, questions fréquentes |
 | [Référence de configuration](docs/CONFIGURATION.md) | Valeurs par défaut et plages de toutes les options, valeurs des trois modes |
 | [Confidentialité et périmètre des données](docs/PRIVACY.md) | Ce qui est envoyé, fichiers locaux, suppression des données |
-| [Architecture](docs/ARCHITECTURE.md) | Les moitiés Host et navigateur, le parcours d’une requête, le protocole |
-| [Développement et vérification](docs/DEVELOPMENT.md) | Construction, tests, vérification de bout en bout, régénération des captures |
 | [Compatibilité](docs/COMPATIBILITY.md) | Versions de DSH, périmètre des tests et interfaces de l’hôte |
 | [Journal des modifications](CHANGELOG.md) | Changements de chaque version |
 | [Index de la documentation](docs/README.md) | Tous les documents, y compris les notes antérieures de vérification et d’optimisation |
@@ -272,20 +219,12 @@ La documentation détaillée est rédigée en chinois.
 ## Contribuer
 
 ```powershell
-npm run build   # génère lib/client.js à partir de src/shared + src/client
-npm test        # exécute les tests unitaires et d’intégration
-npm run check   # construction + tests + vérification de la syntaxe
+npm run build
+npm test
+npm run check
 ```
 
-Pas de `npm install`, pas d’outil d’assemblage ; Node.js 22 ou une version ultérieure est requis. Pour ajouter ou corriger une traduction, modifiez `src/client/locales/<langue>.js` ; les tests vérifient que toutes les langues ont les mêmes clés.
-
-## Limites connues
-
-- Vérifié dans l’interface web de DSH `0.2.2-rc.1` et `0.2.2-rc.3`. Sur DSH Desktop `0.2.2-rc.3` sous Windows, un utilisateur a testé avec succès une méthode de saisie chinoise et les raccourcis `Tab`, `Ctrl+Z` et `Ctrl+Shift+Z`. Les autres méthodes de saisie et versions de DSH restent à tester.
-- Enregistrer un réglage amène l’hôte à redémarrer la partie en arrière-plan du plugin ; une prédiction en cours est annulée.
-- Les fenêtres connectées au même hôte DSH vérifient les mises en pause, les adoptions et les masquages toutes les 800 ms lorsqu’elles sont visibles et toutes les 5 secondes lorsqu’elles sont masquées.
-- Le module détecte les fenêtres surgissantes grâce aux marqueurs de menus et de boîtes de dialogue de DSH. Une modification de ces marqueurs peut affecter l’affichage des suggestions.
-- Le module rétablit la possibilité d’annuler la première suggestion adoptée après un envoi dans DSH Desktop `0.2.2-rc.3`. Les autres versions de l’éditeur utilisent le comportement natif de DSH. [Rapport de validation](docs/VALIDATION-DISPLAY-SESSION.md)
+Le développement exige Node.js 22 ou ultérieur. Aucune dépendance d’exécution à installer. `npm run check` vérifie le paquet client, les README générés, les tests et la syntaxe JavaScript. [Développement et vérification](docs/DEVELOPMENT.md) · [Architecture](docs/ARCHITECTURE.md)
 
 ## Licence
 

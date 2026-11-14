@@ -1,6 +1,6 @@
 # 文档索引
 
-## 当前版本（0.5.0）
+## 当前版本
 
 | 文档 | 给谁看 | 内容 |
 |---|---|---|
@@ -10,7 +10,8 @@
 | [ARCHITECTURE.md](ARCHITECTURE.md) | 维护者 | 两半结构、请求流程、协议、扩展点、落盘文件、构建方式 |
 | [DEVELOPMENT.md](DEVELOPMENT.md) | 维护者 | 构建、测试、端到端验证、调试入口、排查 |
 | [RELEASE.md](RELEASE.md) | 维护者 | 版本信息、发布文件、启用到日常 profile 的步骤与回退 |
-| [COMPATIBILITY.md](COMPATIBILITY.md) | 维护者 | 与 DSH 0.2.2-rc.1 的契约矩阵、降级项、版本策略 |
+| [COMPATIBILITY.md](COMPATIBILITY.md) | 使用者 / 维护者 | 安装版本范围、实测宿主、原生编辑器适配与历史契约矩阵 |
+| [VALIDATION-DISPLAY-SESSION.md](VALIDATION-DISPLAY-SESSION.md) | 使用者 / 维护者 | 显示、会话同步、撤销和输入法的验证与边界 |
 | [../CHANGELOG.md](../CHANGELOG.md) | 所有人 | 版本变更 |
 
 ## 历史记录

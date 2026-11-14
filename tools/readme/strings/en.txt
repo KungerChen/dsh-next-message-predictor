@@ -1,143 +1,102 @@
 title: Next Message Prediction
 product: A composer plugin for DeepSeek Harness
-tagline1: When the assistant finishes, your likely next message is already waiting in the input box.
-tagline2: <kbd>Tab</kbd> fills it in, <kbd>Esc</kbd> ignores it, and it <b>never sends anything for you</b>.
+tagline1: See a suggested follow-up in the composer after an eligible reply.
+tagline2: Focus the input and press <kbd>Tab</kbd> to fill your draft. You decide when to send it.
 b_version: version
 b_deps: third-party deps
 b_langs: languages
 b_license: license
-demo_alt: Demo: after the assistant answers, a grey suggestion appears in the input box; another one is requested; Tab fills it in
-demo_caption: A suggestion appears → ask for another if it does not fit → <kbd>Tab</kbd> fills it in, and you can still edit before sending
-why_h: Why use it
-why_p: When you work with an assistant, many replies are short and easy to guess: “continue”, “run the tests”, “show me the changes”. This plugin writes that follow-up ahead of time and leaves it in the input box.
-c1_h: Less typing
-c1_p: Common follow-ups are one key away. You can edit a suggestion after inserting it.
-c2_h: No interruptions
-c2_p: The moment you start typing, the suggestion steps aside. It stays away during IME composition and while a menu is open. When the model is not confident, it offers nothing.
-c3_h: Never oversteps
-c3_p: It only puts text into the input box. There is no “send message” code anywhere in the plugin; sending is always your decision.
-c4_h: Cost under control
-c4_p: A low-cost model by default, with daily limits on requests and tokens. Your own phrases (the short messages you repeat and the ones you pin) are one “{ui:ghost.another}” away, cost nothing and never leave your computer.
-c5_h: Privacy first
-c5_p: Likely keys, tokens, e-mail addresses and phone numbers are masked before sending. The browser never uploads your draft. Local statistics store numbers, not text.
-c6_h: Transparent usage
-c6_p: Requests, acceptance rate, response time and token usage for the last 7 days are on the settings page, so you can see whether it is worth it.
-feat_h: Features
-f1_h: The suggestion is right in the input box
-f1_p: After the assistant finishes, if the input box is empty, a grey suggestion appears exactly where you are about to type. No pop-up, no extra space taken. In the active window, suggestions appear even when the input is unfocused by default. You can turn on “{ui:settings.requireInputFocus}” in settings. Click the input before accepting a suggestion.
-f1_alt: A grey suggestion in the input box, with “{ui:ghost.adopt}” and “{ui:ghost.another}” on the right
-k_th1: Key
-k_th2: What it does
-k1a: <kbd>Tab</kbd> or <kbd>→</kbd>
-k1b: Inserts the suggestion when the input is focused. You can keep editing.
-k2a: <kbd>Esc</kbd>
-k2b: Hides the suggestion
-k3a: <kbd>Alt</kbd>+<kbd>\\</kbd> (configurable)
-k3b: Predicts right now; with a suggestion showing, switches to another one. One call brings back several alternatives, so switching is instant
-k4a: Just type
-k4b: The suggestion disappears at once; it comes back when you clear the input box
-k5a: Click “{ui:ghost.adopt}”
-k5b: Inserts the suggestion while the input is focused
-f1_pause: Click the pause button in the composer toolbar to pause predictions for this conversation until you resume them or restart DSH. After resuming, predict manually or wait for the next reply. Refreshing the page or saving settings retains the pause.
-f2_h: Three modes, one click
-f2_p: Do not want to study every option? Pick a mode. You can undo it or fine-tune it afterwards.
-f2_alt: The mode card: {ui:preset.balanced.name}, {ui:preset.saver.name}, {ui:preset.quality.name}
-m_th1: Mode
-m_th2: Predicts
-m_th3: Model
-m_th4: Context
-m_th5: Daily limit
-m_th6: Good for
-m_auto: Automatically after every reply
-m_manual: Only when you click “{ui:ghost.predict}” or press the shortcut
-m_fixed: A specific low-cost model
-m_session: The session model
-m_ctx12: 12 messages
-m_ctx6: 6 messages
-m_ctx20: 20 messages
-m_cap200: 200 requests
-m_cap60: 60 requests
-m_fit1: Everyday use
-m_fit2: Strict cost control
-m_fit3: Closer-fitting suggestions
-f2_note: A mode only changes the trigger, the model strategy, the context size and the limits. It never touches the master switch, the shortcut, the language or the privacy options, and it keeps the model you entered.
-fp_h: Your own phrases, one step away
-fp_p: Add the lines you send again and again (“continue”, “run the tests”) under **Settings → {ui:settings.nav} → {ui:settings.sourcesTitle} → {ui:settings.pinned}**, put them in the order you like, and press “{ui:settings.save}” once. They follow the model’s suggestion: “{ui:ghost.another}” (or <kbd>Alt</kbd>+<kbd>\\</kbd>) steps through the model’s suggestion, the short messages you have repeated in this conversation and then your pinned phrases, and asks the model again only after the last one. A small mark on the button shows that a phrase is your own. They cost nothing, never leave your computer, and when a manual prediction gets nothing from the model they are offered instead of “{ui:ghost.none}”.
-fp_alt: A pinned phrase as the grey suggestion; the “{ui:ghost.another}” button carries a pin mark and the position in the list
-fl_h: Nine interface languages
-fl_p: The settings page, the buttons in the input box and their tooltips are available in {langs}. By default the plugin follows the language DeepSeek Harness is set to; you can also pick one under **Settings → {ui:settings.nav} → {ui:settings.language}**, and it applies at once. The suggestions themselves always follow the language of your conversation.
-fl_alt: The top of the settings page in English, Japanese, Spanish and Russian
-f3_h: One click away in the sidebar
-f3_p: Click “{ui:settings.sidebarAdd}” to open Prediction from the DSH left sidebar. If you unpin the entry, you can open it or pin it again from More. The version next to the title shows which release is installed.
-f3_alt1: The “{ui:settings.nav}” entry in the left sidebar
-f3_alt2: The sidebar entry button next to the page title and version
-f4_h: See how much you use
-f4_sum: <b>Show the whole settings page</b> (basics, modes, suggestion sources, model, last 7 days)
-f4_alt: The whole settings page
-shots: Most screenshots show the Chinese interface. They come from a demo conversation and are generated by a script in this repository against a local mock model, which is why the model is named Mock and the numbers are small. In real use the suggestions come from the model you configured in DSH.
-inst_h: Installation
-inst_p: The DeepSeek Harness installation range is `>=0.2.2-rc.1 <0.3.0`. The plugin has no third-party dependencies and needs no build step. One command installs it:
-inst_profile: The name after `--profile` is the profile you use every day: `desktop` for the desktop app, `web` for the web version. Afterwards **quit DSH completely and start it again**.
+inst_h: Quick start
+f1_h: Preview and adopt
+pause_h: Pause a conversation
+f2_h: Prediction modes
+send_h: Privacy and model requests
+docs_h: Documentation
+demo_alt: DSH composer preview with the input unfocused, cycling suggestions and inserting one into the draft after focusing
+inst_p: Installation requires DeepSeek Harness `{fact:dsh_range}`. The GitHub package is ready to install without a build step.
+inst_profile: Use the profile you open in DSH (`desktop` or `web` by default). Then **quit DSH completely and reopen it**.
+s1: Open **Settings → {ui:settings.nav}**. Prediction is off on a fresh install.
+s2: Choose a mode under “{ui:preset.title}”. In “{ui:settings.routeTitle}”, check that your DSH setup can use the proposed provider and model, or select “{ui:settings.routeModeSession}”. Save changes to the model fields.
+s3: Turn on “{ui:settings.enabled}”. After the assistant replies, leave the input empty. To try it manually, click “{ui:ghost.predict}” or focus the empty input and press <kbd>Alt</kbd>+<kbd>\</kbd>.
+route_note: Balanced and Saver default to `{fact:default_provider} / {fact:default_model}`. To use a different specific model, enter its DSH provider and model IDs. If DSH cannot resolve the configured model, a usable DSH default model may be used for that prediction.
 inst_d_sum: The <code>dsh</code> command is not found, or you want to install from a local folder
 inst_d_p: The `dsh` command line lives in the DeepSeek Harness installation folder and can be called by its full path. To change the code yourself, clone the repository and install from the local folder:
 ph_dsh: DSH install folder
 ph_plugin: plugin folder
-inst_d_tail: `<DSH install folder>` is where DeepSeek Harness is installed; `<plugin folder>` is the folder you just cloned.
-steps_p: Then three steps to get going:
-s1: Open **Settings → {ui:settings.nav}** and switch on “{ui:settings.enabled}”. It is off by default: until you enable it, no suggestion is shown and no model is called.
-s2: Pick one under “{ui:preset.title}”. The default is “{ui:preset.balanced.name}”.
-s3: For quicker access, click “{ui:settings.sidebarAdd}” in the top right corner.
 upd_sum: Updating and uninstalling
 upd_p: **Update**: if you installed from GitHub, uninstall and run the install command again; if you installed from a local folder, run `git pull` there. Then restart DSH. Refreshing the page is not enough: the page would be new while the background half is still old, and the settings page would report a version mismatch.
 unin: **Uninstall**:
 conflict: Enable only one composer-prediction plugin per profile. When another one is detected, this plugin pauses itself and says why on the settings page.
-send_h: What it sends
-send_p: Each prediction is a single request to the model, with no automatic retry. It contains excerpts of the most recent **user messages and the assistant’s final text answers** in the current session: at most 12 messages and about 2,000 tokens by default.
-sb1: No tool-call arguments or output, no reasoning, no system prompt.
-sb2: Before sending, likely private keys, API keys, tokens, passwords, e-mail addresses, mobile and identity numbers, and the user name in home-folder paths are replaced with placeholders (rule-based; it cannot promise to catch everything).
-sb3: The browser page sends only session and turn identifiers, never the draft, attachments or any conversation text; the content for the model is read by the background half from DSH’s own session records.
-sb4: Your own phrases (the short messages you repeat in a session and your pinned phrases, “{ui:settings.pinned}”) stay on this computer: no model is called for them and they are never sent to the model.
+f1_p: An available suggestion appears as grey text in the empty composer of the active window. By default it can appear while the input is unfocused. Turn on “{ui:settings.requireInputFocus}” to display it only while the input is focused. This option controls how existing suggestions are displayed.
+f1_alt: A grey suggestion in the unfocused composer with a prompt to focus the input before pressing Tab
+k_th1: Action in the composer
+k_th2: What it does
+k1a: <kbd>Tab</kbd>, <kbd>→</kbd> at the start, or click “{ui:ghost.adopt}”
+k1b: Focus the input first. This fills the draft so you can edit it before sending.
+k2a: <kbd>Esc</kbd>
+k2b: With focus in the input, hide the current suggestion. You can still ask for another manually.
+k3a: <kbd>Alt</kbd>+<kbd>\</kbd> (configurable), “{ui:ghost.predict}” or “{ui:ghost.another}”
+k3b: With the input empty, request a prediction or cycle through suggestions. The shortcut also requires input focus.
+k4a: Just type
+k4b: Writing a draft hides the preview. Clearing the draft can restore the same suggestion while it is still valid.
+undo: After adopting, use <kbd>Ctrl</kbd>+<kbd>Z</kbd> to undo and <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> to redo. Version 0.6.0 fixes undo for the first adoption after sending on the editor tested with DSH Desktop `0.2.2-rc.3`. Other editor versions use DSH’s native history. [Validation report](docs/VALIDATION-DISPLAY-SESSION.md)
+f1_pause: Use the pause control in the composer toolbar to stop automatic and manual prediction for this conversation and clear its current suggestion. Click ▶ to resume, then request a prediction manually or wait for a new reply.
+pause_alt: The composer of a paused conversation, with the control to resume predictions
+f1_sync: Windows connected to the same DSH host share the pause state. It survives page reloads and saving settings until you resume or restart DSH. Adopting or dismissing a suggestion also hides that turn’s suggestions in other views of the same conversation.
+f2_alt: The mode card: {ui:preset.balanced.name}, {ui:preset.saver.name}, {ui:preset.quality.name}
+m_th1: Mode
+m_th2: Predicts
+m_th3: Model
+m_th4: Max. context messages
+m_th5: Daily request limit
+m_auto: Automatically after an eligible reply
+m_fixed: Specific model
+m_manual: Manual only
+m_session: The session model
+f2_note: Modes change when prediction runs, the model strategy, context and limits. They preserve the master switch, shortcut, language, privacy options and model IDs you entered.
+fp_h: Model suggestions and your own phrases
+fp_p: A prediction can offer model suggestions, followed by short messages you repeated in this conversation and your pinned phrases. Add or reorder pinned phrases in **Settings → {ui:settings.nav} → {ui:settings.sourcesTitle} → {ui:settings.pinned}** and save. “{ui:ghost.another}” cycles through available choices without an additional model call. After the existing choices run out, asking for another may call the model, subject to the limits.
+fp_fallback: When the model has no usable result for a manual request, the plugin can offer your own phrases if available. Generating that fallback makes no additional model call.
+fp_alt: A pinned phrase as the grey suggestion; the “{ui:ghost.another}” button carries a pin mark and the position in the list
+settings_h: Settings and usage
+fl_p: The plugin has nine interface languages. It follows DSH by default. To override it, use “{ui:settings.language}” in the plugin settings. This setting controls the interface language.
+f3_p: Click “{ui:settings.sidebarAdd}” to open Prediction from the DSH left sidebar. If you unpin the entry, you can open it or pin it again from More. The version next to the title shows which release is installed.
+f3_alt1: The “{ui:settings.nav}” entry in the left sidebar
+f3_alt2: The sidebar entry button next to the page title and version
+usage: The “{ui:settings.resultTitle}” section shows requests, displayed and accepted suggestions, latency and token usage. Use it to check daily limits and how often suggestions are useful.
+f4_sum: <b>Show the whole settings page</b> (basics, modes, suggestion sources, model, last 7 days)
+f4_alt: The whole settings page
+fl_alt: The top of the settings page in English, Japanese, Spanish and Russian
+shots: Screenshots use an isolated Web UI, a synthetic conversation and a local mock model. The settings show an example configuration. The usage and timing figures are for illustration.
+send_p: A model prediction sends recent excerpts of **user messages and final assistant replies** from the active conversation branch to a model provider configured in DSH. The default input budget is {fact:default_context_messages} messages and about {fact:default_input_tokens} tokens, including the prediction instructions.
+sb1: A short summary of the previous turn’s activity counts is included by default. Tool arguments, tool output, reasoning and system prompts are excluded.
+sb2: Rule-based masking is enabled by default and replaces likely secrets and some personal identifiers. It can miss sensitive text.
+sb3: Prediction and session-state requests from the browser carry identifiers and metadata. The backend reads sent messages from DSH. Drafts, attachments and references are excluded. Local statistics store counts, timings and identifiers without conversation or suggestion text.
+sb4: Local candidates and the pinned-phrase list are not added to the model prompt. A phrase you already sent as a message can still appear as recent conversation context.
 send_more: The full description, and how to delete the local data, is in [Privacy and data boundaries](docs/PRIVACY.md).
 faq_h: FAQ
-q1: Will it send a message for me?
-a1: No. Accepting a suggestion only puts text into the input box, through the input box’s own insertion interface; the plugin contains no call that submits or sends.
-q2: How much does it cost?
-a2: Each prediction is one very short model call (at most 96 output tokens by default). The default daily limits are 200 requests and 500,000 tokens; once reached, no more calls are made that day. To spend less, choose the “{ui:preset.saver.name}” mode, which predicts only when you ask. Actual usage is shown under “{ui:settings.resultTitle}” on the settings page.
-q3: Why is there sometimes no suggestion?
-a3: By design: when the model is not confident it offers nothing, and output that breaks the rules (too long, several lines, written in the assistant’s voice) is discarded. The state line on the settings page says why there is none right now. When you want one, press <kbd>Alt</kbd>+<kbd>\\</kbd>.
-q4: Are the suggestions accurate?
-a4: It is good at short, clear follow-ups: confirming, asking for verification, asking for details. It cannot guess what only you know, and in that case it should stay silent.
-docs_h: Documentation
+q1: Why did no suggestion appear?
+a1: Check the current status in the settings. A paused conversation, an inactive window, a nonempty draft, a menu or active IME composition can block display. The model can also return no usable suggestion. Try manual prediction from the focused, empty input when the conversation is eligible.
+q2: When are requests charged?
+a2: Usage depends on the model provider and the tokens used in each dispatched request. Cycling through existing choices and building a local fallback add no model request. Use Saver mode to request predictions only when you need one.
 docs_note: The detailed documentation is written in Chinese.
 d_th1: Document
 d_th2: Contents
 d1: User guide
-d1c: Keys, every item on the settings page, modes, the sidebar entry, FAQ
+d1c: Settings, keyboard controls, modes and troubleshooting
 d2: Configuration reference
 d2c: Defaults and ranges of all options, the values of the three modes
 d3: Privacy and data boundaries
 d3c: What is sent, local files, how to delete data
-d4: Architecture
-d4c: The Host and browser halves, the request flow, the protocol
-d5: Development and verification
-d5c: Build, tests, end-to-end verification, regenerating the screenshots
 d6: Compatibility
-d6c: DSH versions, test coverage and host interfaces
+d6c: Supported installation range, tested hosts and native editor behavior
 d7: Changelog
 d7c: Changes in each version
 d8: Documentation index
 d8c: All documents, including earlier verification and optimisation notes
 dev_h: Contributing
-dev_c1: generates lib/client.js from src/shared + src/client
-dev_c2: runs the unit and integration tests
-dev_c3: build + test + syntax check
-dev_p: No `npm install` and no bundler; Node.js 22 or later is required. To add or correct a translation, edit `src/client/locales/<language>.js`; the tests check that every language has the same keys.
-lim_h: Known limitations
-l1: Verified in the Web UI of DSH `0.2.2-rc.1` and `0.2.2-rc.3`. On DSH Desktop `0.2.2-rc.3` for Windows, a user successfully tested a Chinese input method and the `Tab`, `Ctrl+Z`, and `Ctrl+Shift+Z` shortcuts. Other input methods and DSH versions still need testing.
-l2: Saving a setting makes the host restart the background half of the plugin; a prediction in progress is cancelled.
-l3: Windows connected to the same DSH Host poll for pauses, adoption and dismissal every 800 ms when visible and every 5 seconds when hidden.
-l4: The plugin detects pop-ups through DSH’s menu and dialog markers. Changes to these markers may affect when suggestions appear.
-l5: The plugin restores Undo for the first accepted suggestion after sending on DSH Desktop `0.2.2-rc.3`. Other editor versions use DSH’s native Undo behavior.
-l5_link: Validation report
+dev_p: Development requires Node.js 22 or later. The repository has no runtime dependencies to install. `npm run check` checks the bundle, generated READMEs, tests and JavaScript syntax.
+d5: Development and verification
+d4: Architecture
 lic_h: License
 lic_p: Released under the [MIT License](LICENSE). The choice of extension points and the “grey suggestion + Tab to accept + Esc to hide” interaction were informed by `dsh-composer-prediction`, also MIT-licensed; none of its code was copied. See [NOTICE](NOTICE).

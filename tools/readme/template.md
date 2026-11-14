@@ -20,72 +20,65 @@
 {{badges}}
 </p>
 
+<div align="center">
+
+[{{inst_h}}](#quick-start) · [{{f1_h}}](#suggestions) · [{{pause_h}}](#session-pause) · [{{f2_h}}](#modes) · [{{send_h}}](#privacy) · [{{docs_h}}](#documentation)
+
+</div>
+
 <p align="center">
   <img src="docs/images/demo.png" width="760" alt="{{demo_alt}}">
 </p>
 
-<p align="center">
-  <sub>{{demo_caption}}</sub>
-</p>
+<a name="quick-start"></a>
 
----
+## {{inst_h}}
 
-## {{why_h}}
+{{inst_p}}
 
-{{why_p}}
+```powershell
+dsh plugin --profile desktop add github:{fact:repo}
+```
 
-<table>
-<tr>
-<td width="33%" valign="top">
+{{inst_profile}}
 
-### ⌨️ {{c1_h}}
+1. {{s1}}
+2. {{s2}}
+3. {{s3}}
 
-{{c1_p}}
+{{route_note}}
 
-</td>
-<td width="33%" valign="top">
+<details>
+<summary>{{inst_d_sum}}</summary>
 
-### 🤫 {{c2_h}}
+{{inst_d_p}}
 
-{{c2_p}}
+```powershell
+git clone https://github.com/{fact:repo}.git
+$dsh = '<{{ph_dsh}}>\resources\runtime\cli\bin\dsh.cmd'
+& $dsh plugin --profile desktop add '<{{ph_plugin}}>'
+```
 
-</td>
-<td width="33%" valign="top">
+</details>
 
-### 🛡️ {{c3_h}}
+<details>
+<summary>{{upd_sum}}</summary>
 
-{{c3_p}}
+{{upd_p}}
 
-</td>
-</tr>
-<tr>
-<td valign="top">
+{{unin}}
 
-### 💰 {{c4_h}}
+```powershell
+dsh plugin --profile desktop remove {fact:package}
+```
 
-{{c4_p}}
+{{conflict}}
 
-</td>
-<td valign="top">
+</details>
 
-### 🔒 {{c5_h}}
+<a name="suggestions"></a>
 
-{{c5_p}}
-
-</td>
-<td valign="top">
-
-### 📊 {{c6_h}}
-
-{{c6_p}}
-
-</td>
-</tr>
-</table>
-
-## {{feat_h}}
-
-### {{f1_h}}
+## {{f1_h}}
 
 {{f1_p}}
 
@@ -99,23 +92,34 @@
 | {{k2a}} | {{k2b}} |
 | {{k3a}} | {{k3b}} |
 | {{k4a}} | {{k4b}} |
-| {{k5a}} | {{k5b}} |
+
+{{undo}}
+
+<a name="session-pause"></a>
+
+## {{pause_h}}
 
 {{f1_pause}}
 
-### {{f2_h}}
+<p align="center">
+  <img src="docs/images/pause.png" width="720" alt="{{pause_alt}}">
+</p>
 
-{{f2_p}}
+{{f1_sync}}
+
+<a name="modes"></a>
+
+## {{f2_h}}
 
 <p align="center">
   <img src="docs/images/modes.png" width="720" alt="{{f2_alt}}">
 </p>
 
-| {{m_th1}} | {{m_th2}} | {{m_th3}} | {{m_th4}} | {{m_th5}} | {{m_th6}} |
-|---|---|---|---|---|---|
-| **{ui:preset.balanced.name}** ({ui:preset.recommended}) | {{m_auto}} | {{m_fixed}} | {{m_ctx12}} | {{m_cap200}} | {{m_fit1}} |
-| **{ui:preset.saver.name}** | {{m_manual}} | {{m_fixed}} | {{m_ctx6}} | {{m_cap60}} | {{m_fit2}} |
-| **{ui:preset.quality.name}** | {{m_auto}} | {{m_session}} | {{m_ctx20}} | {{m_cap200}} | {{m_fit3}} |
+| {{m_th1}} | {{m_th2}} | {{m_th3}} | {{m_th4}} | {{m_th5}} |
+|---|---|---|---|---|
+| **{ui:preset.balanced.name}** ({ui:preset.recommended}) | {{m_auto}} | {{m_fixed}} | {fact:balanced_messages} | {fact:balanced_requests} |
+| **{ui:preset.saver.name}** | {{m_manual}} | {{m_fixed}} | {fact:saver_messages} | {fact:saver_requests} |
+| **{ui:preset.quality.name}** | {{m_auto}} | {{m_session}} | {fact:quality_messages} | {fact:quality_requests} |
 
 {{f2_note}}
 
@@ -123,19 +127,15 @@
 
 {{fp_p}}
 
+{{fp_fallback}}
+
 <p align="center">
   <img src="docs/images/phrases.png" width="720" alt="{{fp_alt}}">
 </p>
 
-### {{fl_h}}
+## {{settings_h}}
 
 {{fl_p}}
-
-<p align="center">
-  <img src="docs/images/languages.png" width="720" alt="{{fl_alt}}">
-</p>
-
-### {{f3_h}}
 
 {{f3_p}}
 
@@ -150,63 +150,24 @@
 </tr>
 </table>
 
-### {{f4_h}}
+{{usage}}
 
 <details>
 <summary>{{f4_sum}}</summary>
-<br>
+
 <p align="center">
   <img src="docs/images/settings.png" width="640" alt="{{f4_alt}}">
 </p>
+
+<p align="center">
+  <img src="docs/images/languages.png" width="720" alt="{{fl_alt}}">
+</p>
+
 </details>
 
 > {{shots}}
 
-## {{inst_h}}
-
-{{inst_p}}
-
-```powershell
-dsh plugin --profile desktop add github:KungerChen/dsh-next-message-predictor
-```
-
-{{inst_profile}}
-
-<details>
-<summary>{{inst_d_sum}}</summary>
-
-{{inst_d_p}}
-
-```powershell
-git clone https://github.com/KungerChen/dsh-next-message-predictor.git
-$dsh = '<{{ph_dsh}}>\resources\runtime\cli\bin\dsh.cmd'
-& $dsh plugin --profile desktop add '<{{ph_plugin}}>'
-```
-
-{{inst_d_tail}}
-
-</details>
-
-{{steps_p}}
-
-1. {{s1}}
-2. {{s2}}
-3. {{s3}}
-
-<details>
-<summary>{{upd_sum}}</summary>
-
-{{upd_p}}
-
-{{unin}}
-
-```powershell
-dsh plugin --profile desktop remove dsh-next-message-predictor
-```
-
-{{conflict}}
-
-</details>
+<a name="privacy"></a>
 
 ## {{send_h}}
 
@@ -235,19 +196,7 @@ dsh plugin --profile desktop remove dsh-next-message-predictor
 
 </details>
 
-<details>
-<summary><b>{{q3}}</b></summary>
-
-{{a3}}
-
-</details>
-
-<details>
-<summary><b>{{q4}}</b></summary>
-
-{{a4}}
-
-</details>
+<a name="documentation"></a>
 
 ## {{docs_h}}
 
@@ -258,8 +207,6 @@ dsh plugin --profile desktop remove dsh-next-message-predictor
 | [{{d1}}](docs/USER-GUIDE.md) | {{d1c}} |
 | [{{d2}}](docs/CONFIGURATION.md) | {{d2c}} |
 | [{{d3}}](docs/PRIVACY.md) | {{d3c}} |
-| [{{d4}}](docs/ARCHITECTURE.md) | {{d4c}} |
-| [{{d5}}](docs/DEVELOPMENT.md) | {{d5c}} |
 | [{{d6}}](docs/COMPATIBILITY.md) | {{d6c}} |
 | [{{d7}}](CHANGELOG.md) | {{d7c}} |
 | [{{d8}}](docs/README.md) | {{d8c}} |
@@ -267,20 +214,12 @@ dsh plugin --profile desktop remove dsh-next-message-predictor
 ## {{dev_h}}
 
 ```powershell
-npm run build   # {{dev_c1}}
-npm test        # {{dev_c2}}
-npm run check   # {{dev_c3}}
+npm run build
+npm test
+npm run check
 ```
 
-{{dev_p}}
-
-## {{lim_h}}
-
-- {{l1}}
-- {{l2}}
-- {{l3}}
-- {{l4}}
-- {{l5}} [{{l5_link}}](docs/VALIDATION-DISPLAY-SESSION.md)
+{{dev_p}} [{{d5}}](docs/DEVELOPMENT.md) · [{{d4}}](docs/ARCHITECTURE.md)
 
 ## {{lic_h}}
 

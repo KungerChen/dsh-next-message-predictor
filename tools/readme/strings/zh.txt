@@ -1,0 +1,102 @@
+title: 下一条消息预测
+product: DeepSeek Harness 输入框插件
+tagline1: 助手答完后，可在输入框里预览下一条消息的建议。
+tagline2: 聚焦输入框后按 <kbd>Tab</kbd> 填入草稿，发送由你决定。
+b_version: 版本
+b_deps: 第三方依赖
+b_langs: 界面语言
+b_license: 许可
+inst_h: 快速开始
+f1_h: 预览和采纳
+pause_h: 暂停当前会话
+f2_h: 预测模式
+send_h: 隐私和模型请求
+docs_h: 文档
+demo_alt: DSH 输入框中的失焦预览、聚焦后切换建议以及填入草稿
+inst_p: DeepSeek Harness 安装版本范围为 `{fact:dsh_range}`。从 GitHub 安装即可使用，无需构建。
+inst_profile: 使用日常打开的 profile（默认桌面版为 `desktop`，Web 版为 `web`）。安装后**完全退出并重新打开 DSH**。
+s1: 打开 **设置 → {ui:settings.nav}**。首次安装时，预测默认关闭。
+s2: 在“{ui:preset.title}”中选一种模式，到“{ui:settings.routeTitle}”确认 DSH 中已配置所填的服务商与模型，或者选择“{ui:settings.routeModeSession}”。修改模型文本框后请保存。
+s3: 打开“{ui:settings.enabled}”，等助手答完后保持输入框为空。也可以点“{ui:ghost.predict}”，或聚焦空输入框后按 <kbd>Alt</kbd>+<kbd>\</kbd> 手动试用。
+route_note: 均衡和省流默认使用 `{fact:default_provider} / {fact:default_model}`。想使用其他指定模型时，请填写 DSH 中对应的服务商 ID 和模型 ID。指定模型无法解析时，本次预测可能改用可用的 DSH 默认模型。
+inst_d_sum: 找不到 <code>dsh</code> 命令，或要从本地目录安装
+inst_d_p: 可直接调用 DeepSeek Harness 安装目录中的命令行。要修改代码，先克隆仓库，再从本地目录安装。
+ph_dsh: DSH 安装目录
+ph_plugin: 插件目录
+upd_sum: 更新与卸载
+upd_p: **更新**。从 GitHub 安装的插件可先卸载，再执行安装命令。本地目录安装的插件可在该目录执行 `git pull`。更新后完全退出并重新打开 DSH。
+unin: **卸载**。
+conflict: 同一个 profile 只启用一个输入框预测插件。检测到另一个同类插件时，本插件会暂停，并在设置页说明原因。
+f1_p: 有建议时，前台窗口的空输入框会显示灰字预览。默认即使输入框失焦也能看到。开启“{ui:settings.requireInputFocus}”后，只有输入框聚焦时才显示。此选项只控制已有建议的显示。
+f1_alt: 失焦的输入框显示灰字建议，以及点击输入框后按 Tab 采纳的提示
+k_th1: 输入框操作
+k_th2: 效果
+k1a: <kbd>Tab</kbd>、光标在开头时按 <kbd>→</kbd>，或点击“{ui:ghost.adopt}”
+k1b: 先聚焦输入框。采纳后建议成为草稿，可继续修改再发送。
+k2a: <kbd>Esc</kbd>
+k2b: 聚焦输入框时隐藏当前建议，之后仍可手动请求新的建议。
+k3a: <kbd>Alt</kbd>+<kbd>\</kbd>（可改）、“{ui:ghost.predict}”或“{ui:ghost.another}”
+k3b: 输入框为空时手动预测或换一条。使用快捷键还需聚焦输入框。
+k4a: 直接打字
+k4b: 开始输入后，预览会隐藏。清空草稿时，如果原建议仍然有效，它可以再次显示。
+undo: 采纳后用 <kbd>Ctrl</kbd>+<kbd>Z</kbd> 撤销、<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> 重做。0.6.0 修复了已验证的 DSH Desktop `0.2.2-rc.3` 编辑器中发送后首次采纳的撤销问题。其他编辑器版本沿用 DSH 的原生撤销行为。 [验证报告](docs/VALIDATION-DISPLAY-SESSION.md)
+f1_pause: 输入框工具栏的暂停按钮会停止本会话的自动和手动预测，并清除当前建议。点击 ▶ 恢复后，可以手动预测或等待新一轮回答结束。
+pause_alt: 已暂停预测的会话及输入框工具栏中的恢复按钮
+f1_sync: 连接同一 DSH 后台的窗口共享暂停状态。刷新页面或保存设置后仍会保留，直到你恢复预测或重启 DSH。在一个窗口采纳或隐藏建议时，同会话其他视图也会隐藏同一回合的建议。
+f2_alt: 预测模式卡片中的均衡、省流和高质量选项
+m_th1: 模式
+m_th2: 何时预测
+m_th3: 模型
+m_th4: 上下文消息上限
+m_th5: 每日请求上限
+m_auto: 满足条件的回答结束后自动
+m_fixed: 指定模型
+m_manual: 仅手动
+m_session: 跟随会话模型
+f2_note: 模式调整触发方式、模型策略、上下文和上限，保留总开关、快捷键、界面语言、隐私选项和已填的模型 ID。
+fp_h: 模型建议和自己的短语
+fp_p: 模型候选之后，可以接上你在本会话中重复发过的短消息和固定短语。在 **设置 → {ui:settings.nav} → {ui:settings.sourcesTitle} → {ui:settings.pinned}** 添加或排序后保存。点击“{ui:ghost.another}”可在已有候选中切换，无需再次调用模型。已有候选用完后，再换一条可能请求模型，仍受额度限制。
+fp_fallback: 手动预测没有可用的模型结果时，如果有自己的短语，插件可以直接提供这些短语。提供本机回退候选无需额外调用模型。
+fp_alt: 输入框中的固定短语候选，“换一条”按钮显示图钉和候选位置
+settings_h: 设置与用量
+fl_p: 插件支持九种界面语言，默认跟随 DSH。也可在插件设置中单独选择“{ui:settings.language}”。该选项控制界面文案的语言。
+f3_p: 点击“{ui:settings.sidebarAdd}”，即可从 DSH 左侧栏打开“{ui:settings.nav}”。取消固定后，可以在“更多”中打开或重新固定。设置标题旁显示已安装的版本。
+f3_alt1: DSH 左侧栏中的“消息预测”入口
+f3_alt2: 消息预测标题、版本号和侧栏入口设置
+usage: “{ui:settings.resultTitle}”显示请求次数、已展示和已采纳的建议、响应时间及 token 用量，可用来查看每日额度和建议的使用情况。
+f4_sum: 展开查看完整设置页和多语言示例
+f4_alt: 包含基础、模式、建议来源、模型和统计的设置页
+fl_alt: 插件设置页顶部的多语言界面示例
+shots: 截图取自隔离的 Web 界面，使用合成会话和本机模拟模型，设置为示例配置。图中的用量和耗时仅供演示。
+send_p: 模型预测将当前会话分支最近的**用户消息和助手最终回答**片段发送给 DSH 配置的模型服务商。默认上限为 {fact:default_context_messages} 条消息、约 {fact:default_input_tokens} token，包含预测任务说明。
+sb1: 默认附带上一回合的简短活动计数摘要。工具调用参数、输出、推理和系统提示不包含在内。
+sb2: 默认开启规则遮蔽，替换疑似密钥及部分个人标识。规则可能漏掉敏感文字。
+sb3: 浏览器的预测与会话状态请求携带标识和元数据。后台从 DSH 读取已发送的消息；草稿、附件和引用不包含在内。本地统计记录次数、耗时和标识，不保存对话或建议正文。
+sb4: 本机候选与固定短语列表不会附加到模型提示中。已经作为消息发出的短语仍可能出现在最近对话片段里。
+send_more: 完整数据范围和删除方法见 [隐私与数据边界](docs/PRIVACY.md)。
+faq_h: 常见问题
+q1: 为什么没有建议？
+a1: 先看设置页的“当前状态”。会话暂停、窗口不在前台、草稿非空、菜单打开或输入法正在组词都可能阻止显示。模型也可能不给可用建议。满足条件时，可在聚焦的空输入框中手动预测。
+q2: 预测什么时候会计费？
+a2: 费用取决于实际调用的服务商及 token 用量。切换已有候选或生成本机回退候选不会新增模型请求。希望只在需要的时候预测，可以使用省流模式。
+docs_note: 宿主版本和桌面验证范围见 [0.6.0 验证报告](docs/VALIDATION-DISPLAY-SESSION.md)。
+d_th1: 文档
+d_th2: 内容
+d1: 使用指南
+d1c: 设置、按键、模式与排查方法
+d2: 配置参考
+d2c: 配置项默认值、取值范围和模式预设
+d3: 隐私与数据边界
+d3c: 发送范围、本地文件和数据删除
+d6: 兼容性
+d6c: 安装范围、实测宿主与原生编辑器行为
+d7: 更新日志
+d7c: 各版本变更
+d8: 文档索引
+d8c: 当前文档和历史验证记录
+dev_h: 参与开发
+dev_p: 开发需要 Node.js 22 或更高版本，无需安装运行依赖。`npm run check` 检查客户端包、生成的 README、测试和 JavaScript 语法。
+d5: 开发与验证
+d4: 架构
+lic_h: 许可
+lic_p: 以 [MIT 许可证](LICENSE) 发布。扩展点和键盘交互参考了同为 MIT 许可的 `dsh-composer-prediction`。来源说明见 [NOTICE](NOTICE)。
