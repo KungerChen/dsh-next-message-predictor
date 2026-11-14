@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/versi%C3%B3n-0.5.0-4d6bfe" alt="versión 0.5.0">
+  <img src="https://img.shields.io/badge/versi%C3%B3n-0.5.1-4d6bfe" alt="versión 0.5.1">
   <img src="https://img.shields.io/badge/DeepSeek%20Harness-0.2.2--rc.1-1f2937" alt="DeepSeek Harness 0.2.2-rc.1">
   <img src="https://img.shields.io/badge/idiomas-9-8250df" alt="idiomas 9">
   <img src="https://img.shields.io/badge/dependencias%20externas-0-2ea44f" alt="dependencias externas 0">
@@ -139,7 +139,7 @@ La página de ajustes, los botones del cuadro de entrada y sus descripciones est
 
 ### A un clic en la barra lateral
 
-Pulsa «Añadir a la barra lateral» y aparecerá una entrada en la barra lateral izquierda de DSH; a partir de ahí, consultar el estado o cambiar de modo ya no requiere pasar por Ajustes. La versión junto al título te dice siempre cuál tienes instalada.
+Pulsa «Añadir acceso a la barra lateral» para abrir Predicción desde la barra lateral izquierda de DSH. Si quitas la fijación, puedes abrir el acceso o volver a fijarlo desde «Más». La versión instalada aparece junto al título.
 
 <table>
 <tr>
@@ -147,7 +147,7 @@ Pulsa «Añadir a la barra lateral» y aparecerá una entrada en la barra latera
   <img src="docs/images/sidebar-entry.png" width="230" alt="La entrada «Predicción» en la barra lateral izquierda">
 </td>
 <td width="70%" align="center" valign="middle">
-  <img src="docs/images/page-header.png" width="560" alt="La versión junto al título de la página y el botón «Quitar de la barra lateral»">
+  <img src="docs/images/page-header.png" width="560" alt="El botón de acceso a la barra lateral junto al título de la página y la versión">
 </td>
 </tr>
 </table>
@@ -166,7 +166,7 @@ Pulsa «Añadir a la barra lateral» y aparecerá una entrada en la barra latera
 
 ## Instalación
 
-Requiere DeepSeek Harness `0.2.2-rc.1` (`>=0.2.2-rc.1 <0.3.0`). El plugin no tiene dependencias externas ni necesita compilarse. Se instala con un solo comando:
+El rango de instalación de DeepSeek Harness es `>=0.2.2-rc.1 <0.3.0`. El plugin no tiene dependencias externas ni necesita compilarse. Se instala con un solo comando:
 
 ```powershell
 dsh plugin --profile desktop add github:KungerChen/dsh-next-message-predictor
@@ -193,7 +193,7 @@ Después, tres pasos para empezar:
 
 1. Abre **Ajustes → Predicción** y activa «Activar la predicción». Viene desactivado: hasta que lo actives no se muestra ninguna sugerencia ni se llama a ningún modelo.
 2. Elige uno en «Modo». El predeterminado es «Equilibrado».
-3. Para tenerlo más a mano, pulsa «Añadir a la barra lateral» en la esquina superior derecha.
+3. Para tenerlo más a mano, pulsa «Añadir acceso a la barra lateral» en la esquina superior derecha.
 
 <details>
 <summary>Actualizar y desinstalar</summary>
@@ -262,7 +262,7 @@ La documentación detallada está escrita en chino.
 | [Privacidad y límites de los datos](docs/PRIVACY.md) | Qué se envía, archivos locales, cómo borrar los datos |
 | [Arquitectura](docs/ARCHITECTURE.md) | Las mitades Host y navegador, el flujo de las solicitudes, el protocolo |
 | [Desarrollo y verificación](docs/DEVELOPMENT.md) | Compilación, pruebas, verificación de extremo a extremo, regenerar las capturas |
-| [Compatibilidad](docs/COMPATIBILITY.md) | El contrato confirmado con DSH 0.2.2-rc.1 y las alternativas |
+| [Compatibilidad](docs/COMPATIBILITY.md) | Versiones de DSH, cobertura de pruebas e interfaces del host |
 | [Registro de cambios](CHANGELOG.md) | Cambios de cada versión |
 | [Índice de la documentación](docs/README.md) | Todos los documentos, incluidas las notas anteriores de verificación y optimización |
 
@@ -278,7 +278,7 @@ No hace falta `npm install` ni empaquetador; se requiere Node.js 22 o posterior.
 
 ## Limitaciones conocidas
 
-- Verificado únicamente en DSH `0.2.2-rc.1`.
+- Verificado en la interfaz web de DSH `0.2.2-rc.1` y `0.2.2-rc.3`. Los métodos de entrada y los atajos de la aplicación de escritorio requieren una verificación aparte.
 - Guardar un ajuste hace que el host reinicie la parte en segundo plano del plugin; la predicción en curso se cancela.
 - Varias ventanas comparten los resultados de predicción; ocultar una sugerencia en una ventana no se sincroniza con las demás en tiempo real.
 - La paleta de comandos y el diálogo de comentarios se reconocen por el foco y por rasgos modales; un error de detección solo supone una sugerencia menos, nunca una pulsación robada.

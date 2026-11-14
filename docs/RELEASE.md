@@ -5,12 +5,12 @@
 | 字段 | 值 |
 |---|---|
 | 包名 | `dsh-next-message-predictor` |
-| 版本 | `0.5.0`（变更见 [CHANGELOG.md](../CHANGELOG.md)） |
-| 目标 DSH | `>=0.2.2-rc.1 <0.3.0`（实测 `0.2.2-rc.1`） |
+| 版本 | `0.5.1`（变更见 [CHANGELOG.md](../CHANGELOG.md)） |
+| 目标 DSH | `>=0.2.2-rc.1 <0.3.0`（实测范围见 [兼容性](COMPATIBILITY.md)） |
 | 提示词版本 | `nmp-p2-v3`（结果缓存键的一部分） |
 | 构建 | 无打包器：`scripts/build-client.mjs` 由 `src/shared` + `src/client` 生成 `lib/client.js`；`lib/index.js` 是 Host 入口 |
 | 发布文件 | `lib/`、`src/`、`cordis.patch.yml`、`locale/*.json`、`icon.svg`、`README.md`、`README.<语言>.md`、`CHANGELOG.md`、`LICENSE`、`NOTICE`（`package.json` 的 `files`；不含 `test/`、`tools/`、`eval/`、`docs/`） |
-| 分发方式 | 本地目录安装（`package.json` 标记 `private`，不发布到 npm） |
+| 分发方式 | GitHub 或本地目录安装（`package.json` 标记 `private`） |
 
 ## 发版步骤
 
@@ -19,6 +19,19 @@
 3. `npm run check`（构建 + 测试 + 语法检查）。构建会拒绝不一致的版本号。
 4. 在隔离 profile 上跑端到端矩阵（[DEVELOPMENT.md](DEVELOPMENT.md#端到端验证隔离-profile)）。
 5. 提交、打标签 `v<版本>`、推送。
+
+## 0.5.1 的验证
+
+2026-11-14，在 Windows 的 DSH `0.2.2-rc.3` 安装包中启用隔离 Web profile，模型请求指向本地模拟服务。
+
+| 检查 | 结果 |
+|---|---|
+| `npm run check` | 299 项通过，含导入回合的 Host 路由回归 |
+| 输入框交互、设置开关、模型链路 | 13、9、9 项通过。采纳建议只填草稿，发送请求为 0 |
+| 语言跟随和固定短语 | 16、19 项通过 |
+| 导入会话 | 打开历史时没有预测请求。手动预测分别验证默认模型、用户新选的会话模型和指定模型。续聊后自动预测使用完成该回合的模型 |
+| 侧栏 | 验证添加提示、取消固定后从“更多”打开、移除再添加后仍从“更多”打开，以及通过 DSH 重新固定 |
+| 卸载并重启 | 插件界面、客户端入口与 Host 路由均已卸载 |
 
 ## 0.5.0 的验证
 

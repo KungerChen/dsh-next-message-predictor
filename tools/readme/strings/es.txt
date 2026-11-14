@@ -65,15 +65,15 @@ fl_h: Nueve idiomas de interfaz
 fl_p: La página de ajustes, los botones del cuadro de entrada y sus descripciones están disponibles en {langs}. Por defecto el plugin sigue el idioma configurado en DeepSeek Harness; también puedes elegir uno en **Ajustes → {ui:settings.nav} → {ui:settings.language}**, y se aplica al instante. Las sugerencias, en cambio, siguen siempre el idioma de tu conversación.
 fl_alt: La parte superior de la página de ajustes en inglés, japonés, español y ruso
 f3_h: A un clic en la barra lateral
-f3_p: Pulsa «{ui:settings.sidebarAdd}» y aparecerá una entrada en la barra lateral izquierda de DSH; a partir de ahí, consultar el estado o cambiar de modo ya no requiere pasar por Ajustes. La versión junto al título te dice siempre cuál tienes instalada.
+f3_p: Pulsa «{ui:settings.sidebarAdd}» para abrir Predicción desde la barra lateral izquierda de DSH. Si quitas la fijación, puedes abrir el acceso o volver a fijarlo desde «Más». La versión instalada aparece junto al título.
 f3_alt1: La entrada «{ui:settings.nav}» en la barra lateral izquierda
-f3_alt2: La versión junto al título de la página y el botón «{ui:settings.sidebarRemove}»
+f3_alt2: El botón de acceso a la barra lateral junto al título de la página y la versión
 f4_h: Cuánto usas, de un vistazo
 f4_sum: <b>Ver la página de ajustes completa</b> (básico, modos, origen de las sugerencias, modelo, últimos 7 días)
 f4_alt: La página de ajustes completa
 shots: La mayoría de las capturas muestran la interfaz en chino. Proceden de una conversación de demostración y las genera un script de este repositorio con un modelo simulado local; por eso el modelo aparece como Mock y las cifras son pequeñas. En el uso real, las sugerencias las genera el modelo que hayas configurado en DSH.
 inst_h: Instalación
-inst_p: Requiere DeepSeek Harness `0.2.2-rc.1` (`>=0.2.2-rc.1 <0.3.0`). El plugin no tiene dependencias externas ni necesita compilarse. Se instala con un solo comando:
+inst_p: El rango de instalación de DeepSeek Harness es `>=0.2.2-rc.1 <0.3.0`. El plugin no tiene dependencias externas ni necesita compilarse. Se instala con un solo comando:
 inst_profile: Lo que va tras `--profile` es el perfil que usas a diario: `desktop` en la aplicación de escritorio, `web` en la versión web. Después, **cierra DSH por completo y vuelve a abrirlo**.
 inst_d_sum: No se encuentra el comando <code>dsh</code>, o quieres instalar desde una carpeta local
 inst_d_p: La línea de comandos `dsh` está en la carpeta de instalación de DeepSeek Harness y se puede invocar por su ruta completa. Si quieres modificar el código, clona el repositorio e instala desde la carpeta local:
@@ -119,7 +119,7 @@ d4c: Las mitades Host y navegador, el flujo de las solicitudes, el protocolo
 d5: Desarrollo y verificación
 d5c: Compilación, pruebas, verificación de extremo a extremo, regenerar las capturas
 d6: Compatibilidad
-d6c: El contrato confirmado con DSH 0.2.2-rc.1 y las alternativas
+d6c: Versiones de DSH, cobertura de pruebas e interfaces del host
 d7: Registro de cambios
 d7c: Cambios de cada versión
 d8: Índice de la documentación
@@ -130,7 +130,7 @@ dev_c2: ejecuta las pruebas unitarias y de integración
 dev_c3: compilación + pruebas + comprobación de sintaxis
 dev_p: No hace falta `npm install` ni empaquetador; se requiere Node.js 22 o posterior. Para añadir o corregir una traducción, edita `src/client/locales/<idioma>.js`; las pruebas comprueban que todos los idiomas tengan las mismas claves.
 lim_h: Limitaciones conocidas
-l1: Verificado únicamente en DSH `0.2.2-rc.1`.
+l1: Verificado en la interfaz web de DSH `0.2.2-rc.1` y `0.2.2-rc.3`. Los métodos de entrada y los atajos de la aplicación de escritorio requieren una verificación aparte.
 l2: Guardar un ajuste hace que el host reinicie la parte en segundo plano del plugin; la predicción en curso se cancela.
 l3: Varias ventanas comparten los resultados de predicción; ocultar una sugerencia en una ventana no se sincroniza con las demás en tiempo real.
 l4: La paleta de comandos y el diálogo de comentarios se reconocen por el foco y por rasgos modales; un error de detección solo supone una sugerencia menos, nunca una pulsación robada.

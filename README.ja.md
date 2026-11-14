@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/%E3%83%90%E3%83%BC%E3%82%B8%E3%83%A7%E3%83%B3-0.5.0-4d6bfe" alt="バージョン 0.5.0">
+  <img src="https://img.shields.io/badge/%E3%83%90%E3%83%BC%E3%82%B8%E3%83%A7%E3%83%B3-0.5.1-4d6bfe" alt="バージョン 0.5.1">
   <img src="https://img.shields.io/badge/DeepSeek%20Harness-0.2.2--rc.1-1f2937" alt="DeepSeek Harness 0.2.2-rc.1">
   <img src="https://img.shields.io/badge/%E8%A8%80%E8%AA%9E-9-8250df" alt="言語 9">
   <img src="https://img.shields.io/badge/%E5%A4%96%E9%83%A8%E4%BE%9D%E5%AD%98-0-2ea44f" alt="外部依存 0">
@@ -139,7 +139,7 @@
 
 ### サイドバーからワンクリック
 
-「サイドバーに追加」を押すと、DSH の左サイドバーに項目が追加されます。以後は設定を開かなくても、状態の確認やモードの切り替えができます。タイトル横のバージョン番号で、どの版が入っているかいつでも分かります。
+「サイドバー項目を追加」を押すと、DSH の左サイドバーから「メッセージ予測」を開けます。固定を解除した項目は「その他」から開いたり、再度固定したりできます。タイトルの横にはインストール済みのバージョンが表示されます。
 
 <table>
 <tr>
@@ -147,7 +147,7 @@
   <img src="docs/images/sidebar-entry.png" width="230" alt="左サイドバーの「メッセージ予測」の項目">
 </td>
 <td width="70%" align="center" valign="middle">
-  <img src="docs/images/page-header.png" width="560" alt="ページタイトル横のバージョン番号と「サイドバーから削除」ボタン">
+  <img src="docs/images/page-header.png" width="560" alt="ページのタイトルとバージョンの横にあるサイドバー項目のボタン">
 </td>
 </tr>
 </table>
@@ -166,7 +166,7 @@
 
 ## インストール
 
-DeepSeek Harness `0.2.2-rc.1`（`>=0.2.2-rc.1 <0.3.0`）が必要です。外部依存はなく、ビルドも不要です。コマンドひとつで導入できます：
+インストール対象は DeepSeek Harness `>=0.2.2-rc.1 <0.3.0` です。外部依存はなく、ビルドも不要です。コマンドひとつで導入できます。
 
 ```powershell
 dsh plugin --profile desktop add github:KungerChen/dsh-next-message-predictor
@@ -193,7 +193,7 @@ $dsh = '<DSH のインストール先>\resources\runtime\cli\bin\dsh.cmd'
 
 1. **設定 → メッセージ予測** を開き、「予測を有効にする」をオンにします。既定ではオフで、有効にするまで候補は表示されず、モデルも呼び出されません。
 2. 「予測モード」でひとつ選びます。既定は「バランス」です。
-3. もっと手早く開きたければ、右上の「サイドバーに追加」を押します。
+3. もっと手早く開きたければ、右上の「サイドバー項目を追加」を押します。
 
 <details>
 <summary>更新とアンインストール</summary>
@@ -262,7 +262,7 @@ dsh plugin --profile desktop remove dsh-next-message-predictor
 | [プライバシーとデータの境界](docs/PRIVACY.md) | 送信する範囲、ローカルのファイル、データの削除方法 |
 | [アーキテクチャ](docs/ARCHITECTURE.md) | Host 側とブラウザー側の構成、リクエストの流れ、プロトコル |
 | [開発と検証](docs/DEVELOPMENT.md) | ビルド、テスト、エンドツーエンドの検証、スクリーンショットの再生成 |
-| [互換性](docs/COMPATIBILITY.md) | DSH 0.2.2-rc.1 との契約の確認と代替動作 |
+| [互換性](docs/COMPATIBILITY.md) | 対応する DSH バージョン、検証範囲、ホストのインターフェース |
 | [変更履歴](CHANGELOG.md) | 各バージョンの変更点 |
 | [ドキュメント一覧](docs/README.md) | 過去の検証と最適化の記録を含む、すべてのドキュメント |
 
@@ -278,7 +278,7 @@ npm run check   # ビルド + テスト + 構文チェック
 
 ## 既知の制限
 
-- 検証済みなのは DSH `0.2.2-rc.1` のみです。
+- DSH `0.2.2-rc.1` と `0.2.2-rc.3` の Web 画面で検証済みです。デスクトップアプリの入力メソッドとショートカットは別途検証が必要です。
 - 設定を保存すると、ホストがプラグインのバックグラウンド側を再起動し、進行中の予測は取り消されます。
 - 複数のウィンドウは予測結果を共有します。あるウィンドウで候補を非表示にしても、他のウィンドウにはすぐには反映されません。
 - コマンドパレットとフィードバックのダイアログは、フォーカスとモーダルの特徴で判定します。判定を誤っても候補が 1 回表示されないだけで、キー入力を奪うことはありません。

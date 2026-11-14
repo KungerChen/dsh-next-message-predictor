@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.5.0-4d6bfe" alt="version 0.5.0">
+  <img src="https://img.shields.io/badge/version-0.5.1-4d6bfe" alt="version 0.5.1">
   <img src="https://img.shields.io/badge/DeepSeek%20Harness-0.2.2--rc.1-1f2937" alt="DeepSeek Harness 0.2.2-rc.1">
   <img src="https://img.shields.io/badge/languages-9-8250df" alt="languages 9">
   <img src="https://img.shields.io/badge/third--party%20deps-0-2ea44f" alt="third-party deps 0">
@@ -139,7 +139,7 @@ The settings page, the buttons in the input box and their tooltips are available
 
 ### One click away in the sidebar
 
-Click “Add to sidebar” and an entry appears in the DSH left sidebar; after that, checking the status or switching modes no longer needs a trip to Settings. The version next to the title always tells you which release is installed.
+Click “Add sidebar entry” to open Prediction from the DSH left sidebar. If you unpin the entry, you can open it or pin it again from More. The version next to the title shows which release is installed.
 
 <table>
 <tr>
@@ -147,7 +147,7 @@ Click “Add to sidebar” and an entry appears in the DSH left sidebar; after t
   <img src="docs/images/sidebar-entry.png" width="230" alt="The “Prediction” entry in the left sidebar">
 </td>
 <td width="70%" align="center" valign="middle">
-  <img src="docs/images/page-header.png" width="560" alt="The version next to the page title and the “Remove from sidebar” button">
+  <img src="docs/images/page-header.png" width="560" alt="The sidebar entry button next to the page title and version">
 </td>
 </tr>
 </table>
@@ -166,7 +166,7 @@ Click “Add to sidebar” and an entry appears in the DSH left sidebar; after t
 
 ## Installation
 
-Requires DeepSeek Harness `0.2.2-rc.1` (`>=0.2.2-rc.1 <0.3.0`). The plugin has no third-party dependencies and needs no build step. One command installs it:
+The DeepSeek Harness installation range is `>=0.2.2-rc.1 <0.3.0`. The plugin has no third-party dependencies and needs no build step. One command installs it:
 
 ```powershell
 dsh plugin --profile desktop add github:KungerChen/dsh-next-message-predictor
@@ -193,7 +193,7 @@ Then three steps to get going:
 
 1. Open **Settings → Prediction** and switch on “Enable prediction”. It is off by default: until you enable it, no suggestion is shown and no model is called.
 2. Pick one under “Mode”. The default is “Balanced”.
-3. For quicker access, click “Add to sidebar” in the top right corner.
+3. For quicker access, click “Add sidebar entry” in the top right corner.
 
 <details>
 <summary>Updating and uninstalling</summary>
@@ -262,7 +262,7 @@ The detailed documentation is written in Chinese.
 | [Privacy and data boundaries](docs/PRIVACY.md) | What is sent, local files, how to delete data |
 | [Architecture](docs/ARCHITECTURE.md) | The Host and browser halves, the request flow, the protocol |
 | [Development and verification](docs/DEVELOPMENT.md) | Build, tests, end-to-end verification, regenerating the screenshots |
-| [Compatibility](docs/COMPATIBILITY.md) | The confirmed contract with DSH 0.2.2-rc.1 and the fallbacks |
+| [Compatibility](docs/COMPATIBILITY.md) | DSH versions, test coverage and host interfaces |
 | [Changelog](CHANGELOG.md) | Changes in each version |
 | [Documentation index](docs/README.md) | All documents, including earlier verification and optimisation notes |
 
@@ -278,7 +278,7 @@ No `npm install` and no bundler; Node.js 22 or later is required. To add or corr
 
 ## Known limitations
 
-- Verified on DSH `0.2.2-rc.1` only.
+- Verified in the Web UI of DSH `0.2.2-rc.1` and `0.2.2-rc.3`. Native desktop input methods and shortcuts need separate verification.
 - Saving a setting makes the host restart the background half of the plugin; a prediction in progress is cancelled.
 - Several windows share prediction results; hiding a suggestion in one window is not synchronised to the others in real time.
 - The command palette and the feedback dialog are recognised by focus and modal traits; a wrong guess only means one suggestion less, never a stolen key press.

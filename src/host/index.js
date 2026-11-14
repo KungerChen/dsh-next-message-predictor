@@ -56,10 +56,18 @@ export function apply(ctx, rawConfig) {
   // service 会通过 onConfigChange 把新配置交回来，预算上限与时区随之更新。
   let liveConfig = normalized.config
   const adapter = createHostAdapter(ctx)
+  const getDefaultModel = () => {
+    try {
+      return safeGet(ctx, 'agentDefaultModel')?.currentSelection?.()
+    } catch {
+      return undefined
+    }
+  }
 
   // 只读的权威会话上下文。
   const contextReader = createSessionContextReader({
     getSessionQuery: () => safeGet(ctx, 'sessionQuery'),
+    getDefaultModel,
     getSession: (sessionId) => {
       const sessions = safeGet(ctx, 'sessions')
       if (sessions === undefined || sessions === null || typeof sessions.get !== 'function') return undefined
@@ -97,20 +105,9 @@ export function apply(ctx, rawConfig) {
     }
   })
 
-  // 默认路由只用于设置页预览，实际调用使用完成回合的模型或固定路由。
   const modelProvider = createModelProvider({
     getLlm: () => safeGet(ctx, 'llm'),
-    getDefaultModel: () => {
-      const agentDefaultModel = safeGet(ctx, 'agentDefaultModel')
-      if (agentDefaultModel === undefined || agentDefaultModel === null || typeof agentDefaultModel.currentSelection !== 'function') {
-        return undefined
-      }
-      try {
-        return agentDefaultModel.currentSelection()
-      } catch {
-        return undefined
-      }
-    },
+    getDefaultModel,
     onEvent: (event) => {
       // 只记录原因码/用量类别；不含上下文与建议正文。
       if (event !== null && typeof event === 'object' && typeof event.kind === 'string') {

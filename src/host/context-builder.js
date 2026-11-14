@@ -548,6 +548,11 @@ export function trimMessages(messages, limits) {
 const MIN_EXCERPT_CHARS = 160
 
 const COMPLETION_RESEND_WINDOW_MS = 30 * 60 * 1000
+const DEEPSEEK_EXPORT_SOURCE = 'deepseek-chat-export'
+
+function isImportedModelSource(selection) {
+  return selection?.provider === DEEPSEEK_EXPORT_SOURCE && selection.model === DEEPSEEK_EXPORT_SOURCE
+}
 
 /**
  * 回合结束后是否出现“让旧上下文失效”的事件（B04）。
@@ -602,6 +607,24 @@ export function formatTurnFacts(stats) {
 export function createSessionContextReader(options) {
   const getSessionQuery = options && typeof options.getSessionQuery === 'function' ? options.getSessionQuery : () => undefined
   const getSession = options && typeof options.getSession === 'function' ? options.getSession : () => undefined
+  const getDefaultModel = options?.getDefaultModel
+
+  // Imported answers carry a source label. DSH's model projection supplies the
+  // next real route for the Session, including a selection made after import.
+  async function readImportedSessionModel(query, sessionId, signal) {
+    if (typeof query.observeSession !== 'function') return undefined
+    let observation
+    try {
+      observation = await query.observeSession(sessionId, { signal })
+      const next = observation.projections?.values?.modelSelection?.next
+      const selection = next === null ? getDefaultModel?.() : next
+      return isImportedModelSource(selection) ? undefined : selection
+    } catch {
+      return undefined
+    } finally {
+      observation?.[Symbol.dispose]()
+    }
+  }
   /** session -> { lastTurnEndSeq, lastTurnEndAt, lastTurnEndCompleted, invalidatedAfter, currentTurn, statsByTurn } */
   const liveStates = new WeakMap()
 
@@ -725,11 +748,13 @@ export function createSessionContextReader(options) {
   /**
    * @param {{sessionId:string, turnId:string, completedEventSeq:number}} anchor
    * @param {object} config - 生效配置。
-   * @returns {Promise<{ok:true, messages:object[], input:string, modelSelection:object, truncated:boolean,
+   * @param {object} [completion] - 已复核的回合结束事件。
+   * @param {AbortSignal} [signal] - 取消导入会话的模型查询。
+   * @returns {Promise<{ok:true, messages:object[], input:string, modelSelection:object|undefined, truncated:boolean,
    *   codePoints:number, estimatedTokens:number, redactions:number, source:string}
    *   | {ok:false, reason:string}>}
    */
-  async function read(anchor, config, completion) {
+  async function read(anchor, config, completion, signal) {
     const verified = completion ?? await verifyAnchor(anchor)
     if (!verified.ok) return verified
     const sessionQuery = getSessionQuery()
@@ -789,11 +814,17 @@ export function createSessionContextReader(options) {
     if (trimmed.messages.length === 0) return { ok: false, reason: 'empty-context' }
     const lastTrimmed = trimmed.messages[trimmed.messages.length - 1]
     if (lastTrimmed.role !== 'assistant') return { ok: false, reason: 'no-final-assistant-text' }
+    const source = finalMessage.source
+    let modelSelection = { provider: source.provider, model: source.model }
+    if (config.modelMode === 'session' && isImportedModelSource(modelSelection)) {
+      modelSelection = await readImportedSessionModel(sessionQuery, anchor.sessionId, signal)
+      if (!verified.isCurrent()) return { ok: false, reason: 'stale-context' }
+    }
     return {
       ok: true,
       messages: trimmed.messages,
       input: trimmed.input,
-      modelSelection: { provider: finalMessage?.source?.provider, model: finalMessage?.source?.model },
+      modelSelection,
       truncated: trimmed.truncated,
       codePoints: trimmed.codePoints,
       estimatedTokens: trimmed.estimatedTokens,

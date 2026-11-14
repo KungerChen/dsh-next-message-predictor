@@ -65,15 +65,15 @@ fl_h: Neuf langues d’interface
 fl_p: La page des paramètres, les boutons de la zone de saisie et leurs infobulles sont disponibles en {langs}. Par défaut, le plugin suit la langue réglée dans DeepSeek Harness ; vous pouvez aussi en choisir une dans **Paramètres → {ui:settings.nav} → {ui:settings.language}**, et elle s’applique aussitôt. Les suggestions, elles, suivent toujours la langue de votre conversation.
 fl_alt: Le haut de la page des paramètres en anglais, japonais, espagnol et russe
 f3_h: À un clic dans la barre latérale
-f3_p: Cliquez sur « {ui:settings.sidebarAdd} » et une entrée apparaît dans la barre latérale gauche de DSH ; consulter l’état ou changer de mode ne demande alors plus de passer par les Paramètres. La version affichée près du titre vous indique toujours laquelle est installée.
+f3_p: Cliquez sur « {ui:settings.sidebarAdd} » pour ouvrir Prédiction depuis la barre latérale gauche de DSH. Si vous désépinglez l’accès, vous pouvez l’ouvrir ou le réépingler depuis « Plus ». La version installée s’affiche à côté du titre.
 f3_alt1: L’entrée « {ui:settings.nav} » dans la barre latérale gauche
-f3_alt2: La version à côté du titre de la page et le bouton « {ui:settings.sidebarRemove} »
+f3_alt2: Le bouton d’accès à la barre latérale à côté du titre et de la version
 f4_h: Votre consommation en un coup d’œil
 f4_sum: <b>Afficher toute la page des paramètres</b> (bases, modes, origine des suggestions, modèle, 7 derniers jours)
 f4_alt: La page des paramètres complète
 shots: La plupart des captures montrent l’interface en chinois. Elles proviennent d’une conversation de démonstration et sont générées par un script de ce dépôt avec un modèle simulé local ; c’est pourquoi le modèle s’appelle Mock et les chiffres sont faibles. En usage réel, les suggestions viennent du modèle que vous avez configuré dans DSH.
 inst_h: Installation
-inst_p: Nécessite DeepSeek Harness `0.2.2-rc.1` (`>=0.2.2-rc.1 <0.3.0`). Le plugin n’a aucune dépendance tierce et ne demande aucune compilation. Une seule commande suffit :
+inst_p: La plage de versions de DeepSeek Harness pour l’installation est `>=0.2.2-rc.1 <0.3.0`. Le plugin n’a aucune dépendance tierce et ne demande aucune compilation. Une seule commande suffit :
 inst_profile: Le nom qui suit `--profile` est le profil que vous utilisez au quotidien : `desktop` pour l’application de bureau, `web` pour la version web. Ensuite, **quittez complètement DSH puis relancez-le**.
 inst_d_sum: La commande <code>dsh</code> est introuvable, ou vous voulez installer depuis un dossier local
 inst_d_p: La ligne de commande `dsh` se trouve dans le dossier d’installation de DeepSeek Harness et peut être appelée par son chemin complet. Pour modifier le code vous-même, clonez le dépôt puis installez depuis le dossier local :
@@ -119,7 +119,7 @@ d4c: Les moitiés Host et navigateur, le parcours d’une requête, le protocole
 d5: Développement et vérification
 d5c: Construction, tests, vérification de bout en bout, régénération des captures
 d6: Compatibilité
-d6c: Le contrat confirmé avec DSH 0.2.2-rc.1 et les solutions de repli
+d6c: Versions de DSH, périmètre des tests et interfaces de l’hôte
 d7: Journal des modifications
 d7c: Changements de chaque version
 d8: Index de la documentation
@@ -130,7 +130,7 @@ dev_c2: exécute les tests unitaires et d’intégration
 dev_c3: construction + tests + vérification de la syntaxe
 dev_p: Pas de `npm install`, pas d’outil d’assemblage ; Node.js 22 ou une version ultérieure est requis. Pour ajouter ou corriger une traduction, modifiez `src/client/locales/<langue>.js` ; les tests vérifient que toutes les langues ont les mêmes clés.
 lim_h: Limites connues
-l1: Vérifié uniquement avec DSH `0.2.2-rc.1`.
+l1: Vérifié dans l’interface web de DSH `0.2.2-rc.1` et `0.2.2-rc.3`. Les méthodes de saisie et les raccourcis de l’application de bureau demandent une vérification distincte.
 l2: Enregistrer un réglage amène l’hôte à redémarrer la partie en arrière-plan du plugin ; une prédiction en cours est annulée.
 l3: Plusieurs fenêtres partagent les résultats de prédiction ; masquer une suggestion dans une fenêtre n’est pas répercuté en temps réel dans les autres.
 l4: La palette de commandes et la boîte de dialogue de commentaires sont reconnues d’après le focus et des caractéristiques modales ; une erreur de détection ne coûte qu’une suggestion, jamais une frappe détournée.

@@ -23,7 +23,7 @@
 <!-- readme:badges:start -->
 
 <p align="center">
-  <img src="https://img.shields.io/badge/%E7%89%88%E6%9C%AC-0.5.0-4d6bfe" alt="版本 0.5.0">
+  <img src="https://img.shields.io/badge/%E7%89%88%E6%9C%AC-0.5.1-4d6bfe" alt="版本 0.5.1">
   <img src="https://img.shields.io/badge/DeepSeek%20Harness-0.2.2--rc.1-1f2937" alt="DeepSeek Harness 0.2.2-rc.1">
   <img src="https://img.shields.io/badge/%E7%95%8C%E9%9D%A2%E8%AF%AD%E8%A8%80-9%20%E7%A7%8D-8250df" alt="界面语言 9 种">
   <img src="https://img.shields.io/badge/%E7%AC%AC%E4%B8%89%E6%96%B9%E4%BE%9D%E8%B5%96-0-2ea44f" alt="第三方依赖 0">
@@ -147,7 +147,7 @@
 
 ### 放进左侧栏，一点即达
 
-点一下“添加到左侧栏”，入口就出现在 DSH 首页左侧；之后看状态、换模式都不用再进设置。标题旁的版本号让你随时知道装的是哪一版。
+点一下“添加侧栏入口”，即可从 DSH 左侧栏打开“消息预测”，查看状态或切换模式。取消固定后，从左侧栏的“更多”打开或重新固定。标题旁显示当前安装的版本。
 
 <table>
 <tr>
@@ -155,7 +155,7 @@
   <img src="docs/images/sidebar-entry.png" width="230" alt="左侧栏中的“消息预测”入口">
 </td>
 <td width="70%" align="center" valign="middle">
-  <img src="docs/images/page-header.png" width="560" alt="页面标题旁的版本号和“从左侧栏移除”按钮">
+  <img src="docs/images/page-header.png" width="560" alt="页面标题旁的版本号和移除侧栏入口的按钮">
 </td>
 </tr>
 </table>
@@ -174,7 +174,7 @@
 
 ## 安装
 
-需要 DeepSeek Harness `0.2.2-rc.1`（`>=0.2.2-rc.1 <0.3.0`）。插件没有第三方依赖，也不需要构建，一条命令装好：
+DeepSeek Harness 的安装版本范围为 `>=0.2.2-rc.1 <0.3.0`。插件没有第三方依赖，也不需要构建，一条命令装好：
 
 ```powershell
 dsh plugin --profile desktop add github:KungerChen/dsh-next-message-predictor
@@ -201,7 +201,7 @@ $dsh = '<DSH 安装目录>\resources\runtime\cli\bin\dsh.cmd'
 
 1. 打开 **设置 → 消息预测**，打开“启用预测”。默认是关闭的：不启用就不会显示建议，也不会调用模型。
 2. 在“预测模式”里选一种，默认是“均衡”。
-3. 想更顺手，就点右上角“添加到左侧栏”。
+3. 想从左侧栏打开设置页，就点右上角“添加侧栏入口”。
 
 <details>
 <summary>更新与卸载</summary>
@@ -268,7 +268,7 @@ dsh plugin --profile desktop remove dsh-next-message-predictor
 | [隐私与数据边界](docs/PRIVACY.md) | 发送范围、本机文件、删除数据的方法 |
 | [架构](docs/ARCHITECTURE.md) | Host 与浏览器两半的结构、请求流程、协议 |
 | [开发与验证](docs/DEVELOPMENT.md) | 构建、测试、端到端验证、重新生成截图 |
-| [兼容性](docs/COMPATIBILITY.md) | 与 DSH 0.2.2-rc.1 的契约确认与降级项 |
+| [兼容性](docs/COMPATIBILITY.md) | DSH 版本、实测范围与宿主接口 |
 | [更新日志](CHANGELOG.md) | 版本变更 |
 | [文档索引](docs/README.md) | 全部文档，含历史验证与优化记录 |
 
@@ -306,7 +306,7 @@ dsh-next-message-predictor/
 
 ## 已知限制
 
-- 只在 DSH `0.2.2-rc.1` 上验证过。
+- 已在 DSH `0.2.2-rc.1` 和 `0.2.2-rc.3` 的 Web 界面中验证。原生桌面窗口的输入法与快捷键需单独验收。
 - 保存设置会让宿主重启插件的后台实例，进行中的预测会被取消。
 - 多个窗口共享预测结果；在一个窗口里隐藏建议不会实时同步到其他窗口。
 - 命令弹层和反馈对话框靠焦点与模态特征判断；判断失误时只会少显示一次建议，不会抢按键。

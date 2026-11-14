@@ -402,7 +402,7 @@ export function createPredictorService(options) {
     }
     const started = Date.now()
     // 1) 权威上下文。
-    const context = await contextReader.read(request.anchor, config, verification)
+    const context = await contextReader.read(request.anchor, config, verification, signal)
     reason = invalidated()
     if (reason) return { kind: RESULT_STALE, reason }
     if (context.ok !== true) {

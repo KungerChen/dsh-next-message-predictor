@@ -29,7 +29,7 @@
 | `manualOnly` | 布尔 | `false` | `true` 时回答结束后不自动预测。设置页以反义显示为“回答结束后自动预测”。 |
 | `showPredictButton` | 布尔 | `true` | 输入框为空时在右侧显示“预测”按钮。 |
 | `predictShortcut` | 字符串 | `Alt+Backslash` | 写法 `Ctrl+Alt+Shift+Meta+<KeyboardEvent.code>`。必须含 Ctrl、Alt 或 Meta；主键不能是 Tab、Escape、Enter、Backspace、Delete 或方向键；Ctrl 或 Meta（不带 Alt）加编辑键（A、C、V、X、Z、Y、F、S、P、R、W、T、N、Q、L）不可用。 |
-| `sidebarEntry` | 布尔 | `false` | 在 DSH 左侧栏的入口列表中显示“消息预测”入口。 |
+| `sidebarEntry` | 布尔 | `false` | 把“消息预测”加入 DSH 的侧栏导航。DSH 管理入口是否固定，取消固定后可从“更多”打开。 |
 | `language` | 字符串 | `auto` | 插件自身文字的语言。`auto` 跟随 DSH 的界面语言；也可以是 `zh`、`en`、`ja`、`ko`、`es`、`fr`、`de`、`ru`、`pt` 之一。不影响建议本身的语言。 |
 
 ### 建议来源
@@ -46,7 +46,7 @@
 
 | 字段 | 类型 | 默认 | 说明 |
 |---|---|---|---|
-| `modelMode` | `fixed` \| `session` | `fixed` | `fixed`：使用下面指定的模型；`session`：跟随完成该回合的会话模型。 |
+| `modelMode` | `fixed` \| `session` | `fixed` | `fixed` 使用下方指定的模型。`session` 跟随完成回合的模型。手动预测导入的 DeepSeek 回复时，使用 DSH 为该会话选择的下一轮模型，尚未选过模型则使用 DSH 默认模型。 |
 | `provider` | 字符串 | `deepseek-official` | 模型服务商 ID。`fixed-test` 是离线测试路径（不调用模型）。 |
 | `model` | 字符串 | `deepseek-flash` | 模型 ID。 |
 | `reasoningEffort` | 字符串 | `off` | 推理强度档位。空字符串表示自动选择（优先 off / none / minimal / low，否则取模型的第一档）。只对指定模型严格校验；会话模型不支持该档位时退回自动选择。 |

@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.5.0-4d6bfe" alt="version 0.5.0">
+  <img src="https://img.shields.io/badge/version-0.5.1-4d6bfe" alt="version 0.5.1">
   <img src="https://img.shields.io/badge/DeepSeek%20Harness-0.2.2--rc.1-1f2937" alt="DeepSeek Harness 0.2.2-rc.1">
   <img src="https://img.shields.io/badge/langues-9-8250df" alt="langues 9">
   <img src="https://img.shields.io/badge/d%C3%A9pendances%20tierces-0-2ea44f" alt="dépendances tierces 0">
@@ -139,7 +139,7 @@ La page des paramètres, les boutons de la zone de saisie et leurs infobulles so
 
 ### À un clic dans la barre latérale
 
-Cliquez sur « Ajouter à la barre latérale » et une entrée apparaît dans la barre latérale gauche de DSH ; consulter l’état ou changer de mode ne demande alors plus de passer par les Paramètres. La version affichée près du titre vous indique toujours laquelle est installée.
+Cliquez sur « Ajouter un accès à la barre latérale » pour ouvrir Prédiction depuis la barre latérale gauche de DSH. Si vous désépinglez l’accès, vous pouvez l’ouvrir ou le réépingler depuis « Plus ». La version installée s’affiche à côté du titre.
 
 <table>
 <tr>
@@ -147,7 +147,7 @@ Cliquez sur « Ajouter à la barre latérale » et une entrée apparaît dans la
   <img src="docs/images/sidebar-entry.png" width="230" alt="L’entrée « Prédiction » dans la barre latérale gauche">
 </td>
 <td width="70%" align="center" valign="middle">
-  <img src="docs/images/page-header.png" width="560" alt="La version à côté du titre de la page et le bouton « Retirer de la barre latérale »">
+  <img src="docs/images/page-header.png" width="560" alt="Le bouton d’accès à la barre latérale à côté du titre et de la version">
 </td>
 </tr>
 </table>
@@ -166,7 +166,7 @@ Cliquez sur « Ajouter à la barre latérale » et une entrée apparaît dans la
 
 ## Installation
 
-Nécessite DeepSeek Harness `0.2.2-rc.1` (`>=0.2.2-rc.1 <0.3.0`). Le plugin n’a aucune dépendance tierce et ne demande aucune compilation. Une seule commande suffit :
+La plage de versions de DeepSeek Harness pour l’installation est `>=0.2.2-rc.1 <0.3.0`. Le plugin n’a aucune dépendance tierce et ne demande aucune compilation. Une seule commande suffit :
 
 ```powershell
 dsh plugin --profile desktop add github:KungerChen/dsh-next-message-predictor
@@ -193,7 +193,7 @@ Puis trois étapes pour commencer :
 
 1. Ouvrez **Paramètres → Prédiction** et activez « Activer la prédiction ». C’est désactivé par défaut : tant que vous ne l’activez pas, aucune suggestion n’est affichée et aucun modèle n’est appelé.
 2. Choisissez-en un sous « Mode ». Par défaut, c’est « Équilibré ».
-3. Pour y accéder plus vite, cliquez sur « Ajouter à la barre latérale » en haut à droite.
+3. Pour y accéder plus vite, cliquez sur « Ajouter un accès à la barre latérale » en haut à droite.
 
 <details>
 <summary>Mise à jour et désinstallation</summary>
@@ -262,7 +262,7 @@ La documentation détaillée est rédigée en chinois.
 | [Confidentialité et périmètre des données](docs/PRIVACY.md) | Ce qui est envoyé, fichiers locaux, suppression des données |
 | [Architecture](docs/ARCHITECTURE.md) | Les moitiés Host et navigateur, le parcours d’une requête, le protocole |
 | [Développement et vérification](docs/DEVELOPMENT.md) | Construction, tests, vérification de bout en bout, régénération des captures |
-| [Compatibilité](docs/COMPATIBILITY.md) | Le contrat confirmé avec DSH 0.2.2-rc.1 et les solutions de repli |
+| [Compatibilité](docs/COMPATIBILITY.md) | Versions de DSH, périmètre des tests et interfaces de l’hôte |
 | [Journal des modifications](CHANGELOG.md) | Changements de chaque version |
 | [Index de la documentation](docs/README.md) | Tous les documents, y compris les notes antérieures de vérification et d’optimisation |
 
@@ -278,7 +278,7 @@ Pas de `npm install`, pas d’outil d’assemblage ; Node.js 22 ou une version u
 
 ## Limites connues
 
-- Vérifié uniquement avec DSH `0.2.2-rc.1`.
+- Vérifié dans l’interface web de DSH `0.2.2-rc.1` et `0.2.2-rc.3`. Les méthodes de saisie et les raccourcis de l’application de bureau demandent une vérification distincte.
 - Enregistrer un réglage amène l’hôte à redémarrer la partie en arrière-plan du plugin ; une prédiction en cours est annulée.
 - Plusieurs fenêtres partagent les résultats de prédiction ; masquer une suggestion dans une fenêtre n’est pas répercuté en temps réel dans les autres.
 - La palette de commandes et la boîte de dialogue de commentaires sont reconnues d’après le focus et des caractéristiques modales ; une erreur de détection ne coûte qu’une suggestion, jamais une frappe détournée.

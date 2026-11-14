@@ -1,6 +1,16 @@
-# P0 契约确认：DSH 0.2.2-rc.1 兼容矩阵
+# DSH 兼容性
 
-本文件是 P0 阶段的交付物。目标版本为 **DSH Desktop/Web 0.2.2-rc.1**（Electron 安装包，下称 `<DSH 安装目录>`，asar 内 `dsh/package.json` 与 `@deepseek-ai/dsh` 均为 `0.2.2-rc.1`）。采集环境：Windows 11，America/Chicago，2026-11-09。
+## 版本与实测范围
+
+`package.json` 的安装范围为 `>=0.2.2-rc.1 <0.3.0`。`0.2.2-rc.1` 是 P0 宿主契约基线，`0.2.2-rc.3` 的回归在 Windows 安装包的隔离 Web profile 上执行。具体版本、场景和结果见 [发布与启用](RELEASE.md)。原生桌面窗口的输入法和快捷键需单独验收。
+
+截至 2026-11-14，npm 的 `latest` 指向 `0.2.2-rc.1`，`next` 指向 `0.2.2-rc.3`。用 npm 验证特定版本可以固定 `@deepseek-ai/dsh@0.2.2-rc.3`。见 [npm 发布标签](https://registry.npmjs.org/-/package/@deepseek-ai%2Fdsh/dist-tags)。
+
+rc.3 导入的助手回复使用 `deepseek-chat-export` 标记来源。插件在「跟随会话模型」模式下用 DSH 的会话模型投影解析实际路由。尚无会话选择时使用 DSH 默认模型。打开导入历史不会触发自动预测。见 [DSH 导入实现](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.2-rc.3/packages/experimental/deepseek-chat-import/src/conversation.ts#L426-L428)。
+
+## P0 契约矩阵（DSH 0.2.2-rc.1）
+
+下文记录 P0 在 **DSH Desktop/Web 0.2.2-rc.1** 上采集的宿主契约（Electron 安装包，下称 `<DSH 安装目录>`，asar 内 `dsh/package.json` 与 `@deepseek-ai/dsh` 均为 `0.2.2-rc.1`）。采集环境为 Windows 11，日期为 2026-11-09。
 
 证据分三类，下文用前缀标注：
 
@@ -112,8 +122,8 @@ P0–P4 已实现：overlay slot、`captureInsertion`+`insertText`、`[data-comp
 
 ## 6. 版本策略
 
-- 只声明并测试 **0.2.2-rc.1**（`package.json` `engines.dsh`）。
-- 不写宽泛 `>=0.2`；升级前需重跑 `docs/VALIDATION.md` 的 P1 矩阵。
+- `engines.dsh` 表示安装范围。实际验证版本见本页开头。
+- 每次升级宿主后，在隔离 profile 上重跑 [回归](DEVELOPMENT.md#端到端验证隔离-profile)。
 - 缺少 overlay / `captureInsertion`+`insertText` / 认证路由时：客户端显示“不支持当前版本”并停用，不退回修改编辑器 DOM 或 `setDraft`。
 
 ## 7. 最小 Host/Client 装载

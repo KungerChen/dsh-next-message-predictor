@@ -43,8 +43,10 @@ import { fileURLToPath } from 'node:url'
 const here = path.dirname(fileURLToPath(import.meta.url))
 const repoRoot = path.resolve(here, '..')
 
-/** Order of the entries in DSH's language menu. */
-const DSH_MENU = ['zh', 'en', 'ja', 'es', 'fr', 'de', 'ru', 'pt']
+/** DSH displays native language names regardless of its current language. */
+const DSH_LANGUAGES = { zh: '中文', en: 'English', ja: '日本語', es: 'Español', fr: 'Français', de: 'Deutsch', ru: 'Русский', pt: 'Português' }
+const GENERAL_SETTINGS_NAME = /^(通用设置|General|一般|Général|Allgemein|Общие|Geral)$/u
+const LANGUAGE_BUTTON_TEXT = new RegExp(`^(?:${Object.values(DSH_LANGUAGES).join('|')})$`, 'u')
 /** Plugin options restored at the end. */
 const RESTORE = { language: 'auto', sidebarEntry: false }
 
@@ -70,7 +72,7 @@ function parseArgs(argv) {
   }
   if (!opts.url) throw new Error('--url is required')
   for (const id of opts.languages) {
-    if (!DSH_MENU.includes(id) || id === 'zh') throw new Error(`--languages: "${id}" is not a non-Chinese DSH language`)
+    if (!Object.hasOwn(DSH_LANGUAGES, id) || id === 'zh') throw new Error(`--languages: "${id}" is not a non-Chinese DSH language`)
   }
   if (!opts.out) opts.out = path.join(repoRoot, 'scratch', 'evidence')
   return opts
@@ -211,7 +213,8 @@ async function main() {
     await page.waitForSelector('[data-composer-input]', { timeout: opts.timeout }).catch(() => {})
     await sleep(2500)
   }
-  const dialogOpen = () => page.locator('[role="dialog"][data-shortcut-modal="settings"]').count().then((n) => n > 0)
+  const settingsDialog = page.locator('[role="dialog"][data-shortcut-modal="settings"]')
+  const dialogOpen = () => settingsDialog.count().then((n) => n > 0)
   const openSettings = async () => {
     if (await dialogOpen()) return
     await page.keyboard.press('Control+Alt+,')
@@ -231,15 +234,15 @@ async function main() {
     if (await dialogOpen()) await page.locator('[role="dialog"] button[class*="close"]').first().click()
     await sleep(400)
   }
-  /** nav index: 0 account, 1 general; the plugin's entry is found by its icon. */
   const openGeneral = async () => {
     await openSettings()
-    await page.locator('[role="dialog"] nav button').nth(1).click()
+    await settingsDialog.locator('nav').getByRole('button', { name: GENERAL_SETTINGS_NAME }).click()
     await sleep(500)
   }
   const openPluginSection = async () => {
     await openSettings()
-    await page.locator('[role="dialog"] nav button:has(svg[focusable="false"])').first().click()
+    const language = await page.evaluate(() => window.__nextMessagePredictor.language())
+    await settingsDialog.locator('nav').getByRole('button', { name: expectedTexts(language).nav, exact: true }).click()
     await page.waitForSelector('[role="dialog"] [data-nmp-setting="header"]')
     await sleep(400)
   }
@@ -286,10 +289,7 @@ async function main() {
    */
   const switchDsh = async (id) => {
     await openGeneral()
-    await page.locator('[role="dialog"] button[aria-haspopup="menu"]').nth(1).click()
-    await sleep(300)
-    const items = page.locator('[role="menuitem"]')
-    assert((await items.count()) === DSH_MENU.length, 'DSH language menu has 8 entries', { count: await items.count() })
+    await settingsDialog.locator('button[aria-haspopup="menu"]').filter({ hasText: LANGUAGE_BUTTON_TEXT }).click()
     // Armed: t0 is stamped by the very click that picks the language.
     await page.evaluate(
       ({ sample, settle, observeSource }) => {
@@ -328,7 +328,7 @@ async function main() {
       { sample: 20, settle: opts.settle, observeSource: OBSERVE },
     )
     const before = await observe()
-    await items.nth(DSH_MENU.indexOf(id)).click()
+    await page.getByRole('menuitem', { name: DSH_LANGUAGES[id], exact: true }).click()
     await page.waitForFunction(() => window.__i18nProbe?.done === true, undefined, { timeout: opts.settle + 10000 })
     const probe = await page.evaluate(() => ({ series: window.__i18nProbe.series, langAt: window.__i18nProbe.langAt, atLang: window.__i18nProbe.atLang }))
     return { before, series: probe.series, langAt: probe.langAt, atLang: probe.atLang }

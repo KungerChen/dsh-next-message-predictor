@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-0.5.0-4d6bfe" alt="Version 0.5.0">
+  <img src="https://img.shields.io/badge/Version-0.5.1-4d6bfe" alt="Version 0.5.1">
   <img src="https://img.shields.io/badge/DeepSeek%20Harness-0.2.2--rc.1-1f2937" alt="DeepSeek Harness 0.2.2-rc.1">
   <img src="https://img.shields.io/badge/Sprachen-9-8250df" alt="Sprachen 9">
   <img src="https://img.shields.io/badge/Fremdabh%C3%A4ngigkeiten-0-2ea44f" alt="Fremdabhängigkeiten 0">
@@ -139,7 +139,7 @@ Die Einstellungsseite, die Schaltflächen im Eingabefeld und ihre Tooltips gibt 
 
 ### Mit einem Klick in der Seitenleiste
 
-Ein Klick auf „Zur Seitenleiste hinzufügen“, und in der linken DSH-Seitenleiste erscheint ein Eintrag; Status prüfen oder Modus wechseln geht danach ohne Umweg über die Einstellungen. Die Version neben dem Titel zeigt jederzeit, welcher Stand installiert ist.
+Klicken Sie auf „Seitenleisteneintrag hinzufügen“, um Vorhersage über die linke DSH-Seitenleiste zu öffnen. Wenn Sie den Eintrag lösen, können Sie ihn unter „Mehr“ öffnen oder wieder anheften. Die installierte Version steht neben dem Titel.
 
 <table>
 <tr>
@@ -147,7 +147,7 @@ Ein Klick auf „Zur Seitenleiste hinzufügen“, und in der linken DSH-Seitenle
   <img src="docs/images/sidebar-entry.png" width="230" alt="Der Eintrag „Vorhersage“ in der linken Seitenleiste">
 </td>
 <td width="70%" align="center" valign="middle">
-  <img src="docs/images/page-header.png" width="560" alt="Die Version neben dem Seitentitel und die Schaltfläche „Aus der Seitenleiste entfernen“">
+  <img src="docs/images/page-header.png" width="560" alt="Die Schaltfläche für den Seitenleisteneintrag neben Seitentitel und Version">
 </td>
 </tr>
 </table>
@@ -166,7 +166,7 @@ Ein Klick auf „Zur Seitenleiste hinzufügen“, und in der linken DSH-Seitenle
 
 ## Installation
 
-Erfordert DeepSeek Harness `0.2.2-rc.1` (`>=0.2.2-rc.1 <0.3.0`). Das Plugin hat keine Fremdabhängigkeiten und braucht keinen Build-Schritt. Ein Befehl genügt:
+Der Installationsbereich für DeepSeek Harness ist `>=0.2.2-rc.1 <0.3.0`. Das Plugin hat keine Fremdabhängigkeiten und braucht keinen Build-Schritt. Ein Befehl genügt:
 
 ```powershell
 dsh plugin --profile desktop add github:KungerChen/dsh-next-message-predictor
@@ -193,7 +193,7 @@ Danach sind es drei Schritte:
 
 1. Öffnen Sie **Einstellungen → Vorhersage** und schalten Sie „Vorhersage aktivieren“ ein. Standardmäßig ist es aus: Vorher wird kein Vorschlag angezeigt und kein Modell aufgerufen.
 2. Wählen Sie unter „Modus“ einen aus. Voreingestellt ist „Ausgewogen“.
-3. Für schnelleren Zugriff klicken Sie oben rechts auf „Zur Seitenleiste hinzufügen“.
+3. Für schnelleren Zugriff klicken Sie oben rechts auf „Seitenleisteneintrag hinzufügen“.
 
 <details>
 <summary>Aktualisieren und deinstallieren</summary>
@@ -262,7 +262,7 @@ Die ausführliche Dokumentation ist auf Chinesisch verfasst.
 | [Datenschutz und Datengrenzen](docs/PRIVACY.md) | Was gesendet wird, lokale Dateien, Löschen der Daten |
 | [Architektur](docs/ARCHITECTURE.md) | Host- und Browser-Hälfte, Ablauf einer Anfrage, Protokoll |
 | [Entwicklung und Verifikation](docs/DEVELOPMENT.md) | Build, Tests, End-to-End-Verifikation, Screenshots neu erzeugen |
-| [Kompatibilität](docs/COMPATIBILITY.md) | Der bestätigte Vertrag mit DSH 0.2.2-rc.1 und die Rückfalllösungen |
+| [Kompatibilität](docs/COMPATIBILITY.md) | DSH-Versionen, Testumfang und Host-Schnittstellen |
 | [Änderungsprotokoll](CHANGELOG.md) | Änderungen je Version |
 | [Dokumentationsindex](docs/README.md) | Alle Dokumente, einschließlich früherer Verifikations- und Optimierungsnotizen |
 
@@ -278,7 +278,7 @@ Kein `npm install`, kein Bundler; erforderlich ist Node.js 22 oder neuer. Um ein
 
 ## Bekannte Einschränkungen
 
-- Nur mit DSH `0.2.2-rc.1` verifiziert.
+- In der Web-Oberfläche von DSH `0.2.2-rc.1` und `0.2.2-rc.3` geprüft. Eingabemethoden und Tastenkürzel der Desktop-App müssen separat geprüft werden.
 - Das Speichern einer Einstellung veranlasst den Host, den Hintergrundteil des Plugins neu zu starten; eine laufende Vorhersage wird abgebrochen.
 - Mehrere Fenster teilen sich die Vorhersageergebnisse; das Ausblenden eines Vorschlags in einem Fenster wird nicht in Echtzeit auf die anderen übertragen.
 - Befehlspalette und Feedback-Dialog werden anhand von Fokus und modalen Merkmalen erkannt; eine Fehleinschätzung kostet höchstens einen Vorschlag, nie einen abgefangenen Tastendruck.

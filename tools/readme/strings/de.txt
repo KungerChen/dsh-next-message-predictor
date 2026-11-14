@@ -65,15 +65,15 @@ fl_h: Neun Oberflächensprachen
 fl_p: Die Einstellungsseite, die Schaltflächen im Eingabefeld und ihre Tooltips gibt es in {langs}. Standardmäßig folgt das Plugin der in DeepSeek Harness eingestellten Sprache; unter **Einstellungen → {ui:settings.nav} → {ui:settings.language}** können Sie auch eine eigene wählen, die sofort gilt. Die Vorschläge selbst richten sich immer nach der Sprache Ihrer Unterhaltung.
 fl_alt: Der obere Teil der Einstellungsseite auf Englisch, Japanisch, Spanisch und Russisch
 f3_h: Mit einem Klick in der Seitenleiste
-f3_p: Ein Klick auf „{ui:settings.sidebarAdd}“, und in der linken DSH-Seitenleiste erscheint ein Eintrag; Status prüfen oder Modus wechseln geht danach ohne Umweg über die Einstellungen. Die Version neben dem Titel zeigt jederzeit, welcher Stand installiert ist.
+f3_p: Klicken Sie auf „{ui:settings.sidebarAdd}“, um Vorhersage über die linke DSH-Seitenleiste zu öffnen. Wenn Sie den Eintrag lösen, können Sie ihn unter „Mehr“ öffnen oder wieder anheften. Die installierte Version steht neben dem Titel.
 f3_alt1: Der Eintrag „{ui:settings.nav}“ in der linken Seitenleiste
-f3_alt2: Die Version neben dem Seitentitel und die Schaltfläche „{ui:settings.sidebarRemove}“
+f3_alt2: Die Schaltfläche für den Seitenleisteneintrag neben Seitentitel und Version
 f4_h: Der Verbrauch auf einen Blick
 f4_sum: <b>Die ganze Einstellungsseite anzeigen</b> (Grundlagen, Modi, Herkunft der Vorschläge, Modell, letzte 7 Tage)
 f4_alt: Die vollständige Einstellungsseite
 shots: Die meisten Screenshots zeigen die chinesische Oberfläche. Sie stammen aus einer Demo-Unterhaltung und werden von einem Skript in diesem Repository mit einem lokalen Mock-Modell erzeugt; deshalb heißt das Modell Mock, und die Zahlen sind klein. Im echten Einsatz kommen die Vorschläge von dem Modell, das Sie in DSH eingerichtet haben.
 inst_h: Installation
-inst_p: Erfordert DeepSeek Harness `0.2.2-rc.1` (`>=0.2.2-rc.1 <0.3.0`). Das Plugin hat keine Fremdabhängigkeiten und braucht keinen Build-Schritt. Ein Befehl genügt:
+inst_p: Der Installationsbereich für DeepSeek Harness ist `>=0.2.2-rc.1 <0.3.0`. Das Plugin hat keine Fremdabhängigkeiten und braucht keinen Build-Schritt. Ein Befehl genügt:
 inst_profile: Hinter `--profile` steht das Profil, das Sie täglich nutzen: `desktop` für die Desktop-App, `web` für die Web-Version. Danach **DSH vollständig beenden und neu starten**.
 inst_d_sum: Der Befehl <code>dsh</code> wird nicht gefunden, oder Sie möchten aus einem lokalen Ordner installieren
 inst_d_p: Die Kommandozeile `dsh` liegt im Installationsordner von DeepSeek Harness und lässt sich über ihren vollständigen Pfad aufrufen. Wenn Sie den Code selbst ändern möchten, klonen Sie das Repository und installieren Sie aus dem lokalen Ordner:
@@ -119,7 +119,7 @@ d4c: Host- und Browser-Hälfte, Ablauf einer Anfrage, Protokoll
 d5: Entwicklung und Verifikation
 d5c: Build, Tests, End-to-End-Verifikation, Screenshots neu erzeugen
 d6: Kompatibilität
-d6c: Der bestätigte Vertrag mit DSH 0.2.2-rc.1 und die Rückfalllösungen
+d6c: DSH-Versionen, Testumfang und Host-Schnittstellen
 d7: Änderungsprotokoll
 d7c: Änderungen je Version
 d8: Dokumentationsindex
@@ -130,7 +130,7 @@ dev_c2: führt die Unit- und Integrationstests aus
 dev_c3: Build + Tests + Syntaxprüfung
 dev_p: Kein `npm install`, kein Bundler; erforderlich ist Node.js 22 oder neuer. Um eine Übersetzung zu ergänzen oder zu korrigieren, bearbeiten Sie `src/client/locales/<Sprache>.js`; die Tests prüfen, dass alle Sprachen dieselben Schlüssel haben.
 lim_h: Bekannte Einschränkungen
-l1: Nur mit DSH `0.2.2-rc.1` verifiziert.
+l1: In der Web-Oberfläche von DSH `0.2.2-rc.1` und `0.2.2-rc.3` geprüft. Eingabemethoden und Tastenkürzel der Desktop-App müssen separat geprüft werden.
 l2: Das Speichern einer Einstellung veranlasst den Host, den Hintergrundteil des Plugins neu zu starten; eine laufende Vorhersage wird abgebrochen.
 l3: Mehrere Fenster teilen sich die Vorhersageergebnisse; das Ausblenden eines Vorschlags in einem Fenster wird nicht in Echtzeit auf die anderen übertragen.
 l4: Befehlspalette und Feedback-Dialog werden anhand von Fokus und modalen Merkmalen erkannt; eine Fehleinschätzung kostet höchstens einen Vorschlag, nie einen abgefangenen Tastendruck.

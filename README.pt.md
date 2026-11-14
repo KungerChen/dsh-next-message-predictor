@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/vers%C3%A3o-0.5.0-4d6bfe" alt="versão 0.5.0">
+  <img src="https://img.shields.io/badge/vers%C3%A3o-0.5.1-4d6bfe" alt="versão 0.5.1">
   <img src="https://img.shields.io/badge/DeepSeek%20Harness-0.2.2--rc.1-1f2937" alt="DeepSeek Harness 0.2.2-rc.1">
   <img src="https://img.shields.io/badge/idiomas-9-8250df" alt="idiomas 9">
   <img src="https://img.shields.io/badge/depend%C3%AAncias%20externas-0-2ea44f" alt="dependências externas 0">
@@ -139,7 +139,7 @@ A página de configurações, os botões da caixa de entrada e as dicas deles es
 
 ### A um clique na barra lateral
 
-Clique em “Adicionar à barra lateral” e um item aparece na barra lateral esquerda do DSH; depois disso, conferir o estado ou trocar de modo não exige mais passar pelas Configurações. A versão ao lado do título mostra sempre qual está instalada.
+Clique em “Adicionar atalho à barra lateral” para abrir Previsão pela barra lateral esquerda do DSH. Se desafixar o atalho, você pode abri-lo ou fixá-lo novamente em “Mais”. A versão instalada aparece ao lado do título.
 
 <table>
 <tr>
@@ -147,7 +147,7 @@ Clique em “Adicionar à barra lateral” e um item aparece na barra lateral es
   <img src="docs/images/sidebar-entry.png" width="230" alt="O item “Previsão” na barra lateral esquerda">
 </td>
 <td width="70%" align="center" valign="middle">
-  <img src="docs/images/page-header.png" width="560" alt="A versão ao lado do título da página e o botão “Remover da barra lateral”">
+  <img src="docs/images/page-header.png" width="560" alt="O botão do atalho da barra lateral ao lado do título da página e da versão">
 </td>
 </tr>
 </table>
@@ -166,7 +166,7 @@ Clique em “Adicionar à barra lateral” e um item aparece na barra lateral es
 
 ## Instalação
 
-Requer o DeepSeek Harness `0.2.2-rc.1` (`>=0.2.2-rc.1 <0.3.0`). O plugin não tem dependências externas nem precisa de compilação. Um comando instala:
+O intervalo de versões do DeepSeek Harness para instalação é `>=0.2.2-rc.1 <0.3.0`. O plugin não tem dependências externas e não precisa de compilação. Um comando instala:
 
 ```powershell
 dsh plugin --profile desktop add github:KungerChen/dsh-next-message-predictor
@@ -193,7 +193,7 @@ Depois, três passos para começar:
 
 1. Abra **Configurações → Previsão** e ligue “Ativar previsão”. Vem desligado: até você ativar, nenhuma sugestão é exibida e nenhum modelo é chamado.
 2. Escolha um em “Modo”. O padrão é “Equilibrado”.
-3. Para chegar mais rápido, clique em “Adicionar à barra lateral” no canto superior direito.
+3. Para chegar mais rápido, clique em “Adicionar atalho à barra lateral” no canto superior direito.
 
 <details>
 <summary>Atualizar e desinstalar</summary>
@@ -262,7 +262,7 @@ A documentação detalhada está escrita em chinês.
 | [Privacidade e limites dos dados](docs/PRIVACY.md) | O que é enviado, arquivos locais, como apagar os dados |
 | [Arquitetura](docs/ARCHITECTURE.md) | As metades Host e navegador, o fluxo dos pedidos, o protocolo |
 | [Desenvolvimento e verificação](docs/DEVELOPMENT.md) | Compilação, testes, verificação de ponta a ponta, como gerar as capturas de novo |
-| [Compatibilidade](docs/COMPATIBILITY.md) | O contrato confirmado com o DSH 0.2.2-rc.1 e as alternativas |
+| [Compatibilidade](docs/COMPATIBILITY.md) | Versões do DSH, cobertura dos testes e interfaces do host |
 | [Registro de alterações](CHANGELOG.md) | Mudanças de cada versão |
 | [Índice da documentação](docs/README.md) | Todos os documentos, incluindo notas anteriores de verificação e otimização |
 
@@ -278,7 +278,7 @@ Não precisa de `npm install` nem de empacotador; é necessário o Node.js 22 ou
 
 ## Limitações conhecidas
 
-- Verificado apenas no DSH `0.2.2-rc.1`.
+- Verificado na interface web do DSH `0.2.2-rc.1` e `0.2.2-rc.3`. Os métodos de entrada e atalhos do aplicativo para desktop exigem uma verificação separada.
 - Salvar uma configuração faz o host reiniciar a parte em segundo plano do plugin; uma previsão em andamento é cancelada.
 - Várias janelas compartilham os resultados das previsões; ocultar uma sugestão em uma janela não é sincronizado com as outras em tempo real.
 - A paleta de comandos e a caixa de diálogo de feedback são reconhecidas pelo foco e por características modais; um erro de detecção significa apenas uma sugestão a menos, nunca uma tecla capturada.

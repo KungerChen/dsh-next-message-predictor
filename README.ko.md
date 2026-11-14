@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/%EB%B2%84%EC%A0%84-0.5.0-4d6bfe" alt="버전 0.5.0">
+  <img src="https://img.shields.io/badge/%EB%B2%84%EC%A0%84-0.5.1-4d6bfe" alt="버전 0.5.1">
   <img src="https://img.shields.io/badge/DeepSeek%20Harness-0.2.2--rc.1-1f2937" alt="DeepSeek Harness 0.2.2-rc.1">
   <img src="https://img.shields.io/badge/%EC%96%B8%EC%96%B4-9-8250df" alt="언어 9">
   <img src="https://img.shields.io/badge/%EC%99%B8%EB%B6%80%20%EC%9D%98%EC%A1%B4%EC%84%B1-0-2ea44f" alt="외부 의존성 0">
@@ -139,7 +139,7 @@
 
 ### 사이드바에서 클릭 한 번으로
 
-“사이드바에 추가”를 누르면 DSH 왼쪽 사이드바에 항목이 생깁니다. 그다음부터는 설정에 들어가지 않고도 상태를 확인하고 모드를 바꿀 수 있습니다. 제목 옆의 버전 번호로 어떤 버전이 설치되어 있는지 언제든 알 수 있습니다.
+“사이드바 항목 추가”를 누르면 DSH 왼쪽 사이드바에서 메시지 예측을 열 수 있습니다. 고정을 해제한 항목은 “더 보기”에서 열거나 다시 고정할 수 있습니다. 제목 옆에는 설치된 버전이 표시됩니다.
 
 <table>
 <tr>
@@ -147,7 +147,7 @@
   <img src="docs/images/sidebar-entry.png" width="230" alt="왼쪽 사이드바의 “메시지 예측” 항목">
 </td>
 <td width="70%" align="center" valign="middle">
-  <img src="docs/images/page-header.png" width="560" alt="페이지 제목 옆의 버전 번호와 “사이드바에서 제거” 버튼">
+  <img src="docs/images/page-header.png" width="560" alt="페이지 제목과 버전 옆에 있는 사이드바 항목 버튼">
 </td>
 </tr>
 </table>
@@ -166,7 +166,7 @@
 
 ## 설치
 
-DeepSeek Harness `0.2.2-rc.1`(`>=0.2.2-rc.1 <0.3.0`)이 필요합니다. 외부 의존성이 없고 빌드도 필요 없습니다. 명령 하나로 설치됩니다:
+설치할 수 있는 DeepSeek Harness 버전 범위는 `>=0.2.2-rc.1 <0.3.0`입니다. 외부 의존성이 없고 빌드도 필요 없습니다. 명령 하나로 설치됩니다.
 
 ```powershell
 dsh plugin --profile desktop add github:KungerChen/dsh-next-message-predictor
@@ -193,7 +193,7 @@ $dsh = '<DSH 설치 폴더>\resources\runtime\cli\bin\dsh.cmd'
 
 1. **설정 → 메시지 예측**을 열고 “예측 사용”을 켭니다. 기본값은 꺼짐입니다. 켜기 전에는 제안이 표시되지 않고 모델도 호출되지 않습니다.
 2. “예측 모드”에서 하나를 고릅니다. 기본값은 “균형”입니다.
-3. 더 빨리 열고 싶다면 오른쪽 위의 “사이드바에 추가”를 누릅니다.
+3. 더 빨리 열고 싶다면 오른쪽 위의 “사이드바 항목 추가”를 누릅니다.
 
 <details>
 <summary>업데이트와 제거</summary>
@@ -262,7 +262,7 @@ dsh plugin --profile desktop remove dsh-next-message-predictor
 | [개인정보와 데이터 경계](docs/PRIVACY.md) | 전송 범위, 로컬 파일, 데이터 삭제 방법 |
 | [아키텍처](docs/ARCHITECTURE.md) | Host 쪽과 브라우저 쪽의 구조, 요청 흐름, 프로토콜 |
 | [개발과 검증](docs/DEVELOPMENT.md) | 빌드, 테스트, 엔드투엔드 검증, 스크린샷 다시 만들기 |
-| [호환성](docs/COMPATIBILITY.md) | DSH 0.2.2-rc.1과의 계약 확인과 대체 동작 |
+| [호환성](docs/COMPATIBILITY.md) | DSH 버전, 검증 범위 및 호스트 인터페이스 |
 | [변경 기록](CHANGELOG.md) | 버전별 변경 사항 |
 | [문서 색인](docs/README.md) | 이전의 검증·최적화 기록을 포함한 모든 문서 |
 
@@ -278,7 +278,7 @@ npm run check   # 빌드 + 테스트 + 문법 검사
 
 ## 알려진 제한
 
-- DSH `0.2.2-rc.1`에서만 검증했습니다.
+- DSH `0.2.2-rc.1`과 `0.2.2-rc.3`의 웹 화면에서 검증했습니다. 데스크톱 앱의 입력기와 단축키는 별도 확인이 필요합니다.
 - 설정을 저장하면 호스트가 플러그인의 백그라운드 쪽을 다시 시작하며, 진행 중인 예측은 취소됩니다.
 - 여러 창이 예측 결과를 공유합니다. 한 창에서 제안을 숨겨도 다른 창에 실시간으로 반영되지는 않습니다.
 - 명령 팔레트와 피드백 대화상자는 포커스와 모달 특성으로 판단합니다. 잘못 판단하더라도 제안이 한 번 덜 표시될 뿐, 키 입력을 가로채지는 않습니다.

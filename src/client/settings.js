@@ -627,7 +627,7 @@ export function createSettingsComponent(react, runtime, t) {
                       ...(sidebarOn ? {} : { borderColor: NMP_ACCENT, color: NMP_ACCENT }),
                     },
                   },
-                  nmpPinIcon(h, sidebarOn),
+                  nmpSidebarIcon(h, sidebarOn),
                   t(sidebarOn ? 'settings.sidebarRemove' : 'settings.sidebarAdd'),
                 ),
                 help('sidebarEntry', 'right'),
@@ -1520,7 +1520,7 @@ function nmpSaveError(t, error) {
 }
 
 /** 14 px "sidebar" glyph: a plus while off, the entry rows drawn in once added. */
-function nmpPinIcon(h, on) {
+function nmpSidebarIcon(h, on) {
   return h(
     'svg',
     { width: 14, height: 14, viewBox: '0 0 16 16', fill: 'none', stroke: 'currentColor', strokeWidth: 1.3, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': 'true', focusable: 'false' },

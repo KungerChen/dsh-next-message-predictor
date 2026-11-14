@@ -59,7 +59,7 @@ function fakeContext(options) {
       if (name === 'sessions') {
         return { get: (id) => state.sessions[id] }
       }
-      return undefined
+      return options?.services?.[name]
     },
     effect(fn) {
       const disposer = fn()
@@ -133,6 +133,70 @@ test('apply registers the plugin route and handles predict', async () => {
   const body = await readJson(response)
   assert.equal(body.result.kind, 'offer')
   assert.equal(body.result.text, '固定测试建议')
+})
+
+test('manual prediction of an imported reply uses the next session model or the DSH default', async (t) => {
+  const defaultModel = { provider: 'default-provider', model: 'default-model' }
+  const sessionModel = { provider: 'session-provider', model: 'session-model' }
+  const importedSource = { kind: 'model', provider: 'deepseek-chat-export', model: 'deepseek-chat-export' }
+  const events = [
+    { type: 'user/message', seq: 2, data: { source: { kind: 'user' }, content: [{ type: 'text', text: '果篮里有什么？' }] } },
+    { type: 'assistant/message', seq: 3, data: { turn: 1, message: {
+      role: 'assistant', source: importedSource, content: [{ type: 'text', text: '果篮里有苹果和梨。' }],
+    } } },
+    { type: 'turn/end', seq: 7, data: { turn: 1, reason: { kind: 'completed' } } },
+  ]
+  for (const [name, next, expected] of [
+    ['session selection', sessionModel, sessionModel],
+    ['DSH default when the session has no selection', null, defaultModel],
+    ['unavailable projection', undefined, null],
+    ['another import source label', importedSource, null],
+  ]) {
+    await t.test(name, async () => {
+      const sessionId = `import-${name.replaceAll(' ', '-')}`
+      const prepared = []
+      let released = false
+      const { ctx, routes, effects } = fakeContext({ services: {
+        agentDefaultModel: { currentSelection: () => defaultModel },
+        sessionQuery: {
+          readSession: async () => ({ events }),
+          readSurface: async () => ({ events, capturedThroughSeq: 7 }),
+          async observeSession(id, { signal }) {
+            assert.equal(id, sessionId)
+            assert.equal(signal.aborted, false)
+            return { projections: { values: { modelSelection: { next } } }, [Symbol.dispose]: () => { released = true } }
+          },
+        },
+        llm: {
+          async prepareCall({ provider, model }) {
+            prepared.push({ provider, model })
+            return { async *stream() {
+              yield { type: 'text-delta', text: '{"suggestion":"梨可以留到明天吃吗？"}' }
+              yield { type: 'finish', reason: { kind: 'stop' } }
+            } }
+          },
+        },
+      } })
+      apply(ctx, { enabled: true, modelMode: 'session' })
+      try {
+        const route = routes.get(ROUTE)
+        const response = await readJson(await route.fetch(jsonRequest(predictBody({
+          anchor: { ...anchor(), sessionId },
+          trigger: 'manual',
+        }))))
+        assert.equal(released, true)
+        assert.deepEqual(prepared, expected ? [expected] : [])
+        if (expected) {
+          assert.equal(response.result.kind, 'offer')
+          assert.equal(response.result.text, '梨可以留到明天吃吗？')
+        } else {
+          assert.deepEqual(response.result, { kind: 'unavailable', reason: 'no-route:no-session-selection' })
+        }
+      } finally {
+        for (const dispose of effects) dispose?.()
+      }
+    })
+  }
 })
 
 test('a blocked turn and an old cached turn are rejected at the HTTP entry point', async () => {
