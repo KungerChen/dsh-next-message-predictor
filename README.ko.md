@@ -13,11 +13,11 @@
 <p align="center">
   <b>DeepSeek Harness 입력창 플러그인</b><br>
   조건을 충족한 답변 뒤에 입력창에서 다음 메시지 제안을 미리 볼 수 있습니다.<br>
-  입력창에 포커스를 두고 <kbd>Tab</kbd>을 누르면 초안에 들어갑니다. 전송은 직접 결정합니다.
+  입력창에 포커스를 두고 <kbd>Tab</kbd>을 누르면 기본적으로 초안에 들어갑니다.
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/%EB%B2%84%EC%A0%84-0.6.0-4d6bfe" alt="버전 0.6.0">
+  <img src="https://img.shields.io/badge/%EB%B2%84%EC%A0%84-0.7.0-4d6bfe" alt="버전 0.7.0">
   <img src="https://img.shields.io/badge/DeepSeek%20Harness-%3E%3D0.2.2--rc.1%20%3C0.3.0-1f2937" alt="DeepSeek Harness &gt;=0.2.2-rc.1 &lt;0.3.0">
   <img src="https://img.shields.io/badge/%EC%96%B8%EC%96%B4-9-8250df" alt="언어 9">
   <img src="https://img.shields.io/badge/%EC%99%B8%EB%B6%80%20%EC%9D%98%EC%A1%B4%EC%84%B1-0-2ea44f" alt="외부 의존성 0">
@@ -69,7 +69,9 @@ $dsh = '<DSH 설치 폴더>\resources\runtime\cli\bin\dsh.cmd'
 <details>
 <summary>업데이트와 제거</summary>
 
-**업데이트**: GitHub에서 설치했다면 먼저 제거한 뒤 위의 설치 명령을 다시 실행합니다. 로컬 폴더에서 설치했다면 그 폴더에서 `git pull`을 실행합니다. 그런 다음 DSH를 다시 시작하세요. 페이지만 새로 고치는 것으로는 부족합니다. 페이지는 새 버전인데 백그라운드 쪽은 예전 버전으로 남아, 설정 페이지에 버전 불일치가 표시됩니다.
+**GitHub 설치 업데이트**. 플러그인을 제거하고 설치 명령을 다시 실행한 다음 DSH를 완전히 종료하고 다시 여세요.
+
+**로컬 업데이트 적용**. 먼저 로컬 플러그인 폴더의 파일을 업데이트하고 빌드합니다. 플러그인 설정에서 아직 로드하지 않은 로컬 빌드를 감지하면 “로컬 업데이트 적용”을 선택할 수 있습니다. 같은 프로필의 다른 변경된 플러그인도 다시 로드될 수 있습니다. 처음 사용하거나 적용할 수 없으면 DSH를 완전히 종료하고 다시 여세요.
 
 **제거**:
 
@@ -93,7 +95,7 @@ dsh plugin --profile desktop remove dsh-next-message-predictor
 
 | 입력창에서 할 일 | 동작 |
 |---|---|
-| <kbd>Tab</kbd>, 커서가 처음에 있을 때 <kbd>→</kbd>, 또는 “Tab 적용” 클릭 | 먼저 입력창에 포커스를 둡니다. 제안을 초안에 넣은 뒤 전송 전까지 수정할 수 있습니다. |
+| <kbd>Tab</kbd>, 해당 버튼, 또는 커서가 처음에 있을 때 <kbd>→</kbd> | 먼저 입력창에 포커스를 둡니다. 기본적으로 제안이 초안에 들어갑니다. “Tab으로 전송”을 켜면 Tab과 해당 버튼으로 현재 제안을 전송합니다. 오른쪽 화살표는 항상 초안에만 넣습니다. 현재 제안이 유효하고 전송 조건을 충족해야 합니다. 켜기 전에 실수로 전송할 수 있다는 점을 확인하세요. |
 | <kbd>Esc</kbd> | 입력창에 포커스가 있을 때 현재 제안을 숨깁니다. 이후 직접 새 예측을 요청할 수 있습니다. |
 | <kbd>Alt</kbd>+<kbd>\</kbd>(변경 가능), “예측” 또는 “다른 제안” | 입력창이 비어 있을 때 예측하거나 다른 제안을 표시합니다. 단축키를 쓰려면 입력창에 포커스도 필요합니다. |
 | 그냥 입력하기 | 입력을 시작하면 미리보기가 사라집니다. 초안을 지울 때 제안이 아직 유효하면 다시 표시될 수 있습니다. |
@@ -205,7 +207,7 @@ dsh plugin --profile desktop remove dsh-next-message-predictor
 
 ## 문서
 
-자세한 문서는 중국어로 작성되어 있습니다.
+0.7.0의 호환성과 검증 범위는 [릴리스와 설정](docs/RELEASE.md#release-validation-070)을 참조하세요. 자세한 문서는 중국어로 작성되어 있습니다.
 
 | 문서 | 내용 |
 |---|---|

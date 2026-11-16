@@ -1,7 +1,7 @@
 title: Next Message Prediction
 product: A composer plugin for DeepSeek Harness
 tagline1: See a suggested follow-up in the composer after an eligible reply.
-tagline2: Focus the input and press <kbd>Tab</kbd> to fill your draft. You decide when to send it.
+tagline2: Focus the input and press <kbd>Tab</kbd> to fill your draft by default.
 b_version: version
 b_deps: third-party deps
 b_langs: languages
@@ -24,15 +24,16 @@ inst_d_p: The `dsh` command line lives in the DeepSeek Harness installation fold
 ph_dsh: DSH install folder
 ph_plugin: plugin folder
 upd_sum: Updating and uninstalling
-upd_p: **Update**: if you installed from GitHub, uninstall and run the install command again; if you installed from a local folder, run `git pull` there. Then restart DSH. Refreshing the page is not enough: the page would be new while the background half is still old, and the settings page would report a version mismatch.
+upd_p: **Update a GitHub installation**. Uninstall the plugin, run the install command again, then fully restart DSH.
+upd_local: **Apply a local build**. Update and build the plugin files in the local directory first. When the plugin settings detect a local build that has yet to load, choose “{ui:settings.localUpdateApply}”. DSH can also reload other changed plugins in the same profile. Fully restart DSH before first use or if the update cannot be applied.
 unin: **Uninstall**:
 conflict: Enable only one composer-prediction plugin per profile. When another one is detected, this plugin pauses itself and says why on the settings page.
 f1_p: An available suggestion appears as grey text in the empty composer of the active window. By default it can appear while the input is unfocused. Turn on “{ui:settings.requireInputFocus}” to display it only while the input is focused. This option controls how existing suggestions are displayed.
 f1_alt: A grey suggestion in the unfocused composer with a prompt to focus the input before pressing Tab
 k_th1: Action in the composer
 k_th2: What it does
-k1a: <kbd>Tab</kbd>, <kbd>→</kbd> at the start, or click “{ui:ghost.adopt}”
-k1b: Focus the input first. This fills the draft so you can edit it before sending.
+k1a: <kbd>Tab</kbd>, its matching button, or <kbd>→</kbd> at the start
+k1b: Focus the input first. By default, these actions fill the draft. If you enable “{ui:settings.sendOnTab}”, Tab and its matching button submit the current suggestion. The right arrow always fills the draft. Sending requires a current suggestion and the send checks to pass. Consider the risk of accidental sends before enabling this option.
 k2a: <kbd>Esc</kbd>
 k2b: With focus in the input, hide the current suggestion. You can still ask for another manually.
 k3a: <kbd>Alt</kbd>+<kbd>\</kbd> (configurable), “{ui:ghost.predict}” or “{ui:ghost.another}”
@@ -79,7 +80,7 @@ q1: Why did no suggestion appear?
 a1: Check the current status in the settings. A paused conversation, an inactive window, a nonempty draft, a menu or active IME composition can block display. The model can also return no usable suggestion. Try manual prediction from the focused, empty input when the conversation is eligible.
 q2: When are requests charged?
 a2: Usage depends on the model provider and the tokens used in each dispatched request. Cycling through existing choices and building a local fallback add no model request. Use Saver mode to request predictions only when you need one.
-docs_note: The detailed documentation is written in Chinese.
+docs_note: Compatibility and validation for 0.7.0 are listed in [Release and setup](docs/RELEASE.md#release-validation-070). The detailed documentation is written in Chinese.
 d_th1: Document
 d_th2: Contents
 d1: User guide

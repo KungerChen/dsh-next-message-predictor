@@ -27,5 +27,5 @@ jobs:
           node-version: 22
       # No dependencies and no lockfile, so there is nothing to install.
       - run: npm run check
-      - name: The committed bundle is up to date
-        run: git diff --exit-code -- lib/client.js
+      - name: Generated runtime files are up to date
+        run: git diff --exit-code -- lib/client.js lib/build-manifest.json src/shared/build-id.js

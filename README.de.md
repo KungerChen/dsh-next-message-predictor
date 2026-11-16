@@ -13,11 +13,11 @@
 <p align="center">
   <b>Ein Plugin für das Eingabefeld von DeepSeek Harness</b><br>
   Nach einer geeigneten Antwort kann im Eingabefeld ein Vorschlag für deine nächste Nachricht erscheinen.<br>
-  Setze den Fokus ins Eingabefeld und drücke <kbd>Tab</kbd>, um den Vorschlag in den Entwurf zu übernehmen. Du entscheidest, wann du sendest.
+  Fokussiere das Eingabefeld und drücke <kbd>Tab</kbd>, um den Vorschlag standardmäßig in den Entwurf zu übernehmen.
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-0.6.0-4d6bfe" alt="Version 0.6.0">
+  <img src="https://img.shields.io/badge/Version-0.7.0-4d6bfe" alt="Version 0.7.0">
   <img src="https://img.shields.io/badge/DeepSeek%20Harness-%3E%3D0.2.2--rc.1%20%3C0.3.0-1f2937" alt="DeepSeek Harness &gt;=0.2.2-rc.1 &lt;0.3.0">
   <img src="https://img.shields.io/badge/Sprachen-9-8250df" alt="Sprachen 9">
   <img src="https://img.shields.io/badge/Fremdabh%C3%A4ngigkeiten-0-2ea44f" alt="Fremdabhängigkeiten 0">
@@ -69,7 +69,9 @@ $dsh = '<DSH-Installationsordner>\resources\runtime\cli\bin\dsh.cmd'
 <details>
 <summary>Aktualisieren und deinstallieren</summary>
 
-**Aktualisieren**: Bei Installation von GitHub erst deinstallieren und den Installationsbefehl erneut ausführen; bei Installation aus einem lokalen Ordner dort `git pull` ausführen. Anschließend DSH neu starten. Die Seite neu zu laden reicht nicht: Dann wäre die Seite neu, der Hintergrundteil aber noch alt, und die Einstellungsseite würde auf abweichende Versionen hinweisen.
+**Eine GitHub-Installation aktualisieren**. Deinstalliere das Plugin, führe den Installationsbefehl erneut aus und starte DSH vollständig neu.
+
+**Einen lokalen Build übernehmen**. Aktualisiere und kompiliere zuerst die Plugin-Dateien im lokalen Ordner. Wenn die Einstellungen einen noch nicht geladenen Build erkennen, wähle „Lokales Update anwenden“. DSH kann dabei auch andere geänderte Plugins im selben Profil neu laden. Starte DSH vor der ersten Verwendung oder bei fehlgeschlagener Übernahme vollständig neu.
 
 **Deinstallieren**:
 
@@ -93,7 +95,7 @@ Ein verfügbarer Vorschlag erscheint grau im leeren Eingabefeld des aktiven Fens
 
 | Aktion im Eingabefeld | Wirkung |
 |---|---|
-| <kbd>Tab</kbd>, <kbd>→</kbd> am Anfang oder Klick auf „Tab: übernehmen“ | Fokussiere zuerst das Eingabefeld. Der Vorschlag wird in den Entwurf übernommen und bleibt bis zum Senden bearbeitbar. |
+| <kbd>Tab</kbd>, die zugehörige Schaltfläche oder <kbd>→</kbd> am Anfang | Fokussiere zuerst das Eingabefeld. Standardmäßig landet der Vorschlag im Entwurf. Wenn du „Mit Tab senden“ aktivierst, senden Tab und die zugehörige Schaltfläche den aktuellen Vorschlag. Die Pfeiltaste nach rechts übernimmt ihn immer nur in den Entwurf. Das Senden setzt einen gültigen Vorschlag und bestandene Prüfungen voraus. Beachte vor der Aktivierung das Risiko versehentlichen Sendens. |
 | <kbd>Esc</kbd> | Blendet beim fokussierten Eingabefeld den Vorschlag aus. Anschließend kannst du manuell einen neuen anfordern. |
 | <kbd>Alt</kbd>+<kbd>\</kbd> (änderbar), „Vorhersagen“ oder „Anderer“ | Fordert bei leerem Eingabefeld eine Vorhersage an oder wechselt zum nächsten Vorschlag. Das Tastenkürzel erfordert zusätzlich den Fokus im Feld. |
 | Einfach tippen | Sobald du tippst, verschwindet die Vorschau. Wenn du den Entwurf leerst und der Vorschlag noch gültig ist, kann er wieder erscheinen. |
@@ -205,7 +207,7 @@ Der Preis hängt vom aufgerufenen Anbieter und dem Tokenverbrauch ab. Ein Wechse
 
 ## Dokumentation
 
-Die ausführliche Dokumentation ist auf Chinesisch verfasst.
+Kompatibilität und Prüfungen für 0.7.0 stehen unter [Veröffentlichung und Einrichtung](docs/RELEASE.md#release-validation-070). Die ausführliche Dokumentation ist auf Chinesisch verfasst.
 
 | Dokument | Inhalt |
 |---|---|

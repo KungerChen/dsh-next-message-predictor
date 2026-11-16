@@ -97,6 +97,24 @@ export function hasOpenMenuOrDialog(card) {
   return hasVisiblePopup(document, PAGE_DIALOG_SELECTORS.join(', '))
 }
 
+/** Detect transient popup changes while a send gesture is waiting on the Host. */
+export function popupChangedDuringSend(records, card) {
+  const pageSelector = PAGE_DIALOG_SELECTORS.join(', ')
+  return records.some((record) => {
+    if (record.type === 'attributes') {
+      if (record.attributeName === 'aria-expanded') {
+        return card.contains(record.target) && record.target.hasAttribute('aria-haspopup') &&
+          (record.oldValue === 'true' || record.target.getAttribute('aria-expanded') === 'true')
+      }
+      if (record.attributeName === 'role' && ['menu', 'listbox', 'dialog', 'alertdialog'].includes(record.oldValue)) return true
+      return record.target.matches?.(pageSelector)
+    }
+    return [...record.addedNodes, ...record.removedNodes].some((node) =>
+      node.matches?.(pageSelector) || node.querySelector?.(pageSelector),
+    )
+  })
+}
+
 /** Whether the page is currently visible (not a hidden tab / minimized window). */
 export function pageVisible() {
   if (typeof document === 'undefined' || document === null) return false

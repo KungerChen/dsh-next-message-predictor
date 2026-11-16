@@ -10,11 +10,21 @@
 
 rc.3 导入的助手回复使用 `deepseek-chat-export` 标记来源。插件在「跟随会话模型」模式下用 DSH 的会话模型投影解析实际路由。尚无会话选择时使用 DSH 默认模型。打开导入历史不会触发自动预测。见 [DSH 导入实现](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.2-rc.3/packages/experimental/deepseek-chat-import/src/conversation.ts#L426-L428)。
 
+0.7.0 的焦点显示、Tab 一键发送和本地更新已经用户桌面验收。隔离 DSH Web 的具体宿主版本、检查结果及未覆盖范围见 [0.7.0 的验证](RELEASE.md#release-validation-070)。
+
 ### 首次采纳的撤销
 
 DSH 桌面版 `0.2.2-rc.3` 在发送后清空编辑器的历史栈和当前历史前态。如果回复完成后聚焦输入框没有提交独立的选区更新，首次采纳可能没有可撤销前态。插件 0.5.1 的原生桌面对照中，按钮和 Tab 都触发了这条路径。见 [验证报告](VALIDATION-DISPLAY-SESSION.md)。
 
 0.6.0 仅对已核验的 Lexical `0.49.0+prod.esm` 编辑器准备撤销前态。适配层通过 Lexical 的 DOM 私有标记找到当前输入框对应的实例，之后使用公开的 `read` 和 `update`。适配层先让待提交的编辑保留其原有标签，再用 `history-merge` 提交当前草稿状态，保留原有撤销和重做条目。它复核焦点、选区、草稿版本及原生插入位置，再调用一次 `InputActions.insertText` 插入文字。DOM 标记或编辑器版本不匹配时，沿用 DSH 的原生插入及撤销行为。 [Lexical DOM 私有标记](https://github.com/facebook/lexical/blob/v0.49.0/packages/lexical/src/LexicalUtils.ts#L259-L276) · [Lexical 更新接口](https://github.com/facebook/lexical/blob/v0.49.0/packages/lexical/src/LexicalEditor.ts#L1720-L1762) · [Lexical 历史实现](https://github.com/facebook/lexical/blob/v0.49.0/packages/lexical-history/src/index.ts#L493-L529)
+
+### Tab 一键发送
+
+一键发送需要 DSH 当前输入框的公开 `inputActions.submit()` 及 Host 可读取的会话状态。任一能力缺失时，符合填入条件的建议仍可作为草稿。状态不兼容、窗口失焦、草稿或会话发生变化时禁止提交。P0 采集的 submit 方法只说明接口存在，桌面、Web 及版本覆盖以 [本轮维护记录](maintenance/20261115-focus-tab-send.md#20261115-focus-tab-send) 的实际验证为准。
+
+### 应用本地更新
+
+需要宿主公开的 `hmr.runExclusive()` 和 `hmr.reconcileProfile()`。协调范围是整个 profile，浏览器与 Host 可能先后更新。旧构建首次升级时需完整重启 DSH。若出错导致目标路由消失，先修复本地文件并手动重启。产品的验证范围见 [本地更新实施记录](maintenance/20261115-local-update-implementation.md#20261115-local-update-implementation)。
 
 ## P0 契约矩阵（DSH 0.2.2-rc.1）
 
@@ -88,7 +98,7 @@ DSH 桌面版 `0.2.2-rc.3` 在发送后清空编辑器的历史栈和当前历�
 | `InputActions.captureInsertion` | `() => {start, end, draftRev}`，同步 | `[C] §3.2` | 确认 |
 | `InputActions.insertText` | `(text, span) => boolean`，编辑器冻结、已销毁或草稿版本不匹配时返回 false。编辑使用宿主的 `paste` 历史标记。 | `[C] §3.2` | 已验证原生插入，撤销适配见上文 |
 | `setDraft` | 存在但**不用于采纳**（整段替换破坏引用/撤销语义） | `[C] §3.2` | 确认 |
-| `submit()` | 存在但**不得调用**（本插件零发送） | `[C] §3.2` | 确认 |
+| `submit()` | 存在；P0/P1 阶段禁用（该阶段要求零发送） | `[C] §3.2` | 确认 |
 | 语义为空 | `draft==='' && attachments=0 && occurrences=0 && queue=0 && phase==='plain' && !claim`（空白字符也算内容） | `[C] §3.3` | 确认规则 |
 | `canEdit` | `!frozen(phase)` + session `!removed` + subagent 非 one-shot；DOM `aria-disabled` 辅助 | `[C] §3.3` | 部分（组合派生） |
 | 焦点 | `document.activeElement === card.querySelector('[data-composer-input]')` | `[C] §3.3` | 部分（DOM 派生） |

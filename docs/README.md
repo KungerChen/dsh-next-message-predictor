@@ -31,3 +31,22 @@
 | [OPTIMIZATION-BATCH4.md](OPTIMIZATION-BATCH4.md) | 0.2.x | 方向键采纳、冲突检测、回合事实摘要 |
 
 评测数据与报告在 [`../eval/`](../eval/)：`fixtures.deidentified.jsonl` 是纯合成样本；`replay-*.json` 是真实会话回放的指标，只有哈希标识和分数，不含对话文字。
+
+<a id="handoff-map"></a>
+## 协作与规格映射
+
+[AGENTS.md](../AGENTS.md) 为接手入口。现有 ARCHITECTURE、CONFIGURATION、PRIVACY、COMPATIBILITY 承担 SPEC 职责，DEVELOPMENT 和专题 VALIDATION 提供验收要求；本页现有“历史记录”继续承担 LOG-INDEX 职责，CHANGELOG 保持版本变更定位。
+
+<a id="maintenance-log"></a>
+## 维护记录索引
+
+| 记录 ID | 日期 | 行为 | 原记录 | 状态 |
+| --- | --- | --- | --- | --- |
+| 20261116-release-070 | 2026-11-16 | 0.7.0 验收回执与发布 | [发布记录](maintenance/20261116-release-0.7.0.md#20261116-release-070) | 发布进行中 |
+| 20261115-local-update-implementation | 2026-11-15 | 自动检测同版本本地构建差异及手动应用 | [实施记录](maintenance/20261115-local-update-implementation.md#20261115-local-update-implementation) | 用户已确认本地更新 |
+| 20261115-local-update-investigation | 2026-11-15 | 调查本机更新生效与必要时重启 DSH | [调查记录](maintenance/20261115-local-update-investigation.md#20261115-local-update-investigation) | 隔离验证完成，方案已批准 |
+| 20261115-focus-tab-send | 2026-11-15 | 修复焦点显示，增加默认关闭的 Tab 一键发送 | [维护记录](maintenance/20261115-focus-tab-send.md#20261115-focus-tab-send) | 用户已确认焦点显示及一键发送 |
+| 20261115-085644-rules-alignment-predictor | 2026-11-15 | 明确生成 README 与人工验收的边界 | [规范修订](maintenance/20261115-085644-rules-alignment.md#20261115-085644-rules-alignment-predictor) | 已自测，待用户验收（规范修订） |
+| 20261114-project-docs-audit | 2026-11-14 | 补齐协作规则与文档职责映射 | [文档维护](maintenance/2026-11-14-project-docs.md#20261114-project-docs-audit) | 文档检查见记录；用户已确认（文档整理） |
+
+原历史记录按原文状态理解，不把早期通过结果当成当前版本验证。新增施工继续在此追加稳定 ID、摘要、证据入口与状态；不复制整份历史报告。

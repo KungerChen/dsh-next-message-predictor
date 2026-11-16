@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Prédiction du prochain message",
-    "description": "Lorsque l’assistant a terminé sa réponse, une suggestion pour votre prochain message s’affiche en gris dans la zone de saisie vide. Tab ou → l’accepte, Échap la masque ; la suggestion est seulement insérée, jamais envoyée automatiquement. Chaque prédiction correspond à un appel au modèle."
+    "description": "Lorsque l’assistant a terminé sa réponse, une suggestion pour votre prochain message s’affiche en gris dans la zone de saisie vide. Par défaut, Tab insère la suggestion dans le brouillon. Activez l’envoi avec Tab pour l’envoyer avec cette touche. La flèche droite l’insère toujours dans le brouillon et Échap la masque. Chaque prédiction correspond à un appel au modèle."
   }
 }

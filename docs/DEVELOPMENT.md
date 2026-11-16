@@ -1,6 +1,6 @@
 # 开发与验证
 
-适用版本：0.6.0。
+适用版本 0.7.0。
 
 ## 环境
 
@@ -27,13 +27,13 @@ DSH 的数据目录取环境变量 `DSH_HOME`，未设置时为用户主目录�
 ## 日常命令
 
 ```powershell
-npm run build   # 生成 lib/client.js
+npm run build   # 生成 lib/client.js、lib/build-manifest.json、src/shared/build-id.js
 npm test        # 全部单元与集成测试
 npm run check   # build + README 是否过期 + test + node --check
 npm run readme  # 重新生成各语言 README
 ```
 
-改了 `src/shared/` 或 `src/client/` 之后必须重新 `npm run build`，否则 DSH 加载的还是旧的 `lib/client.js`。`test/v030.test.mjs` 会在 bundle 里的版本号与 `package.json` 不一致时失败，提醒重新构建。
+改动运行时源文件、元数据、`cordis.patch.yml`、`icon.svg`、Host 入口或构建器后，运行 `npm run build` 同步三个生成文件。构建标识的输入由 `src/host/build-integrity.js` 定义，覆盖 `scripts/build-client.mjs`。README、文档和测试不改变构建标识。`test/v030.test.mjs` 检查 bundle 版本与 `package.json` 一致。
 
 ## 修改代码时的约定
 
@@ -47,7 +47,7 @@ npm run readme  # 重新生成各语言 README
 
 ## CI
 
-`.github/workflows/ci.yml` 在推送到 `main` 和每个 pull request 上运行，矩阵是 ubuntu-latest 与 windows-latest（Node 22）。步骤只有 `npm run check`，随后用 `git diff --exit-code -- lib/client.js` 确认入库的 bundle 与源码一致；没有依赖，所以不执行 `npm install`。测试要在两个系统上都通过：不要在测试里写死路径分隔符、本机时区或 `git` 之外的外部程序。README 顶部的 CI 徽章指向这个工作流。
+`.github/workflows/ci.yml` 在推送到 `main` 和每个 pull request 上运行，矩阵是 ubuntu-latest 与 windows-latest（Node 22）。步骤只有 `npm run check`，随后用 `git diff --exit-code -- lib/client.js lib/build-manifest.json src/shared/build-id.js` 确认入库的生成文件与输入一致；没有依赖，所以不执行 `npm install`。测试要在两个系统上都通过：不要在测试里写死路径分隔符、本机时区或 `git` 之外的外部程序。README 顶部的 CI 徽章指向这个工作流。
 
 ## README 的生成
 
@@ -62,6 +62,14 @@ node tools/build-readmes.mjs --check  # 只检查；有差异时退出码为 1�
 ```
 
 新增 README 语言：先按上面“新增一种语言”加好界面语言，复制 `tools/readme/strings/en.txt` 为 `<语言>.txt` 并逐行翻译（键和顺序必须与其他语言一致），把语言 id 加到 `tools/build-readmes.mjs` 的 `ORDER`，运行 `npm run readme`。其他语言 README 的语言栏会随之更新。
+
+<a id="readme-acceptance-boundary"></a>
+### README 同步与验收边界
+
+- 已授权的源码、配置、预设、语言或模板变更影响 README 生成结果时，允许并要求在正式自测前通过生成源与 `npm run readme` 同步各语言 README，不必为这一必要同步另等人工验收或重复请求确认；审阅差异，确保内容都对应本轮已授权变更。此规则是全局 README 更新时机在本项目生成文件上的具体例外。
+- 生成一致性只说明文档与当前实现相符，不代表功能已通过用户验收、已上线或已发布。未验收状态及具体验证缺口记录在本轮维护日志；没有相应证据和用户确认时，不得把验收/上线陈述提前写成已完成。
+- 不涉及生成依赖的能力说明、运行方式、限制和验收状态，仍按用户确认后更新的约定处理；用户明确要求本轮直接交付文档的，按该授权执行并区分已验证与待验证内容。
+- `npm run check` 的 README 一致性门槛保持不变；不得跳过该检查、修改断言或放宽标准来避免同步。文档生成不构成服务启用、正式发布或自动发送的授权。
 
 ## 测试
 
@@ -259,6 +267,6 @@ Host 日志以 `[next-message-predictor]` 开头，只有原因码、耗时、�
 | 现象 | 先看 |
 |---|---|
 | 设置页空白或面板空白 | 控制台里的 `slot entry crashed`；运行 `npm test` 看冒烟测试 |
-| 改了代码不生效 | 是否 `npm run build`；是否重启了 DSH（Host 半）或刷新了页面（浏览器半）；设置页是否提示版本不一致 |
+| 改了代码不生效 | 先运行 `npm run build`，再根据设置页提示应用本地更新。若宿主不支持热加载或旧构建没有更新入口，请完整重启 DSH。 |
 | 一直不出建议 | 设置页“当前状态”；“高级选项 → 诊断信息”的计数；Host 日志里的 `stale` / `abstain` 原因 |
 | 保存设置失败 | 提示里的原因；`能力` 一行的 `configEditor` 是否为 `true` |

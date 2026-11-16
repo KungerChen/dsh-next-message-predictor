@@ -66,6 +66,8 @@ $dsh = '<{{ph_dsh}}>\resources\runtime\cli\bin\dsh.cmd'
 
 {{upd_p}}
 
+{{upd_local}}
+
 {{unin}}
 
 ```powershell

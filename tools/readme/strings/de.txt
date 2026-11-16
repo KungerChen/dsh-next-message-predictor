@@ -1,7 +1,7 @@
 title: Vorhersage der nächsten Nachricht
 product: Ein Plugin für das Eingabefeld von DeepSeek Harness
 tagline1: Nach einer geeigneten Antwort kann im Eingabefeld ein Vorschlag für deine nächste Nachricht erscheinen.
-tagline2: Setze den Fokus ins Eingabefeld und drücke <kbd>Tab</kbd>, um den Vorschlag in den Entwurf zu übernehmen. Du entscheidest, wann du sendest.
+tagline2: Fokussiere das Eingabefeld und drücke <kbd>Tab</kbd>, um den Vorschlag standardmäßig in den Entwurf zu übernehmen.
 b_version: Version
 b_deps: Fremdabhängigkeiten
 b_langs: Sprachen
@@ -24,15 +24,16 @@ inst_d_p: Die Kommandozeile `dsh` liegt im Installationsordner von DeepSeek Harn
 ph_dsh: DSH-Installationsordner
 ph_plugin: Plugin-Ordner
 upd_sum: Aktualisieren und deinstallieren
-upd_p: **Aktualisieren**: Bei Installation von GitHub erst deinstallieren und den Installationsbefehl erneut ausführen; bei Installation aus einem lokalen Ordner dort `git pull` ausführen. Anschließend DSH neu starten. Die Seite neu zu laden reicht nicht: Dann wäre die Seite neu, der Hintergrundteil aber noch alt, und die Einstellungsseite würde auf abweichende Versionen hinweisen.
+upd_p: **Eine GitHub-Installation aktualisieren**. Deinstalliere das Plugin, führe den Installationsbefehl erneut aus und starte DSH vollständig neu.
+upd_local: **Einen lokalen Build übernehmen**. Aktualisiere und kompiliere zuerst die Plugin-Dateien im lokalen Ordner. Wenn die Einstellungen einen noch nicht geladenen Build erkennen, wähle „{ui:settings.localUpdateApply}“. DSH kann dabei auch andere geänderte Plugins im selben Profil neu laden. Starte DSH vor der ersten Verwendung oder bei fehlgeschlagener Übernahme vollständig neu.
 unin: **Deinstallieren**:
 conflict: Aktivieren Sie pro Profil nur ein Vorhersage-Plugin für das Eingabefeld. Wird ein weiteres erkannt, pausiert dieses Plugin von selbst und nennt auf der Einstellungsseite den Grund.
 f1_p: Ein verfügbarer Vorschlag erscheint grau im leeren Eingabefeld des aktiven Fensters. Standardmäßig genügt auch ein Feld ohne Fokus. Aktiviere „{ui:settings.requireInputFocus}“, um ihn nur bei fokussiertem Feld zu sehen. Die Option steuert die Anzeige vorhandener Vorschläge.
 f1_alt: Grauer Vorschlag im Eingabefeld ohne Fokus mit Hinweis, vor Tab das Eingabefeld zu fokussieren
 k_th1: Aktion im Eingabefeld
 k_th2: Wirkung
-k1a: <kbd>Tab</kbd>, <kbd>→</kbd> am Anfang oder Klick auf „{ui:ghost.adopt}“
-k1b: Fokussiere zuerst das Eingabefeld. Der Vorschlag wird in den Entwurf übernommen und bleibt bis zum Senden bearbeitbar.
+k1a: <kbd>Tab</kbd>, die zugehörige Schaltfläche oder <kbd>→</kbd> am Anfang
+k1b: Fokussiere zuerst das Eingabefeld. Standardmäßig landet der Vorschlag im Entwurf. Wenn du „{ui:settings.sendOnTab}“ aktivierst, senden Tab und die zugehörige Schaltfläche den aktuellen Vorschlag. Die Pfeiltaste nach rechts übernimmt ihn immer nur in den Entwurf. Das Senden setzt einen gültigen Vorschlag und bestandene Prüfungen voraus. Beachte vor der Aktivierung das Risiko versehentlichen Sendens.
 k2a: <kbd>Esc</kbd>
 k2b: Blendet beim fokussierten Eingabefeld den Vorschlag aus. Anschließend kannst du manuell einen neuen anfordern.
 k3a: <kbd>Alt</kbd>+<kbd>\</kbd> (änderbar), „{ui:ghost.predict}“ oder „{ui:ghost.another}“
@@ -79,7 +80,7 @@ q1: Warum ist kein Vorschlag zu sehen?
 a1: Prüfe den aktuellen Status in den Einstellungen. Eine Pause, ein inaktives Fenster, ein vorhandener Entwurf, ein offenes Menü oder laufende IME-Eingabe können die Anzeige verhindern. Auch das Modell kann ohne brauchbaren Vorschlag antworten. Wenn die Unterhaltung die Bedingungen erfüllt, versuche es manuell im leeren, fokussierten Feld.
 q2: Wann entstehen Kosten?
 a2: Der Preis hängt vom aufgerufenen Anbieter und dem Tokenverbrauch ab. Ein Wechsel vorhandener Optionen oder das Erstellen einer lokalen Alternative führt zu keiner weiteren Modellanfrage. Im Sparmodus fragst du Vorhersagen nur bei Bedarf an.
-docs_note: Die ausführliche Dokumentation ist auf Chinesisch verfasst.
+docs_note: Kompatibilität und Prüfungen für 0.7.0 stehen unter [Veröffentlichung und Einrichtung](docs/RELEASE.md#release-validation-070). Die ausführliche Dokumentation ist auf Chinesisch verfasst.
 d_th1: Dokument
 d_th2: Inhalt
 d1: Benutzerhandbuch

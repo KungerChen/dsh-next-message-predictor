@@ -31,6 +31,7 @@ function emptyCounters() {
     releases: 0,
     dismisses: 0,
     accepts: 0,
+    sendClaims: 0,
     sendCalls: 0,
     inputTokens: 0,
     outputTokens: 0,

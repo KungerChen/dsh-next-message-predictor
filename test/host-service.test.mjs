@@ -81,6 +81,21 @@ async function call(service, body) {
   return response
 }
 
+test('local update RPC validates its target and reports only acceptance', async () => {
+  const target = 'a'.repeat(64), adapter = fakeAdapter()
+  let active
+  adapter.localBuild = () => ({ runningId: 'b'.repeat(64), installedId: target, state: 'update-available', canApply: true, reason: '' })
+  adapter.applyLocalUpdate = async (id, signal, isActive) => { assert.equal(id, target); active = isActive; return '' }
+  const service = createPredictorService({ config: baseConfig(), adapter })
+  assert.equal(service.statusValue().localBuild.installedId, target)
+  assert.equal((await service.handle({ schemaVersion: 1, operation: 'update.apply', targetBuildId: 'bad' })).status, 400)
+  const result = await service.handle({ schemaVersion: 1, operation: 'update.apply', targetBuildId: target })
+  assert.deepEqual(result.body.value, { accepted: true })
+  assert.equal(active(), true)
+  service.dispose()
+  assert.equal(active(), false)
+})
+
 test('predict returns the fixed suggestion as an offer', async () => {
   const { service } = createService()
   const response = await call(service, request())

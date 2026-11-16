@@ -74,10 +74,9 @@ function parseArgs(argv) {
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
-/** Static proof that the browser half has no send/submit code path. */
+/** Native opt-in submission has one call site, and no code can bypass the composer. */
 function codePathCheck() {
   const forbidden = [
-    /\.submit\s*\(/u,
     /session\/prompt/u,
     /sendSession/u,
     /beginSubmission/u,
@@ -96,6 +95,12 @@ function codePathCheck() {
   const hits = []
   for (const rel of files) {
     const text = readFileSync(path.join(repoRoot, rel), 'utf8')
+    const submits = [...text.matchAll(/\.submit\s*\(/gu)]
+    const allowed = rel === 'src/client/overlay.js' && submits.length === 1 &&
+      /if \(send\) \{\s+try \{\s+actions\.submit\(\)/u.test(text)
+    if (rel === 'src/client/overlay.js' ? !allowed : submits.length > 0) {
+      hits.push({ file: rel, pattern: 'native submit call sites' })
+    }
     for (const pattern of forbidden) {
       if (pattern.test(text)) hits.push({ file: rel, pattern: String(pattern) })
     }
@@ -135,6 +140,7 @@ function readStateExpr() {
         config: {
           ready: state.config.ready,
           enabled: state.config.config ? state.config.config.enabled : null,
+          sendOnTab: state.config.config?.sendOnTab,
           revision: state.config.revision,
           hostError: state.config.hostError,
         },
@@ -394,7 +400,7 @@ async function main() {
   try {
     // ---- code path check ---------------------------------------------------
     report.steps.codePath = report.codePath
-    assert(report.codePath.ok, 'no send/submit code path in the browser half', report.codePath)
+    assert(report.codePath.ok, 'native submit is confined to the explicit opt-in path; no direct send bypasses', report.codePath)
 
     // ---- 0. load -----------------------------------------------------------
     await step('load', async () => {
@@ -417,6 +423,7 @@ async function main() {
       const s = await state()
       assert(s.present === true, 'predictor client runtime is mounted', s)
       assert(s.config && s.config.ready === true, 'predictor config loaded from Host', s)
+      assert(s.config.sendOnTab === false, 'the isolated P1 matrix requires sendOnTab off before any gesture', s)
       return {
         status: response?.status() ?? null,
         url: page.url(),
@@ -529,7 +536,8 @@ async function main() {
       const sendishFrames = newFrames.filter((f) => /session\/prompt|"prompt"|beginSubmission/i.test(f.payload))
       assert(sendish.length === 0, 'no HTTP prompt/send request after adoption', { sendish })
       assert(sendishFrames.length === 0, 'no prompt/send frame after adoption', { sendishFrames })
-      assert(countersAfter !== null && countersAfter.sendCalls === 0, 'host sendCalls counter is zero', countersAfter)
+      assert(countersAfter !== null && countersAfter.sendCalls === 0, 'host direct sendCalls counter is zero', countersAfter)
+      assert(countersAfter !== null && countersAfter.sendClaims === 0, 'default mode requests no send grants', countersAfter)
       assert(
         countersAfter !== null && countersAfter.accepts >= 1,
         'host recorded one acceptance',

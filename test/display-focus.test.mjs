@@ -2,7 +2,8 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 
 import { createClientRuntime } from '../src/client/controller.js'
-import { nmpAdoptSuggestion } from '../src/client/overlay.js'
+import { nmpAdoptSuggestion, nmpClaimAndAdopt } from '../src/client/overlay.js'
+import { popupChangedDuringSend } from '../src/client/dom.js'
 import { DEFAULT_CONFIG } from '../src/shared/config.js'
 
 function fixture(t, requireInputFocus = false) {
@@ -77,7 +78,7 @@ function fixture(t, requireInputFocus = false) {
   function adopt(painted) {
     return nmpAdoptSuggestion({ runtime, painted, card, actions })
   }
-  return { runtime, env, show, timeline, input, attributes, adopt, calls, away, popups, span, selection }
+  return { runtime, env, show, timeline, input, attributes, adopt, calls, away, popups, span, selection, card, actions }
 }
 
 function editorWithHistory(f, overrides = {}) {
@@ -259,4 +260,60 @@ test('an incompatible DOM bridge getter does not interfere with native insertion
   document.activeElement = f.input
   assert.equal(f.adopt(painted), true)
   assert.deepEqual(f.timeline, ['capture', 'insert'])
+})
+
+for (const outcome of ['grant', 'denied', 'unavailable', 'insert-refused', 'submit-throws', 'lost-focus', 'type-and-clear', 'revoked']) {
+  test(`claim then adopt issues no more than one native submission: ${outcome}`, async (t) => {
+    const f = fixture(t)
+    await f.runtime.loadStatus()
+    document.activeElement = f.input
+    f.env.focused = true
+    const painted = f.show()
+    const aborter = new AbortController()
+    let complete
+    f.runtime.claimSend = () => new Promise((resolve) => { complete = resolve })
+    const attempt = nmpClaimAndAdopt({
+      runtime: f.runtime, painted, card: f.card, input: f.input, actions: f.actions,
+      signal: aborter.signal, isCurrent: () => f.runtime.assistStore.getSnapshot() === painted,
+    })
+    f.actions.submit = () => {
+      f.timeline.push('submit')
+      if (outcome === 'submit-throws') throw Error('native submission outcome unknown')
+    }
+    if (outcome === 'insert-refused') f.actions.insertText = () => false
+    if (outcome === 'lost-focus') document.activeElement = f.away
+    if (outcome === 'revoked') aborter.abort()
+    if (outcome === 'type-and-clear') {
+      f.runtime.sync({ ...f.env, draftRev: 3, draft: 'user edit' })
+      f.runtime.sync({ ...f.env, draftRev: 4, draft: '' })
+    }
+    complete(outcome === 'denied' ? 'session-state-changed' : outcome === 'unavailable' ? 'send-unavailable' : '')
+    await attempt
+    assert.equal(f.timeline.filter((x) => x === 'submit').length, ['grant', 'submit-throws'].includes(outcome) ? 1 : 0)
+    assert.equal(f.timeline.filter((x) => x === 'insert').length, ['grant', 'submit-throws', 'unavailable'].includes(outcome) ? 1 : 0)
+    if (outcome === 'submit-throws') assert.equal(f.runtime.noticeStore.getSnapshot().reason, 'send-outcome-unknown')
+  })
+}
+
+test('a popup inserted and removed before observer delivery revokes a pending send', () => {
+  const popup = { matches: (selector) => selector.includes('[role="dialog"]') }
+  const records = [{ type: 'childList', addedNodes: [popup], removedNodes: [] },
+    { type: 'childList', addedNodes: [], removedNodes: [popup] }]
+  assert.equal(popupChangedDuringSend(records, {}), true)
+  assert.equal(popupChangedDuringSend([{ type: 'childList', addedNodes: [{}], removedNodes: [{}] }], {}), false)
+})
+
+test('display diagnostics report eligibility and retain the last blocked observation after navigation', async (t) => {
+  const { runtime, show, env } = fixture(t, true)
+  await runtime.loadStatus()
+  show()
+  assert.equal(runtime.displayBlocker(env), 'input-not-focused')
+  assert.equal(runtime.displayBlocker({ ...env, windowFocused: false }), 'window-inactive')
+  assert.equal(runtime.displayBlocker({ ...env, composing: true }), 'composing')
+  assert.equal(runtime.displayBlocker({ ...env, menuOpen: true }), 'menu-open')
+  assert.equal(runtime.displayBlocker({ ...env, draft: 'typing' }), 'draft-not-empty')
+  runtime.sync({ ...env, draft: 'typing', draftRev: 3 })
+  assert.deepEqual(runtime.displayStore.getSnapshot(), { reason: 'draft-not-empty', shown: false, detached: false })
+  runtime.detachView(env.sessionId)
+  assert.deepEqual(runtime.displayStore.getSnapshot(), { reason: 'draft-not-empty', shown: false, detached: true })
 })

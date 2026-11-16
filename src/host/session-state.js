@@ -6,6 +6,7 @@ const SESSION_STORES = Symbol.for('dsh-next-message-predictor.session-stores.v1'
 const MAX_PAUSE_SESSIONS = 4096
 const MAX_TERMINALS = 4096
 const MAX_OFFERS = 8192
+const MAX_SEND_CLAIMS = 65536
 
 /**
  * Uses the Host's profile identity across reloads. The connection is a fallback
@@ -31,6 +32,8 @@ export function createSessionState({ now = Date.now } = {}) {
   const pauses = new Map()
   const terminals = new Map()
   const projectedOffers = new Map()
+  // A granted turn is never reopened by an expiring offer, a disconnect, or a plugin reload.
+  const sendClaims = new Set()
   const listeners = new Set()
   /** Global monotonic sequence for the lifetime of this Host authority. */
   let sequence = 0
@@ -81,7 +84,7 @@ export function createSessionState({ now = Date.now } = {}) {
     }
   }
 
-  function registerOffer(offer, sessionId, turn, state) {
+  function registerOffer(offer, sessionId, turn, state, anchor, configRevision) {
     if (projectedOffers.has(offer.suggestionId)) return true
     prune(projectedOffers)
     prune(terminals)
@@ -92,8 +95,27 @@ export function createSessionState({ now = Date.now } = {}) {
     if (projectedOffers.size >= MAX_OFFERS || (previous === undefined && terminals.size >= MAX_TERMINALS)) return false
     terminals.set(key, { ...previous, expiresAt: Math.max(previous?.expiresAt ?? 0, offer.expiresAt) })
     projectedOffers.set(offer.suggestionId, {
-      sessionId, turn, expiresAt: offer.expiresAt, pauseRevision: state.pauseRevision, turnRevision: state.turnRevision,
+      sessionId, turn, anchor, configRevision, expiresAt: offer.expiresAt, pauseRevision: state.pauseRevision, turnRevision: state.turnRevision,
     })
+    return true
+  }
+
+  function sendableOffer(suggestionId, sessionId, expected, configRevision) {
+    const offer = projectedOffers.get(suggestionId)
+    if (offer?.sessionId !== sessionId || offer.anchor == null || offer.expiresAt <= now() ||
+      offer.configRevision !== configRevision) return null
+    const current = snapshot(sessionId, offer.turn)
+    if (current.hostId !== expected.hostId || current.paused || current.terminal === 'accepted' ||
+      current.pauseRevision !== expected.pauseRevision || current.turnRevision !== expected.turnRevision ||
+      current.pauseRevision !== offer.pauseRevision || current.turnRevision !== offer.turnRevision ||
+      sendClaims.has(terminalKey(sessionId, offer.turn))) return null
+    return offer
+  }
+
+  function claimSend(suggestionId, sessionId, expected, configRevision) {
+    const offer = sendableOffer(suggestionId, sessionId, expected, configRevision)
+    if (offer === null || sendClaims.size >= MAX_SEND_CLAIMS) return false
+    sendClaims.add(terminalKey(sessionId, offer.turn))
     return true
   }
 
@@ -122,6 +144,8 @@ export function createSessionState({ now = Date.now } = {}) {
     resumedAt: (sessionId) => pauses.get(sessionId)?.resumedAt ?? 0,
     changePause,
     registerOffer,
+    sendableOffer,
+    claimSend,
     finishOffer,
     subscribe(listener) {
       listeners.add(listener)

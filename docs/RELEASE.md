@@ -5,11 +5,11 @@
 | 字段 | 值 |
 |---|---|
 | 包名 | `dsh-next-message-predictor` |
-| 版本 | `0.6.0`（变更见 [CHANGELOG.md](../CHANGELOG.md)） |
+| 版本 | `0.7.0`。变更见 [CHANGELOG.md](../CHANGELOG.md)。 |
 | 目标 DSH | `>=0.2.2-rc.1 <0.3.0`（实测范围见 [兼容性](COMPATIBILITY.md)） |
 | 提示词版本 | `nmp-p2-v3`（结果缓存键的一部分） |
-| 构建 | 无打包器：`scripts/build-client.mjs` 由 `src/shared` + `src/client` 生成 `lib/client.js`；`lib/index.js` 是 Host 入口 |
-| 发布文件 | `lib/`、`src/`、`cordis.patch.yml`、`locale/*.json`、`icon.svg`、`README.md`、`README.<语言>.md`、`CHANGELOG.md`、`LICENSE`、`NOTICE`（`package.json` 的 `files`；不含 `test/`、`tools/`、`eval/`、`docs/`） |
+| 构建 | `scripts/build-client.mjs` 生成 `lib/client.js`、`lib/build-manifest.json` 和 `src/shared/build-id.js`。Host 入口为 `lib/index.js`。 |
+| 0.7.0 分发文件 | `lib/index.js`、`lib/client.js`、`lib/build-manifest.json`、`scripts/build-client.mjs`、`src/`、`cordis.patch.yml`、`locale/*.json`、`icon.svg`、`README.md`、`README.<语言>.md`、`CHANGELOG.md`、`LICENSE`、`NOTICE`（`package.json` 的 `files`；不含 `test/`、`tools/`、`eval/`、`docs/`） |
 | 分发方式 | GitHub 或本地目录安装（`package.json` 标记 `private`） |
 
 ## 发版步骤
@@ -19,6 +19,18 @@
 3. `npm run check`（构建 + 测试 + 语法检查）。构建会拒绝不一致的版本号。
 4. 在隔离 profile 上跑端到端矩阵（[DEVELOPMENT.md](DEVELOPMENT.md#端到端验证隔离-profile)）。
 5. 提交、打标签 `v<版本>`、推送。
+
+<a id="release-validation-070"></a>
+
+## 0.7.0 的验证
+
+| 验证层次 | 结果 |
+|---|---|
+| 本地正式检查 | `npm run check` 389 项通过，含本地构建校验、更新状态和混用构建的防护。 |
+| 隔离 DSH Web | `0.2.2-rc.3` 高层流程中，显示与一键发送 57 项通过；后续使用实际产品副本复测本地更新 20 项通过，覆盖同版本换载、草稿保留和目标变化拒绝。 |
+| 用户桌面验收 | 2026-11-15 确认焦点显示和 Tab 一键发送；2026-11-16 确认本地更新功能。 |
+
+详细证据和未覆盖场景见 [焦点与一键发送](maintenance/20261115-focus-tab-send.md#20261115-focus-tab-send) 及 [应用本地更新](maintenance/20261115-local-update-implementation.md#20261115-local-update-implementation)。
 
 ## 0.6.0 的验证
 
@@ -75,8 +87,8 @@ $dsh = '<DSH 安装目录>\resources\runtime\cli\bin\dsh.cmd'
 
 本地目录以 `link:` 方式进入 profile：profile 直接引用这个目录，不复制文件。因此：
 
-- **更新不需要重新安装。** 改完代码运行 `npm run build`，然后完全退出并重新打开 DSH。Host 半在 DSH 重启后加载新代码；浏览器半在页面重新加载时加载新 bundle。
-- **只刷新页面不够。** 那样页面是新版本而后台还是旧版本，设置页会在标题下提示版本不一致，新增的选项（如左侧栏入口）保存会失败。
+- **首次升级。** 更新本地文件并运行 `npm run build`。如果当前运行的构建没有本地更新功能，请完整退出并重新打开 DSH 一次，加载支持此功能的构建。
+- **后续本地构建。** 更新同一目录并运行 `npm run build`，再到“设置 → 消息预测”点“应用本地更新”。该操作可能一起重载当前 profile 中其他已变更插件。宿主不支持热加载、应用失败或需要恢复时，按 [使用指南](USER-GUIDE.md#应用本地更新) 修复本地文件或手动重启。
 
 同一个 profile 只启用一个输入框预测插件。本插件检测到另一个幽灵文字插件时会自动暂停并在设置页说明，但两个插件仍会各自调用模型，应停用其中一个。
 

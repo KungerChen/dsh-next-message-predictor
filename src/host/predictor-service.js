@@ -26,6 +26,8 @@ import {
   OPERATION_PREDICT,
   OPERATION_RELEASE,
   OPERATION_RESULTS,
+  OPERATION_SEND_CLAIM,
+  OPERATION_UPDATE_APPLY,
   OPERATION_SESSION_PAUSE,
   OPERATION_SESSION_STATE,
   OPERATION_STATUS,
@@ -36,11 +38,13 @@ import {
   SOURCE_HABIT,
   SOURCE_PINNED,
   acceptedChoice,
+  isId,
   isSessionId,
   isSessionRevision,
   sessionTurnIdentity,
   validatePredictRequest,
   validateTurnAnchor,
+  validSessionVersion,
 } from '../shared/protocol.js'
 import { normalizePhraseKey, parseCandidatesJson, validateSuggestionText } from '../shared/output-validation.js'
 import { buildManualSuffix, buildSystemPrompt, estimateTokens, PROMPT_VERSION } from '../shared/prompt.js'
@@ -712,7 +716,7 @@ export function createPredictorService(options) {
     /** 这条请求实际等到的那个生产任务的计量信息；没有经过生产任务时为空。 */
     let meta
     const respond = (result, extra) => {
-      if (result.kind === RESULT_OFFER && !sessionState.registerOffer(result, sessionId, turn, initialState)) {
+      if (result.kind === RESULT_OFFER && !sessionState.registerOffer(result, sessionId, turn, initialState, request.anchor, revision)) {
         result = { kind: RESULT_UNAVAILABLE, reason: 'session-state-capacity' }
       }
       recordResult(result, request, dispatchKey, requestStartedAt, meta, extra)
@@ -887,6 +891,10 @@ export function createPredictorService(options) {
         return handleOutcome(body)
       case OPERATION_RESULTS:
         return handleResults()
+      case OPERATION_SEND_CLAIM:
+        return handleSendClaim(body, signal)
+      case OPERATION_UPDATE_APPLY:
+        return handleUpdateApply(body, signal)
       case OPERATION_SESSION_STATE:
       case OPERATION_SESSION_PAUSE:
         return handleSessionState(operation, body)
@@ -900,6 +908,17 @@ export function createPredictorService(options) {
         diagnostics.count('requestsRejected')
         return operationError(operation === '' ? 'unknown' : operation, 'unknown-operation', 'unsupported operation', 400)
     }
+  }
+
+  async function handleUpdateApply(body, signal) {
+    const operation = OPERATION_UPDATE_APPLY
+    if (body.schemaVersion !== SCHEMA_VERSION || typeof body.targetBuildId !== 'string' || !/^[a-f0-9]{64}$/.test(body.targetBuildId)) {
+      return operationError(operation, 'bad-request', 'target build ID is required', 400)
+    }
+    if (typeof adapter.applyLocalUpdate !== 'function') return operationError(operation, 'update-unavailable', 'update is unavailable', 409)
+    const reason = await adapter.applyLocalUpdate(body.targetBuildId, signal, () => !disposed)
+    if (reason !== '') return operationError(operation, reason, 'update could not be applied', 409)
+    return operationResult(operation, { accepted: true })
   }
 
   function handleRelease(body) {
@@ -941,6 +960,54 @@ export function createPredictorService(options) {
       accepted: finished !== null,
       ...(finished === null ? {} : { sessionState: finished.state, turn: finished.turn }),
     })
+  }
+
+  async function handleSendClaim(body, signal) {
+    const operation = OPERATION_SEND_CLAIM
+    const { suggestionId, sessionId, expectedConfigRevision, sessionVersion } = body
+    const refuse = (reason) => operationResult(operation, { granted: false, reason })
+    if (body.schemaVersion !== SCHEMA_VERSION || !isId(suggestionId) || !isSessionId(sessionId) ||
+      !isSessionRevision(expectedConfigRevision) || !validSessionVersion(sessionVersion)) {
+      return operationError(operation, 'bad-request', 'offer, session and configuration versions are required', 400)
+    }
+    const current = () => !disposed && !signal?.aborted && effective.config.enabled &&
+      effective.config.sendOnTab && revision === expectedConfigRevision
+    if (!current()) return refuse('session-state-changed')
+    if (adapter.sendClaimAvailable?.() !== true) return refuse('send-unavailable')
+    const offer = sessionState.sendableOffer(suggestionId, sessionId, sessionVersion, expectedConfigRevision)
+    if (offer === null) return refuse('session-state-changed')
+    const readState = () => adapter.readSessionState(sessionId, signal ?? new AbortController().signal)
+    let completion
+    let live
+    let initialCursor
+    try {
+      // Verify the anchor between two samples: a cold session may advance on
+      // disk without an in-memory event listener invalidating isCurrent().
+      const initial = await readState()
+      const initialReason = sendStateBlocker(initial)
+      if (initialReason !== '') return refuse(initialReason)
+      initialCursor = initial.cursor
+      completion = await contextReader.verifyAnchor(offer.anchor)
+      if (!completion.ok) return refuse('stale-context')
+      live = await readState()
+    } catch {
+      return refuse('send-unavailable')
+    }
+    const blocker = sendStateBlocker(live)
+    if (blocker !== '') return refuse(blocker)
+    if (!current() || live.cursor !== initialCursor || live.cursor < offer.anchor.completedEventSeq ||
+      !completion.isCurrent() || !sessionState.claimSend(suggestionId, sessionId, sessionVersion, expectedConfigRevision)) {
+      return refuse('session-state-changed')
+    }
+    diagnostics.count('sendClaims')
+    return operationResult(operation, { granted: true, sessionVersion })
+  }
+
+  function sendStateBlocker(live) {
+    if (live == null || typeof live.running !== 'boolean' || !Array.isArray(live.pendingInput) ||
+      (live.queue !== null && !Array.isArray(live.queue)) || !Number.isSafeInteger(live.cursor)) return 'send-unavailable'
+    if (live.running || live.pendingInput.length > 0 || (live.queue?.length ?? 0) > 0) return 'turn-running'
+    return ''
   }
 
   function handleSessionState(operation, body) {
@@ -1051,12 +1118,13 @@ export function createPredictorService(options) {
       ...currentConfigStatus(),
       // The page compares this with its own bundle version (restart pending?).
       version: PLUGIN_VERSION,
+      localBuild: adapter.localBuild?.() ?? { runningId: null, installedId: null, state: 'unknown', canApply: false, reason: 'update-unavailable' },
       enabled: effective.config.enabled,
       mode: providerMode(effective.config),
       route,
       modelMode: effective.config.modelMode,
       promptVersion: PROMPT_VERSION,
-      capabilities: { ...capabilities, sessionState: true },
+      capabilities: { ...capabilities, sessionState: true, sendClaim: adapter.sendClaimAvailable?.() === true },
       budget: ledger !== null && typeof ledger.snapshot === 'function' ? ledger.snapshot() : null,
       diagnostics: diagnostics.snapshot(),
       offerTtlMs: OFFER_TTL_MS,

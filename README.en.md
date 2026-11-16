@@ -13,11 +13,11 @@
 <p align="center">
   <b>A composer plugin for DeepSeek Harness</b><br>
   See a suggested follow-up in the composer after an eligible reply.<br>
-  Focus the input and press <kbd>Tab</kbd> to fill your draft. You decide when to send it.
+  Focus the input and press <kbd>Tab</kbd> to fill your draft by default.
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.6.0-4d6bfe" alt="version 0.6.0">
+  <img src="https://img.shields.io/badge/version-0.7.0-4d6bfe" alt="version 0.7.0">
   <img src="https://img.shields.io/badge/DeepSeek%20Harness-%3E%3D0.2.2--rc.1%20%3C0.3.0-1f2937" alt="DeepSeek Harness &gt;=0.2.2-rc.1 &lt;0.3.0">
   <img src="https://img.shields.io/badge/languages-9-8250df" alt="languages 9">
   <img src="https://img.shields.io/badge/third--party%20deps-0-2ea44f" alt="third-party deps 0">
@@ -69,7 +69,9 @@ $dsh = '<DSH install folder>\resources\runtime\cli\bin\dsh.cmd'
 <details>
 <summary>Updating and uninstalling</summary>
 
-**Update**: if you installed from GitHub, uninstall and run the install command again; if you installed from a local folder, run `git pull` there. Then restart DSH. Refreshing the page is not enough: the page would be new while the background half is still old, and the settings page would report a version mismatch.
+**Update a GitHub installation**. Uninstall the plugin, run the install command again, then fully restart DSH.
+
+**Apply a local build**. Update and build the plugin files in the local directory first. When the plugin settings detect a local build that has yet to load, choose “Apply local update”. DSH can also reload other changed plugins in the same profile. Fully restart DSH before first use or if the update cannot be applied.
 
 **Uninstall**:
 
@@ -93,7 +95,7 @@ An available suggestion appears as grey text in the empty composer of the active
 
 | Action in the composer | What it does |
 |---|---|
-| <kbd>Tab</kbd>, <kbd>→</kbd> at the start, or click “Tab accept” | Focus the input first. This fills the draft so you can edit it before sending. |
+| <kbd>Tab</kbd>, its matching button, or <kbd>→</kbd> at the start | Focus the input first. By default, these actions fill the draft. If you enable “Send with Tab”, Tab and its matching button submit the current suggestion. The right arrow always fills the draft. Sending requires a current suggestion and the send checks to pass. Consider the risk of accidental sends before enabling this option. |
 | <kbd>Esc</kbd> | With focus in the input, hide the current suggestion. You can still ask for another manually. |
 | <kbd>Alt</kbd>+<kbd>\</kbd> (configurable), “Predict” or “Another” | With the input empty, request a prediction or cycle through suggestions. The shortcut also requires input focus. |
 | Just type | Writing a draft hides the preview. Clearing the draft can restore the same suggestion while it is still valid. |
@@ -205,7 +207,7 @@ Usage depends on the model provider and the tokens used in each dispatched reque
 
 ## Documentation
 
-The detailed documentation is written in Chinese.
+Compatibility and validation for 0.7.0 are listed in [Release and setup](docs/RELEASE.md#release-validation-070). The detailed documentation is written in Chinese.
 
 | Document | Contents |
 |---|---|

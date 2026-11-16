@@ -13,11 +13,11 @@
 <p align="center">
   <b>Um plugin para a caixa de entrada do DeepSeek Harness</b><br>
   Após uma resposta que atende às condições, uma sugestão para a próxima mensagem pode aparecer na caixa de texto.<br>
-  Coloque o foco na caixa e pressione <kbd>Tab</kbd> para inserir a sugestão no rascunho. Você decide quando enviar.
+  Coloque o foco na caixa e pressione <kbd>Tab</kbd> para inserir a sugestão no rascunho por padrão.
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/vers%C3%A3o-0.6.0-4d6bfe" alt="versão 0.6.0">
+  <img src="https://img.shields.io/badge/vers%C3%A3o-0.7.0-4d6bfe" alt="versão 0.7.0">
   <img src="https://img.shields.io/badge/DeepSeek%20Harness-%3E%3D0.2.2--rc.1%20%3C0.3.0-1f2937" alt="DeepSeek Harness &gt;=0.2.2-rc.1 &lt;0.3.0">
   <img src="https://img.shields.io/badge/idiomas-9-8250df" alt="idiomas 9">
   <img src="https://img.shields.io/badge/depend%C3%AAncias%20externas-0-2ea44f" alt="dependências externas 0">
@@ -69,7 +69,9 @@ $dsh = '<pasta de instalação do DSH>\resources\runtime\cli\bin\dsh.cmd'
 <details>
 <summary>Atualizar e desinstalar</summary>
 
-**Atualizar**: se você instalou pelo GitHub, desinstale e execute de novo o comando de instalação; se instalou de uma pasta local, execute `git pull` nela. Depois reinicie o DSH. Recarregar a página não basta: a página ficaria nova e a parte em segundo plano continuaria antiga, e a página de configurações avisaria que as versões não coincidem.
+**Atualizar uma instalação do GitHub**. Desinstale o plugin, execute de novo o comando de instalação e reinicie o DSH por completo.
+
+**Aplicar uma compilação local**. Primeiro atualize e compile os arquivos do plugin na pasta local. Se as configurações detectarem uma compilação que ainda não foi carregada, escolha “Aplicar atualização local”. O DSH também pode recarregar outros plugins alterados no mesmo perfil. Reinicie o DSH por completo antes do primeiro uso ou se não for possível aplicar a atualização.
 
 **Desinstalar**:
 
@@ -93,7 +95,7 @@ Sugestões disponíveis aparecem em cinza na caixa vazia da janela ativa. Por pa
 
 | Ação na caixa de texto | O que faz |
 |---|---|
-| <kbd>Tab</kbd>, <kbd>→</kbd> no início ou clique em “Tab para aceitar” | Coloque o foco na caixa primeiro. A sugestão passa para o rascunho e pode ser editada antes do envio. |
+| <kbd>Tab</kbd>, o botão correspondente ou <kbd>→</kbd> no início | Coloque o foco na caixa primeiro. Por padrão, a sugestão passa para o rascunho. Se ativar “Enviar com Tab”, Tab e o botão correspondente enviam a sugestão atual. A seta para a direita sempre insere a sugestão no rascunho. O envio exige uma sugestão válida e o cumprimento das verificações. Considere o risco de envio acidental antes de ativar a opção. |
 | <kbd>Esc</kbd> | Oculta a sugestão atual enquanto a caixa está em foco. Depois você pode pedir outra manualmente. |
 | <kbd>Alt</kbd>+<kbd>\</kbd> (configurável), “Prever” ou “Outra” | Com a caixa vazia, solicita uma previsão ou muda de sugestão. O atalho também exige foco na caixa. |
 | Simplesmente digitar | Digitar oculta a sugestão. Ao limpar o rascunho, ela pode reaparecer se ainda for válida. |
@@ -205,7 +207,7 @@ O custo depende do provedor chamado e dos tokens usados. Alternar entre opções
 
 ## Documentação
 
-A documentação detalhada está escrita em chinês.
+A compatibilidade e os testes da versão 0.7.0 estão em [Publicação e configuração](docs/RELEASE.md#release-validation-070). A documentação detalhada está escrita em chinês.
 
 | Documento | Conteúdo |
 |---|---|

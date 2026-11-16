@@ -13,11 +13,11 @@
 <p align="center">
   <b>Un plugin pour la zone de saisie de DeepSeek Harness</b><br>
   Après une réponse éligible, une suggestion peut s’afficher dans le champ de saisie.<br>
-  Placez le curseur dans le champ et appuyez sur <kbd>Tab</kbd> pour insérer la suggestion dans le brouillon. Vous choisissez quand l’envoyer.
+  Placez le curseur dans le champ et appuyez sur <kbd>Tab</kbd> pour insérer la suggestion dans le brouillon par défaut.
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.6.0-4d6bfe" alt="version 0.6.0">
+  <img src="https://img.shields.io/badge/version-0.7.0-4d6bfe" alt="version 0.7.0">
   <img src="https://img.shields.io/badge/DeepSeek%20Harness-%3E%3D0.2.2--rc.1%20%3C0.3.0-1f2937" alt="DeepSeek Harness &gt;=0.2.2-rc.1 &lt;0.3.0">
   <img src="https://img.shields.io/badge/langues-9-8250df" alt="langues 9">
   <img src="https://img.shields.io/badge/d%C3%A9pendances%20tierces-0-2ea44f" alt="dépendances tierces 0">
@@ -69,7 +69,9 @@ $dsh = '<dossier d’installation de DSH>\resources\runtime\cli\bin\dsh.cmd'
 <details>
 <summary>Mise à jour et désinstallation</summary>
 
-**Mise à jour** : si vous avez installé depuis GitHub, désinstallez puis relancez la commande d’installation ; si vous avez installé depuis un dossier local, exécutez-y `git pull`. Redémarrez ensuite DSH. Actualiser la page ne suffit pas : la page serait à jour alors que la partie en arrière-plan resterait ancienne, et la page des paramètres signalerait un écart de version.
+**Mettre à jour une installation GitHub**. Désinstallez le module, exécutez de nouveau la commande d’installation, puis redémarrez entièrement DSH.
+
+**Appliquer une compilation locale**. Mettez d’abord à jour et compilez les fichiers dans le dossier local. Si les paramètres détectent une compilation qui reste à charger, choisissez « Appliquer la mise à jour locale ». DSH peut aussi recharger les autres modules modifiés du même profil. Redémarrez entièrement DSH avant la première utilisation ou si la mise à jour ne peut pas être appliquée.
 
 **Désinstallation** :
 
@@ -93,7 +95,7 @@ Une suggestion disponible apparaît en gris dans le champ vide de la fenêtre ac
 
 | Action dans le champ de saisie | Effet |
 |---|---|
-| <kbd>Tab</kbd>, <kbd>→</kbd> au début ou clic sur « Tab : accepter » | Placez d’abord le curseur dans le champ. Le texte s’ajoute au brouillon et reste modifiable avant l’envoi. |
+| <kbd>Tab</kbd>, le bouton correspondant ou <kbd>→</kbd> au début | Placez d’abord le curseur dans le champ. Par défaut, la suggestion s’ajoute au brouillon. Si vous activez « Envoyer avec Tab », Tab et le bouton correspondant envoient la suggestion actuelle. La flèche droite l’insère toujours dans le brouillon. L’envoi exige une suggestion valide et le respect des conditions d’envoi. Tenez compte du risque d’envoi accidentel avant d’activer l’option. |
 | <kbd>Échap</kbd> | Masque la suggestion quand le champ a le focus. Vous pouvez ensuite en demander une autre manuellement. |
 | <kbd>Alt</kbd>+<kbd>\</kbd> (configurable), « Prédire » ou « Une autre » | Quand le champ est vide, demande une prédiction ou passe à une autre suggestion. Le raccourci exige aussi le focus dans le champ. |
 | Taper, tout simplement | La saisie masque l’aperçu. En effaçant le brouillon, la suggestion peut réapparaître si elle est encore valable. |
@@ -205,7 +207,7 @@ Le coût dépend du fournisseur sollicité et des jetons consommés. Parcourir l
 
 ## Documentation
 
-La documentation détaillée est rédigée en chinois.
+La compatibilité et la validation de la version 0.7.0 figurent dans [Publication et configuration](docs/RELEASE.md#release-validation-070). La documentation détaillée est rédigée en chinois.
 
 | Document | Contenu |
 |---|---|

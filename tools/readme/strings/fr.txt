@@ -1,7 +1,7 @@
 title: Prédiction du prochain message
 product: Un plugin pour la zone de saisie de DeepSeek Harness
 tagline1: Après une réponse éligible, une suggestion peut s’afficher dans le champ de saisie.
-tagline2: Placez le curseur dans le champ et appuyez sur <kbd>Tab</kbd> pour insérer la suggestion dans le brouillon. Vous choisissez quand l’envoyer.
+tagline2: Placez le curseur dans le champ et appuyez sur <kbd>Tab</kbd> pour insérer la suggestion dans le brouillon par défaut.
 b_version: version
 b_deps: dépendances tierces
 b_langs: langues
@@ -24,15 +24,16 @@ inst_d_p: La ligne de commande `dsh` se trouve dans le dossier d’installation 
 ph_dsh: dossier d’installation de DSH
 ph_plugin: dossier du plugin
 upd_sum: Mise à jour et désinstallation
-upd_p: **Mise à jour** : si vous avez installé depuis GitHub, désinstallez puis relancez la commande d’installation ; si vous avez installé depuis un dossier local, exécutez-y `git pull`. Redémarrez ensuite DSH. Actualiser la page ne suffit pas : la page serait à jour alors que la partie en arrière-plan resterait ancienne, et la page des paramètres signalerait un écart de version.
+upd_p: **Mettre à jour une installation GitHub**. Désinstallez le module, exécutez de nouveau la commande d’installation, puis redémarrez entièrement DSH.
+upd_local: **Appliquer une compilation locale**. Mettez d’abord à jour et compilez les fichiers dans le dossier local. Si les paramètres détectent une compilation qui reste à charger, choisissez « {ui:settings.localUpdateApply} ». DSH peut aussi recharger les autres modules modifiés du même profil. Redémarrez entièrement DSH avant la première utilisation ou si la mise à jour ne peut pas être appliquée.
 unin: **Désinstallation** :
 conflict: N’activez qu’un seul plugin de prédiction pour la zone de saisie par profil. Si un autre est détecté, ce plugin se met en pause de lui-même et en donne la raison sur la page des paramètres.
 f1_p: Une suggestion disponible apparaît en gris dans le champ vide de la fenêtre active. Par défaut, le champ peut l’afficher même sans le focus. Activez « {ui:settings.requireInputFocus} » pour limiter l’affichage au champ actif. Cette option règle l’affichage des suggestions déjà obtenues.
 f1_alt: Suggestion grise dans le champ inactif, avec l’indication de cliquer dans le champ avant d’appuyer sur Tab
 k_th1: Action dans le champ de saisie
 k_th2: Effet
-k1a: <kbd>Tab</kbd>, <kbd>→</kbd> au début ou clic sur « {ui:ghost.adopt} »
-k1b: Placez d’abord le curseur dans le champ. Le texte s’ajoute au brouillon et reste modifiable avant l’envoi.
+k1a: <kbd>Tab</kbd>, le bouton correspondant ou <kbd>→</kbd> au début
+k1b: Placez d’abord le curseur dans le champ. Par défaut, la suggestion s’ajoute au brouillon. Si vous activez « {ui:settings.sendOnTab} », Tab et le bouton correspondant envoient la suggestion actuelle. La flèche droite l’insère toujours dans le brouillon. L’envoi exige une suggestion valide et le respect des conditions d’envoi. Tenez compte du risque d’envoi accidentel avant d’activer l’option.
 k2a: <kbd>Échap</kbd>
 k2b: Masque la suggestion quand le champ a le focus. Vous pouvez ensuite en demander une autre manuellement.
 k3a: <kbd>Alt</kbd>+<kbd>\</kbd> (configurable), « {ui:ghost.predict} » ou « {ui:ghost.another} »
@@ -79,7 +80,7 @@ q1: Pourquoi n’y a-t-il pas de suggestion ?
 a1: Vérifiez l’état dans les paramètres. Une conversation en pause, une fenêtre inactive, un brouillon, un menu ouvert ou une composition IME peuvent bloquer l’affichage. Le modèle peut aussi ne rien proposer d’utilisable. Lorsque les conditions sont réunies, essayez une prédiction manuelle depuis le champ vide et actif.
 q2: Quand une requête est-elle facturée ?
 a2: Le coût dépend du fournisseur sollicité et des jetons consommés. Parcourir les choix disponibles et générer une suggestion de secours en local n’ajoute aucune requête au modèle. Le mode économie permet de demander une prédiction au besoin.
-docs_note: La documentation détaillée est rédigée en chinois.
+docs_note: La compatibilité et la validation de la version 0.7.0 figurent dans [Publication et configuration](docs/RELEASE.md#release-validation-070). La documentation détaillée est rédigée en chinois.
 d_th1: Document
 d_th2: Contenu
 d1: Guide d’utilisation

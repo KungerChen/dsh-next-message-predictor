@@ -25,9 +25,12 @@ import {
   OPERATION_PREDICT,
   OPERATION_RELEASE,
   OPERATION_RESULTS,
+  OPERATION_SEND_CLAIM,
+  SEND_CLAIM_TIMEOUT_MS,
   OPERATION_SESSION_PAUSE,
   OPERATION_SESSION_STATE,
   OPERATION_STATUS,
+  OPERATION_UPDATE_APPLY,
   SOURCE_MODEL,
   offerRing,
   sameSessionVersion,
@@ -75,6 +78,26 @@ function coerceConfig(raw) {
 
 /** How long each kind of request may take before the page stops waiting (ms). */
 const RPC_TIMEOUT_STATUS_MS = 10000
+const LOCAL_UPDATE_VERIFY_MS = 20000
+const LOCAL_UPDATE_RECHECK_MS = 500
+
+function nmpKnownBuildId(id) {
+  return typeof id === 'string' && /^[a-f0-9]{64}$/u.test(id)
+}
+
+function nmpLocalBuildStatus(raw, clientBuildId) {
+  const runningId = nmpKnownBuildId(raw?.runningId) ? raw.runningId : ''
+  const installedId = nmpKnownBuildId(raw?.installedId) ? raw.installedId : ''
+  const different = runningId !== '' && installedId !== '' && runningId !== installedId
+  return {
+    state: raw == null ? 'legacy' : different && raw.state === 'update-available' ? 'update-available' :
+      runningId !== '' && installedId === runningId && raw.state === 'current' ? 'current' : 'unknown',
+    runningId,
+    installedId,
+    clientBuildId,
+    canApply: different && raw.state === 'update-available' && raw.canApply === true,
+  }
+}
 /** A config write restarts the Host half of the plugin, so it gets longer. */
 const RPC_TIMEOUT_SAVE_MS = 30000
 const RPC_TIMEOUT_RESULTS_MS = 20000
@@ -138,6 +161,7 @@ const INITIAL_CONFIG_STATE = {
   mode: '',
   /** Version the Host half reports; '' until known (or from a Host older than 0.3.0). */
   hostVersion: '',
+  localBuild: null,
 }
 
 /**
@@ -158,9 +182,14 @@ export function createClientRuntime(options) {
   const rpc = options.rpc
   const now = typeof options.now === 'function' ? options.now : Date.now
   const configStore = createStore(INITIAL_CONFIG_STATE)
+  const clientBuildId = options.clientBuildId ?? ''
+  // The page owns this small handoff while DSH replaces its client module.
+  const updateHandoff = options.updateHandoff ?? { request: null }
+  const updateStore = createStore({ phase: updateHandoff.request ? 'checking' : '', failure: '' })
   const assistStore = createStore(INITIAL_ASSIST)
   const signalsStore = createStore({ composing: false, menuTick: 0 })
   const noticeStore = createStore(INITIAL_NOTICE)
+  const displayStore = createStore({ reason: '', shown: false, detached: false })
   const sessionStore = createStore(INITIAL_SESSION_STATE)
   const sessionControlStore = createStore(INITIAL_SESSION_CONTROL)
   const shellStore = createStore(INITIAL_SHELL_STATE)
@@ -213,7 +242,7 @@ export function createClientRuntime(options) {
    * running 可能先变 false，而新 turnId/turnEnds 稍后才到。因此不能用
    * “上一帧 running=true”直接触发，而要等待 running 由 true 变 false 后
    * **观察到 turnId 变化**再触发（并在超时后清理，避免永久 armed）。
-   * @type {{ turnIdAtArm: string, idleAt: number | null } | null}
+   * @type {{ turnIdAtArm: string, idleAt: number | null, configRevision: number } | null}
    */
   let completionArm = null
   /** @type {Set<string>} suggestions already announced to assistive tech */
@@ -467,7 +496,10 @@ export function createClientRuntime(options) {
     })
     timer = setTimeout(() => {
       timer = undefined
-      if (assistStore.getSnapshot().suggestionId === result.suggestionId) clearOffer('idle', 'expired')
+      if (assistStore.getSnapshot().suggestionId === result.suggestionId) {
+        noteDisplay('offer-expired')
+        clearOffer('idle', 'expired')
+      }
     }, Math.max(0, result.expiresAt - now()))
     timer?.unref?.()
   }
@@ -499,11 +531,82 @@ export function createClientRuntime(options) {
     return { ok: false, error: message }
   }
 
-  /** Fetch effective config + diagnostics from the Host. */
-  async function loadStatus() {
+  let statusRequest = null
+  let statusGeneration = 0
+  let updateTimer
+
+  function canRunBuild(state = configStore.getSnapshot()) {
+    return clientBuildId === '' ||
+      (updateHandoff.request == null && state.localBuild?.runningId === clientBuildId)
+  }
+
+  function finishUpdate(phase, failure = '') {
+    updateHandoff.request = null
+    updateStore.set({ phase, failure })
+    if (latestEnv !== null) sync(latestEnv)
+  }
+
+  function checkLocalUpdate() {
+    clearTimeout(updateTimer)
+    if (disposed || updateHandoff.request == null) return
+    const { targetBuildId, expiresAt, failure, settled, acknowledged } = updateHandoff.request
+    const state = configStore.getSnapshot()
+    const build = state.localBuild
+    if (failure) {
+      finishUpdate('failed', failure)
+    } else if (settled && state.hostError === '' && build?.state === 'current' &&
+      build.runningId === targetBuildId && clientBuildId === targetBuildId) {
+      finishUpdate(acknowledged ? 'applied' : 'verified')
+    } else if (Date.now() >= expiresAt) {
+      finishUpdate('failed', 'unconfirmed')
+    } else {
+      updateTimer = setTimeout(() => void loadStatus(2000), Math.min(LOCAL_UPDATE_RECHECK_MS, expiresAt - Date.now()))
+      updateTimer?.unref?.()
+    }
+  }
+
+  async function applyLocalUpdate(targetBuildId) {
+    const state = configStore.getSnapshot()
+    if (disposed || updateHandoff.request != null || state.hostError !== '' ||
+      state.localBuild?.canApply !== true || state.localBuild.installedId !== targetBuildId) return false
+    const request = { targetBuildId, expiresAt: Date.now() + LOCAL_UPDATE_VERIFY_MS }
+    updateHandoff.request = request
+    updateStore.set({ phase: 'checking', failure: '' })
+    if (latestEnv !== null) sync(latestEnv)
+    checkLocalUpdate()
     try {
-      const body = await rpc(OPERATION_STATUS, {}, undefined, RPC_TIMEOUT_STATUS_MS)
-      if (disposed) return { ok: false, error: 'disposed' }
+      const body = await rpc(OPERATION_UPDATE_APPLY, { targetBuildId }, undefined, 14000)
+      if (updateHandoff.request === request) {
+        request.acknowledged = body?.ok === true && body.value?.accepted === true
+        if (body?.ok === false && typeof body.error?.code === 'string') request.failure = body.error.code
+      }
+    } catch {
+      // A changing route can lose its reply. Verify read-only and never replay this request.
+    } finally {
+      // The original renderer can be disposed before the old Host's reply.
+      // The next renderer must see its result before reporting completion.
+      request.settled = true
+    }
+    if (!disposed) void loadStatus(2000)
+    return true
+  }
+
+  /** Fetch effective config + diagnostics; coalesce focus and Settings reads. */
+  function loadStatus(timeoutMs = RPC_TIMEOUT_STATUS_MS, fresh = false) {
+    if (statusRequest !== null && !fresh) return statusRequest
+    const generation = ++statusGeneration
+    statusRequest = readStatus(timeoutMs, generation).finally(() => {
+      if (generation !== statusGeneration) return
+      statusRequest = null
+      checkLocalUpdate()
+    })
+    return statusRequest
+  }
+
+  async function readStatus(timeoutMs, generation) {
+    try {
+      const body = await rpc(OPERATION_STATUS, {}, undefined, timeoutMs)
+      if (disposed || generation !== statusGeneration) return { ok: false, error: 'stale-status' }
       if (!body || body.ok !== true || body.value === null || typeof body.value !== 'object') {
         const message = body && body.error && body.error.message ? body.error.message : 'status unavailable'
         return statusFailed(String(message))
@@ -525,10 +628,11 @@ export function createClientRuntime(options) {
         promptVersion: typeof value.promptVersion === 'string' ? value.promptVersion : '',
         mode: typeof value.mode === 'string' ? value.mode : '',
         hostVersion: typeof value.version === 'string' ? value.version : '',
+        localBuild: clientBuildId ? nmpLocalBuildStatus(value.localBuild, clientBuildId) : null,
       })
       return { ok: true, value }
     } catch (error) {
-      if (disposed) return { ok: false, error: 'disposed' }
+      if (disposed || generation !== statusGeneration) return { ok: false, error: 'stale-status' }
       return statusFailed(error instanceof Error ? error.message : String(error))
     }
   }
@@ -554,8 +658,8 @@ export function createClientRuntime(options) {
         promptVersion: typeof value.promptVersion === 'string' ? value.promptVersion : configStore.getSnapshot().promptVersion,
         mode: typeof value.mode === 'string' ? value.mode : configStore.getSnapshot().mode,
       })
-      // The write restarts the Host plugin; refresh capabilities lazily.
-      void loadStatus()
+      // A check started before the write must not restore the prior configuration.
+      void loadStatus(RPC_TIMEOUT_STATUS_MS, true)
       return { ok: true, value }
     } catch (error) {
       return { ok: false, error: error instanceof Error ? error.message : String(error) }
@@ -568,6 +672,7 @@ export function createClientRuntime(options) {
     if (!configState.ready) return { ok: false, reason: 'config-loading' }
     if (configState.hostError !== '') return { ok: false, reason: 'host-unavailable' }
     if (configState.config.enabled !== true) return { ok: false, reason: 'disabled' }
+    if (!canRunBuild(configState)) return { ok: false, reason: 'build-mismatch' }
     if (configState.capabilities.connectionFetch !== true) return { ok: false, reason: 'host-route-unavailable' }
     if (env === null || env === undefined) return { ok: false, reason: 'no-view' }
     if (!env.sessionId) return { ok: false, reason: 'no-session' }
@@ -1025,6 +1130,12 @@ export function createClientRuntime(options) {
     const previous = latestEnv
     latestEnv = env
     updateSessionControl(env)
+    if (assistStore.getSnapshot().status === 'offered') {
+      const blocker = displayBlocker(env)
+      if (blocker !== '') noteDisplay(blocker)
+    } else if (previous?.sessionId !== env.sessionId || previous?.turnId !== env.turnId) {
+      noteDisplay('')
+    }
     const configState = configStore.getSnapshot()
     if (!configState.ready) return
     trackSession(env, previous)
@@ -1042,6 +1153,14 @@ export function createClientRuntime(options) {
         clearWork('closed', 'closed')
         completionArm = null
         setAssist({ ...INITIAL_ASSIST, status: 'disabled' })
+      }
+      return
+    }
+    if (!canRunBuild(configState)) {
+      completionArm = null
+      clearWork('unavailable', 'closed')
+      if (assistStore.getSnapshot().reason !== 'build-mismatch') {
+        setAssist({ ...INITIAL_ASSIST, status: 'unavailable', reason: 'build-mismatch' })
       }
       return
     }
@@ -1084,14 +1203,14 @@ export function createClientRuntime(options) {
     }
     if (env.running === true) {
       if (completionArm === null || completionArm.idleAt !== null) {
-        completionArm = { turnIdAtArm: env.turnId, idleAt: null }
+        completionArm = { turnIdAtArm: env.turnId, idleAt: null, configRevision: configState.revision }
       }
       clearWork('idle', 'overwritten')
       return
     }
     if (completionArm !== null) {
       completionArm.idleAt ??= now()
-      if (now() - completionArm.idleAt > 5000) completionArm = null
+      if (now() - completionArm.idleAt > 5000 || completionArm.configRevision !== configState.revision) completionArm = null
     }
     if (!env.turnId) {
       clearWork('closed', 'closed')
@@ -1198,6 +1317,10 @@ export function createClientRuntime(options) {
       }
       const check = eligibility(env)
       if (check.reason === 'session-state-unavailable' && sessionRead !== null) return
+      // A host send transition can briefly freeze an otherwise eligible empty
+      // composer after the completed turn appears. Keep the existing bounded
+      // arm only while this is the sole blocker; user actions still cancel it.
+      if (check.reason === 'input-frozen' && eligibility({ ...env, phase: 'plain' }).ok) return
       completionArm = null
       if (check.ok) scheduleAuto(env, tkey)
       // B01：失焦/不可见时先记下，聚焦后补发（Host 仍有 30 分钟窗口）。
@@ -1295,11 +1418,47 @@ export function createClientRuntime(options) {
       state.expiresAt > now()
   }
 
-  function canDisplayOffer(env) {
+  function displayBlocker(env) {
     const state = assistStore.getSnapshot()
-    if (conflictSource !== '' || state.status !== 'offered' || state.text === '') return false
-    if (!offerMatches(state, env) || !currentSessionVersion(state.sessionVersion) || !eligibility(env).ok) return false
-    return configStore.getSnapshot().config.requireInputFocus !== true || env.focused === true
+    if (conflictSource !== '' || state.status !== 'offered' || state.text === '') return 'no-current-offer'
+    const check = eligibility(env)
+    if (!check.ok) return check.reason
+    if (state.expiresAt <= now()) return 'offer-expired'
+    if (!offerMatches(state, env) || !currentSessionVersion(state.sessionVersion)) return 'stale-view'
+    if (configStore.getSnapshot().config.requireInputFocus === true && env.focused !== true) return 'input-not-focused'
+    return ''
+  }
+
+  function canDisplayOffer(env) {
+    return displayBlocker(env) === ''
+  }
+
+  function noteDisplay(reason, shown = false) {
+    const last = displayStore.getSnapshot()
+    if (last.reason !== reason || last.shown !== shown || last.detached) displayStore.set({ reason, shown, detached: false })
+  }
+
+  async function claimSend(painted, signal) {
+    const { revision, config, capabilities } = configStore.getSnapshot()
+    const sessionVersion = painted.sessionVersion
+    if (!canRunBuild() || config.sendOnTab !== true || !validSessionVersion(sessionVersion) ||
+      !currentSessionVersion(sessionVersion)) return 'session-state-changed'
+    if (capabilities.sendClaim !== true) return 'send-unavailable'
+    try {
+      const body = await rpc(OPERATION_SEND_CLAIM, {
+        suggestionId: painted.suggestionId, sessionId: painted.sessionId, expectedConfigRevision: revision, sessionVersion,
+      }, signal, SEND_CLAIM_TIMEOUT_MS)
+      if (signal.aborted || disposed) return 'session-state-changed'
+      const result = body?.ok === true ? body.value : null
+      if (result?.granted === true && sameSessionVersion(sessionVersion, result.sessionVersion)) return ''
+      return result?.reason ?? 'send-interrupted'
+    } catch {
+      return 'send-interrupted'
+    }
+  }
+
+  function noteSendFeedback(sessionId, reason) {
+    noticeStore.set({ kind: 'send-feedback', reason, sessionId, at: now() })
   }
 
   /** Reserve the offer for the focused editor's synchronous native insertion. */
@@ -1441,6 +1600,7 @@ export function createClientRuntime(options) {
         }
       },
       config: () => configStore.getSnapshot(),
+      updateState: () => updateStore.getSnapshot(),
       legacy: () => legacySnapshot,
       predictNow,
       /** Paint a local fake offer without the Host; P1 manual smoke-test path. */
@@ -1469,6 +1629,7 @@ export function createClientRuntime(options) {
 
   function dispose() {
     disposed = true
+    clearTimeout(updateTimer)
     clearTimer()
     cancelStatusRetry()
     abortInflight()
@@ -1488,6 +1649,8 @@ export function createClientRuntime(options) {
     if (state.status === 'offered') remembered = rememberOffer(state, latestEnv)
     else if (state.status === 'waiting') rememberPending(state)
     latestEnv = null
+    const lastDisplay = displayStore.getSnapshot()
+    if (lastDisplay.reason !== '' || lastDisplay.shown) displayStore.set({ detached: true })
     updateSessionControl(null)
     completionArm = null
     manualFallback = null
@@ -1500,9 +1663,12 @@ export function createClientRuntime(options) {
     assistStore,
     signalsStore,
     noticeStore,
+    displayStore,
     sessionStore,
     sessionControlStore,
     shellStore,
+    updateStore,
+    applyLocalUpdate,
     clearNotice,
     loadStatus,
     saveConfig,
@@ -1514,6 +1680,10 @@ export function createClientRuntime(options) {
     toggleSessionPause,
     canOfferAnother,
     canDisplayOffer,
+    displayBlocker,
+    noteDisplay,
+    claimSend,
+    noteSendFeedback,
     prepareAdoption,
     markAccepted,
     markInsertRejected,

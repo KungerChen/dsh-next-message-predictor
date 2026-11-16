@@ -13,11 +13,11 @@
 <p align="center">
   <b>Un plugin para el cuadro de entrada de DeepSeek Harness</b><br>
   Después de una respuesta que cumple las condiciones, puedes ver una sugerencia para tu próximo mensaje en el cuadro de texto.<br>
-  Enfoca el cuadro y pulsa <kbd>Tab</kbd> para pasar la sugerencia al borrador. Tú decides cuándo enviarlo.
+  Enfoca el cuadro y pulsa <kbd>Tab</kbd> para pasar la sugerencia al borrador de forma predeterminada.
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/versi%C3%B3n-0.6.0-4d6bfe" alt="versión 0.6.0">
+  <img src="https://img.shields.io/badge/versi%C3%B3n-0.7.0-4d6bfe" alt="versión 0.7.0">
   <img src="https://img.shields.io/badge/DeepSeek%20Harness-%3E%3D0.2.2--rc.1%20%3C0.3.0-1f2937" alt="DeepSeek Harness &gt;=0.2.2-rc.1 &lt;0.3.0">
   <img src="https://img.shields.io/badge/idiomas-9-8250df" alt="idiomas 9">
   <img src="https://img.shields.io/badge/dependencias%20externas-0-2ea44f" alt="dependencias externas 0">
@@ -69,7 +69,9 @@ $dsh = '<carpeta de instalación de DSH>\resources\runtime\cli\bin\dsh.cmd'
 <details>
 <summary>Actualizar y desinstalar</summary>
 
-**Actualizar**: si instalaste desde GitHub, desinstala y vuelve a ejecutar el comando de instalación; si instalaste desde una carpeta local, ejecuta `git pull` en ella. Después reinicia DSH. Recargar la página no basta: la página sería nueva y la parte en segundo plano seguiría siendo antigua, y la página de ajustes avisaría de que las versiones no coinciden.
+**Actualizar una instalación de GitHub**. Desinstala el complemento, vuelve a ejecutar el comando de instalación y reinicia DSH por completo.
+
+**Aplicar una compilación local**. Actualiza y compila primero los archivos del complemento en la carpeta local. Si los ajustes detectan una compilación que aún no se ha cargado, elige «Aplicar actualización local». DSH también puede recargar otros complementos modificados en el mismo perfil. Reinicia DSH por completo antes del primer uso o si no puedes aplicar la actualización.
 
 **Desinstalar**:
 
@@ -93,7 +95,7 @@ Las sugerencias disponibles se muestran en gris en el cuadro vacío de la ventan
 
 | Acción en el cuadro de texto | Qué hace |
 |---|---|
-| <kbd>Tab</kbd>, <kbd>→</kbd> al inicio o clic en «Tab: aceptar» | Enfoca primero el cuadro. La sugerencia pasa al borrador y puedes editarla antes de enviarlo. |
+| <kbd>Tab</kbd>, su botón correspondiente o <kbd>→</kbd> al inicio | Enfoca primero el cuadro. De forma predeterminada, la sugerencia pasa al borrador. Si activas «Enviar con Tab», Tab y su botón correspondiente envían la sugerencia actual. La flecha derecha siempre la inserta en el borrador. Solo se envía si la sugerencia sigue siendo válida y se cumplen las comprobaciones. Ten en cuenta el riesgo de envíos accidentales antes de activarlo. |
 | <kbd>Esc</kbd> | Con el cuadro enfocado, oculta la sugerencia actual. Después puedes pedir otra manualmente. |
 | <kbd>Alt</kbd>+<kbd>\</kbd> (configurable), «Predecir» o «Otra» | Con el cuadro vacío, pide una predicción o cambia de sugerencia. El atajo también requiere que el cuadro tenga el foco. |
 | Escribir sin más | Al escribir se oculta la sugerencia. Si vacías el borrador y la sugerencia sigue vigente, puede volver a mostrarse. |
@@ -205,7 +207,7 @@ El coste depende del proveedor que recibe la solicitud y de los tokens que usa. 
 
 ## Documentación
 
-La documentación detallada está escrita en chino.
+Consulta [Publicación y configuración](docs/RELEASE.md#release-validation-070) para ver la compatibilidad y las pruebas de 0.7.0. La documentación detallada está escrita en chino.
 
 | Documento | Contenido |
 |---|---|

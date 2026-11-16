@@ -71,6 +71,7 @@ export const DEFAULT_CONFIG = {
   showPredictButton: true,
   /** Display suggestions only while the input itself is focused. */
   requireInputFocus: false,
+  sendOnTab: false,
   /** 一次模型调用给出最多 3 条候选，“换一条”先在本地切换，切完才再调用模型。 */
   multiCandidates: true,
   /**
@@ -338,7 +339,7 @@ const LIST_FIELDS = {
   },
 }
 
-const BOOLEAN_FIELDS = ['enabled', 'announceSuggestions', 'manualOnly', 'showPredictButton', 'requireInputFocus', 'multiCandidates', 'habitSuggestions', 'includeTurnFacts', 'redactSecrets', 'sidebarEntry']
+const BOOLEAN_FIELDS = ['enabled', 'announceSuggestions', 'manualOnly', 'showPredictButton', 'requireInputFocus', 'sendOnTab', 'multiCandidates', 'habitSuggestions', 'includeTurnFacts', 'redactSecrets', 'sidebarEntry']
 
 /** Own-property test that also works for objects without a prototype. */
 function hasOwn(object, key) {

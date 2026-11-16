@@ -1,7 +1,7 @@
 title: Previsão da próxima mensagem
 product: Um plugin para a caixa de entrada do DeepSeek Harness
 tagline1: Após uma resposta que atende às condições, uma sugestão para a próxima mensagem pode aparecer na caixa de texto.
-tagline2: Coloque o foco na caixa e pressione <kbd>Tab</kbd> para inserir a sugestão no rascunho. Você decide quando enviar.
+tagline2: Coloque o foco na caixa e pressione <kbd>Tab</kbd> para inserir a sugestão no rascunho por padrão.
 b_version: versão
 b_deps: dependências externas
 b_langs: idiomas
@@ -24,15 +24,16 @@ inst_d_p: A linha de comando `dsh` fica na pasta de instalação do DeepSeek Har
 ph_dsh: pasta de instalação do DSH
 ph_plugin: pasta do plugin
 upd_sum: Atualizar e desinstalar
-upd_p: **Atualizar**: se você instalou pelo GitHub, desinstale e execute de novo o comando de instalação; se instalou de uma pasta local, execute `git pull` nela. Depois reinicie o DSH. Recarregar a página não basta: a página ficaria nova e a parte em segundo plano continuaria antiga, e a página de configurações avisaria que as versões não coincidem.
+upd_p: **Atualizar uma instalação do GitHub**. Desinstale o plugin, execute de novo o comando de instalação e reinicie o DSH por completo.
+upd_local: **Aplicar uma compilação local**. Primeiro atualize e compile os arquivos do plugin na pasta local. Se as configurações detectarem uma compilação que ainda não foi carregada, escolha “{ui:settings.localUpdateApply}”. O DSH também pode recarregar outros plugins alterados no mesmo perfil. Reinicie o DSH por completo antes do primeiro uso ou se não for possível aplicar a atualização.
 unin: **Desinstalar**:
 conflict: Ative apenas um plugin de previsão para a caixa de entrada por perfil. Quando outro é detectado, este plugin se pausa sozinho e explica o motivo na página de configurações.
 f1_p: Sugestões disponíveis aparecem em cinza na caixa vazia da janela ativa. Por padrão, elas podem aparecer mesmo quando a caixa está sem foco. Ative “{ui:settings.requireInputFocus}” para exibi-las apenas com foco na caixa. Essa opção controla a exibição das sugestões já disponíveis.
 f1_alt: Sugestão cinza na caixa sem foco e aviso para colocar o foco na caixa antes de pressionar Tab
 k_th1: Ação na caixa de texto
 k_th2: O que faz
-k1a: <kbd>Tab</kbd>, <kbd>→</kbd> no início ou clique em “{ui:ghost.adopt}”
-k1b: Coloque o foco na caixa primeiro. A sugestão passa para o rascunho e pode ser editada antes do envio.
+k1a: <kbd>Tab</kbd>, o botão correspondente ou <kbd>→</kbd> no início
+k1b: Coloque o foco na caixa primeiro. Por padrão, a sugestão passa para o rascunho. Se ativar “{ui:settings.sendOnTab}”, Tab e o botão correspondente enviam a sugestão atual. A seta para a direita sempre insere a sugestão no rascunho. O envio exige uma sugestão válida e o cumprimento das verificações. Considere o risco de envio acidental antes de ativar a opção.
 k2a: <kbd>Esc</kbd>
 k2b: Oculta a sugestão atual enquanto a caixa está em foco. Depois você pode pedir outra manualmente.
 k3a: <kbd>Alt</kbd>+<kbd>\</kbd> (configurável), “{ui:ghost.predict}” ou “{ui:ghost.another}”
@@ -79,7 +80,7 @@ q1: Por que não apareceu nenhuma sugestão?
 a1: Veja o estado atual nas configurações. Uma conversa pausada, janela inativa, rascunho não vazio, menu aberto ou composição por IME podem impedir a exibição. O modelo também pode não retornar uma sugestão válida. Em uma conversa elegível, tente a previsão manual com a caixa vazia e em foco.
 q2: Quando uma solicitação é cobrada?
 a2: O custo depende do provedor chamado e dos tokens usados. Alternar entre opções existentes e montar uma alternativa local não adicionam solicitações ao modelo. Use o modo economia para pedir previsões quando precisar.
-docs_note: A documentação detalhada está escrita em chinês.
+docs_note: A compatibilidade e os testes da versão 0.7.0 estão em [Publicação e configuração](docs/RELEASE.md#release-validation-070). A documentação detalhada está escrita em chinês.
 d_th1: Documento
 d_th2: Conteúdo
 d1: Guia de uso

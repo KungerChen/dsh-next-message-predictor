@@ -89,7 +89,7 @@ const NMP_KBD_STYLE = {
 const NMP_ADVANCED_FIELDS = [
   'triggerDelayMs', 'autoWindowMinutes', 'manualLimit', 'candidateCount', 'habitMinCount',
   'contextMessages', 'targetInputTokens', 'maxContextCodePoints', 'includeTurnFacts', 'redactSecrets',
-  'maxSuggestionGraphemes', 'maxOutputTokens', 'timeoutMs', 'dailyRequestLimit', 'dailyTokenBudget', 'announceSuggestions',
+  'maxSuggestionGraphemes', 'maxOutputTokens', 'timeoutMs', 'dailyRequestLimit', 'dailyTokenBudget', 'announceSuggestions', 'sendOnTab',
 ]
 
 /** 1234567 -> "1,234,567"; non-numbers -> "—". */
@@ -253,7 +253,10 @@ export function createSettingsComponent(react, runtime, t) {
   return function NextMessagePredictorSettings() {
     const configState = useStoreSettings(react, runtime.configStore)
     const assist = useStoreSettings(react, runtime.assistStore)
-    const [busy, setBusy] = useState(false)
+    const display = useStoreSettings(react, runtime.displayStore)
+    const update = useStoreSettings(react, runtime.updateStore)
+    const [saveBusy, setBusy] = useState(false)
+    const busy = saveBusy || update.phase === 'checking'
     const [message, setMessage] = useState(null)
     const [fakeText, setFakeText] = useState(null)
     const [drafts, setDrafts] = useState({})
@@ -265,6 +268,7 @@ export function createSettingsComponent(react, runtime, t) {
     const [results, setResults] = useState(null)
     const [resultsBusy, setResultsBusy] = useState(false)
     const [recording, setRecording] = useState(false)
+    const [confirmSend, setConfirmSend] = useState(false)
     const [confirmRedact, setConfirmRedact] = useState(false)
     const [advancedOpen, setAdvancedOpen] = useState(nmpReadAdvancedOpen)
     // Pinned phrases: edited as a whole and written with one Save (every config
@@ -289,6 +293,7 @@ export function createSettingsComponent(react, runtime, t) {
     }
     useEffect(() => {
       loadResultsNow()
+      void runtime.loadStatus?.()
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
@@ -574,6 +579,21 @@ export function createSettingsComponent(react, runtime, t) {
     // page was refreshed after an update but DSH has not been restarted yet.
     const hostVersion = configState.hostVersion
     const versionMismatch = configState.ready === true && configState.hostError === '' && hostVersion !== PLUGIN_VERSION
+    const build = configState.hostError === '' ? configState.localBuild : null
+    const checkBuild = build?.state === 'current' && build.runningId !== build.clientBuildId
+    const buildNote = build?.canApply === true ? 'localUpdateAvailable'
+      : build?.state === 'update-available' ? 'localUpdateUnavailable'
+        : checkBuild ? 'localUpdateRefresh'
+          : build?.state === 'legacy' && !versionMismatch ? 'localUpdateLegacy'
+            : build?.state === 'unknown' ? 'localUpdateUnknown' : ''
+    const updateNote = update.phase === 'checking' ? 'localUpdateChecking'
+      : update.phase === 'applied' ? 'localUpdateApplied'
+        : update.phase === 'verified' ? 'localUpdateVerified'
+          : update.phase === 'failed' ? ({
+          'build-changed': 'localUpdateChanged',
+          'restart-required': 'localUpdateUnavailable',
+          unconfirmed: 'localUpdateUnconfirmed',
+        }[update.failure] ?? 'localUpdateFailed') : ''
     // Header: what this is, which version, and the one-click sidebar entry.
     rows.push(
       h(
@@ -642,6 +662,22 @@ export function createSettingsComponent(react, runtime, t) {
               (hostVersion === '' ? t('settings.versionHostOld') : t('settings.versionHostOther').split('{host}').join(hostVersion)).split('{version}').join(PLUGIN_VERSION),
             )
           : null,
+        updateNote !== '' ? h('p', {
+          'data-nmp-setting': 'localUpdateResult', role: 'status',
+          style: { margin: 0, fontSize: '12px', lineHeight: '18px', color: update.phase === 'failed' ? NMP_WARNING : 'var(--dsw-alias-label-secondary)' },
+        }, t(`settings.${updateNote}`)) : null,
+        buildNote !== '' && update.phase !== 'checking' ? h('div', {
+          'data-nmp-setting': 'localBuild', style: { ...NMP_HINT_STYLE, display: 'flex', flexDirection: 'column', gap: '6px' },
+        },
+          h('div', { role: 'status' }, t(`settings.${buildNote}`)),
+          build.canApply ? h('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '5px' } },
+            h('div', { id: 'nmp-local-update-instructions' }, t('settings.localUpdateInstructions')),
+            h('button', {
+              type: 'button', 'data-nmp-setting': 'applyLocalUpdate', 'aria-describedby': 'nmp-local-update-instructions', disabled: busy,
+              style: buttonStyle(busy), onClick: () => void runtime.applyLocalUpdate(build.installedId),
+            }, t('settings.localUpdateApply')),
+          ) : null,
+        ) : null,
       ),
     )
 
@@ -698,6 +734,7 @@ export function createSettingsComponent(react, runtime, t) {
     const autoPredict = config.manualOnly !== true
     const showButton = config.showPredictButton !== false
     const requireInputFocus = config.requireInputFocus === true
+    const sendOnTab = config.sendOnTab === true
     const waitingStates = ['idle', 'closed']
     const stateText = !enabled
       ? t('state.disabled')
@@ -745,6 +782,31 @@ export function createSettingsComponent(react, runtime, t) {
           nmpSwitch(h, { name: 'requireInputFocus', checked: requireInputFocus, disabled: busy || !enabled, label: t('settings.requireInputFocus'), onClick: () => toggle('requireInputFocus', !requireInputFocus, 'settings.saved') }),
           { dim: !enabled },
         ),
+        row(
+          'sendOnTab',
+          t('settings.sendOnTab'),
+          nmpSwitch(h, { name: 'sendOnTab', checked: sendOnTab, disabled: busy || !enabled,
+            label: t('settings.sendOnTab'), onClick: () => {
+              if (sendOnTab) toggle('sendOnTab', false, 'settings.saved')
+              else setConfirmSend(true)
+            } }),
+          { dim: !enabled, note: sendOnTab ? t('settings.sendOnTabWarning') : '' },
+        ),
+        confirmSend && !sendOnTab && enabled ? h('div', {
+          'data-nmp-setting': 'sendOnTabConfirm',
+          role: 'group',
+          'aria-label': t('settings.sendOnTab'),
+          style: { padding: '10px 12px', borderRadius: '8px', border: `1px solid ${NMP_DANGER}`, fontSize: '12px', lineHeight: '18px' },
+        },
+          h('div', { role: 'alert' }, t('settings.sendOnTabWarning')),
+          h('div', { style: { display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '8px' } },
+            h('button', { type: 'button', 'data-nmp-setting': 'sendOnTabCancel', disabled: busy, onClick: () => setConfirmSend(false), style: buttonStyle(busy) }, t('settings.cancel')),
+            h('button', { type: 'button', 'data-nmp-setting': 'sendOnTabEnable', disabled: busy, onClick: () => {
+              setConfirmSend(false)
+              toggle('sendOnTab', true, 'settings.saved')
+            }, style: buttonStyle(busy) }, t('settings.sendOnTabEnable')),
+          ),
+        ) : null,
         row(
           'shortcut',
           t('settings.shortcut'),
@@ -810,7 +872,10 @@ export function createSettingsComponent(react, runtime, t) {
             'data-nmp-setting': 'keys',
             style: { ...NMP_HINT_STYLE, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6px 14px', paddingTop: '12px', borderTop: NMP_DIVIDER },
           },
-          h('span', { style: { display: 'inline-flex', alignItems: 'center', gap: '6px' } }, kbd('Tab', 'k1'), kbd('→', 'k2'), t('settings.keyAdopt')),
+          sendOnTab ? h('span', { style: { display: 'inline-flex', alignItems: 'center', gap: '6px' } },
+            kbd('Tab', 'k1'), t('settings.keySend')) : null,
+          h('span', { style: { display: 'inline-flex', alignItems: 'center', gap: '6px' } },
+            sendOnTab ? null : kbd('Tab', 'k1'), kbd('→', 'k2'), t('settings.keyAdopt')),
           h('span', { style: { display: 'inline-flex', alignItems: 'center', gap: '6px' } }, kbd('Esc', 'k3'), t('settings.keyHide')),
           h('span', { style: { display: 'inline-flex', alignItems: 'center', gap: '6px' } }, kbd(keyLabel, 'k4'), t('settings.keyPredict')),
         ),
@@ -1246,6 +1311,10 @@ export function createSettingsComponent(react, runtime, t) {
     // ── Folded: advanced options ────────────────────────────────────────────
     const diagLines = []
     diagLines.push(`${t('settings.diagnosticState')}: ${assist.status}${assist.reason ? ` (${assist.reason})` : ''}`)
+    if (display?.shown || display?.reason) {
+      const state = display.shown ? t('settings.diagnosticShown') : nmpCodeLabel(t, 'reason', display.reason)
+      diagLines.push(`${t(display.detached ? 'settings.diagnosticLastDisplay' : 'settings.diagnosticDisplay')}: ${state}`)
+    }
     if (assist.status === 'conflict') {
       diagLines.push(`${t('settings.conflictHint')}: ${assist.reason}`)
     }
@@ -1253,7 +1322,7 @@ export function createSettingsComponent(react, runtime, t) {
     diagLines.push(`${t('settings.diagnosticMode')}: ${configState.mode || 'n/a'} / ${configState.promptVersion || 'n/a'}`)
     if (counters !== null) {
       diagLines.push(
-        `${t('settings.diagnosticCounters')}: ${t('settings.countRequests')}=${counters.requestsReceived} ${t('settings.countOffers')}=${counters.offers} ${t('settings.countProviderCalls')}=${counters.providerCalls} ${t('settings.countSendCalls')}=${counters.sendCalls}`,
+        `${t('settings.diagnosticCounters')}: ${t('settings.countRequests')}=${counters.requestsReceived} ${t('settings.countOffers')}=${counters.offers} ${t('settings.countProviderCalls')}=${counters.providerCalls} ${t('settings.countSendClaims')}=${counters.sendClaims ?? 0}`,
       )
       diagLines.push(
         `${t('settings.diagnosticTokens')}: in=${counters.inputTokens} out=${counters.outputTokens} reasoning=${counters.reasoningTokens} cacheR=${counters.cacheReadTokens} unknown=${counters.unknownUsage}`,

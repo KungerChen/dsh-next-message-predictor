@@ -16,6 +16,8 @@
 //   form values change.
 
 import { ENTRY_ID, ROUTE } from '../shared/config.js'
+import { PLUGIN_BUILD_ID } from '../shared/build-id.js'
+import { applyBuildUpdate, inspectLocalBuild } from './build-integrity.js'
 
 const ROUTE_REGISTERED = Symbol('nmp.route')
 
@@ -41,6 +43,15 @@ export function createHostAdapter(ctx) {
   const configEditor = tryGetService(ctx, 'configEditor')
   const sessions = tryGetService(ctx, 'sessions')
   const agents = tryGetService(ctx, 'agents')
+
+  const localBuild = () => {
+    const hmr = tryGetService(ctx, 'hmr')
+    const available = typeof hmr?.runExclusive === 'function' && typeof hmr?.reconcileProfile === 'function'
+    return inspectLocalBuild(tryGetService(ctx, 'profileContext')?.dir, available, undefined, PLUGIN_BUILD_ID)
+  }
+  async function applyLocalUpdate(targetBuildId, signal, isActive) {
+    return applyBuildUpdate({ hmr: tryGetService(ctx, 'hmr'), inspect: localBuild, entryId: ENTRY_ID, targetBuildId, signal, isActive })
+  }
 
   /**
    * Whether the host can prove the session exists and is live.
@@ -186,6 +197,10 @@ export function createHostAdapter(ctx) {
     configEditorAvailable: configEditor !== undefined && typeof configEditor.edit === 'function',
     sessionKnown,
     sessionManageable,
+    sendClaimAvailable: () => typeof tryGetService(ctx, 'sessionController')?.state === 'function',
+    readSessionState: (sessionId, signal) => tryGetService(ctx, 'sessionController')?.state?.({ sessionId }, signal),
+    localBuild,
+    applyLocalUpdate,
     connection,
     currentEntryConfig,
     persistConfig,

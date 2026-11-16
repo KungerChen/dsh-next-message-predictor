@@ -13,11 +13,11 @@
 <p align="center">
   <b>DeepSeek Harness 输入框插件</b><br>
   助手答完后，可在输入框里预览下一条消息的建议。<br>
-  聚焦输入框后按 <kbd>Tab</kbd> 填入草稿，发送由你决定。
+  聚焦输入框后按 <kbd>Tab</kbd>，默认填入草稿。
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/%E7%89%88%E6%9C%AC-0.6.0-4d6bfe" alt="版本 0.6.0">
+  <img src="https://img.shields.io/badge/%E7%89%88%E6%9C%AC-0.7.0-4d6bfe" alt="版本 0.7.0">
   <img src="https://img.shields.io/badge/DeepSeek%20Harness-%3E%3D0.2.2--rc.1%20%3C0.3.0-1f2937" alt="DeepSeek Harness &gt;=0.2.2-rc.1 &lt;0.3.0">
   <img src="https://img.shields.io/badge/%E7%95%8C%E9%9D%A2%E8%AF%AD%E8%A8%80-9-8250df" alt="界面语言 9">
   <img src="https://img.shields.io/badge/%E7%AC%AC%E4%B8%89%E6%96%B9%E4%BE%9D%E8%B5%96-0-2ea44f" alt="第三方依赖 0">
@@ -69,7 +69,9 @@ $dsh = '<DSH 安装目录>\resources\runtime\cli\bin\dsh.cmd'
 <details>
 <summary>更新与卸载</summary>
 
-**更新**。从 GitHub 安装的插件可先卸载，再执行安装命令。本地目录安装的插件可在该目录执行 `git pull`。更新后完全退出并重新打开 DSH。
+**从 GitHub 更新**。先卸载，然后重新执行安装命令并完整重开 DSH。
+
+**应用本地更新**。先更新并构建本地插件目录。若“消息预测”设置检测到未加载的本地构建，会显示“应用本地更新”。点击后，DSH 可能同时重载此 profile 中的其他已变更插件。首次使用前，或无法应用时，请完整退出并重新打开 DSH。
 
 **卸载**。
 
@@ -93,7 +95,7 @@ dsh plugin --profile desktop remove dsh-next-message-predictor
 
 | 输入框操作 | 效果 |
 |---|---|
-| <kbd>Tab</kbd>、光标在开头时按 <kbd>→</kbd>，或点击“Tab 采纳” | 先聚焦输入框。采纳后建议成为草稿，可继续修改再发送。 |
+| <kbd>Tab</kbd>、对应按钮，或光标在开头时按 <kbd>→</kbd> | 先聚焦输入框。默认填入草稿。显式开启 “Tab 一键发送”后，Tab 和对应按钮会提交当前建议。右方向键始终只填入草稿。仅在当前建议有效且通过发送保护时提交，启用前请留意误发风险。 |
 | <kbd>Esc</kbd> | 聚焦输入框时隐藏当前建议，之后仍可手动请求新的建议。 |
 | <kbd>Alt</kbd>+<kbd>\</kbd>（可改）、“预测”或“换一条” | 输入框为空时手动预测或换一条。使用快捷键还需聚焦输入框。 |
 | 直接打字 | 开始输入后，预览会隐藏。清空草稿时，如果原建议仍然有效，它可以再次显示。 |
@@ -205,7 +207,7 @@ dsh plugin --profile desktop remove dsh-next-message-predictor
 
 ## 文档
 
-宿主版本和桌面验证范围见 [0.6.0 验证报告](docs/VALIDATION-DISPLAY-SESSION.md)。
+0.7.0 的宿主与验证范围见 [发布与启用](docs/RELEASE.md#release-validation-070)。
 
 | 文档 | 内容 |
 |---|---|

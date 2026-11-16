@@ -1,6 +1,6 @@
 # 配置参考
 
-适用于 0.6.0。配置定义见 `src/shared/config.js`（`DEFAULT_CONFIG`、取值范围）和 `src/shared/presets.js`（模式）。
+适用于 0.7.0。配置定义见 `src/shared/config.js`（`DEFAULT_CONFIG`、取值范围）和 `src/shared/presets.js`（模式）。
 
 配置保存在 DSH profile 中本插件的 loader 条目（id `next-message-predictor`）下。通常在设置页修改；也可以在 profile 的 `cordis.patch.yml` 里写：
 
@@ -28,7 +28,8 @@
 | `enabled` | 布尔 | `false` | 总开关。关闭时不显示建议、不调用模型。 |
 | `manualOnly` | 布尔 | `false` | `true` 时回答结束后不自动预测。设置页以反义显示为“回答结束后自动预测”。 |
 | `showPredictButton` | 布尔 | `true` | 输入框为空时在右侧显示“预测”按钮。 |
-| `requireInputFocus` | 布尔 | `false` | 仅在输入框获得焦点时显示预测。开关只影响显示，切换输入框焦点会复用尚未过期的建议。 |
+| `requireInputFocus` | 布尔 | `false` | `true` 时仅在输入框聚焦时显示；`false` 时前台空输入框聚焦或失焦都可显示。切换焦点复用仍有效的建议。 |
+| `sendOnTab` | 布尔 | `false` | “Tab 一键发送”。缺字段时按关闭处理。启用需要确认误发风险。在聚焦输入框中执行 Tab 或对应按钮，且满足发送保护时，经 DSH 提交当前建议。高级选项的“恢复默认值”会关闭。 |
 | `predictShortcut` | 字符串 | `Alt+Backslash` | 写法 `Ctrl+Alt+Shift+Meta+<KeyboardEvent.code>`。必须含 Ctrl、Alt 或 Meta；主键不能是 Tab、Escape、Enter、Backspace、Delete 或方向键；Ctrl 或 Meta（不带 Alt）加编辑键（A、C、V、X、Z、Y、F、S、P、R、W、T、N、Q、L）不可用。 |
 | `sidebarEntry` | 布尔 | `false` | 把“消息预测”加入 DSH 的侧栏导航。DSH 管理入口是否固定，取消固定后可从“更多”打开。 |
 | `language` | 字符串 | `auto` | 插件自身文字的语言。`auto` 跟随 DSH 的界面语言；也可以是 `zh`、`en`、`ja`、`ko`、`es`、`fr`、`de`、`ru`、`pt` 之一。不影响建议本身的语言。 |
@@ -118,8 +119,10 @@
 1. 目标模式是指定模型（均衡、省流），而当前 `provider` 或 `model` 为空，或 `provider` 是 `fixed-test`：同时写入推荐路由 `deepseek-official / deepseek-flash` 和 `reasoningEffort: off`。已有路由时不动。
 2. 目标模式是仅手动（省流），而 `showPredictButton` 为 `false`：同时写入 `showPredictButton: true`，保证有一个看得见的触发方式。
 
-模式从不写入 `enabled`、`requireInputFocus`、`predictShortcut`、`sidebarEntry`、`language`、`habitSuggestions`、`pinnedPhrases`、`redactSecrets`、`includeTurnFacts`、`announceSuggestions`、`fakeSuggestion`。这些约束由 `test/v030.test.mjs` 和 `test/i18n.test.mjs` 检查。
+模式预设保留 `enabled`、`requireInputFocus`、`sendOnTab`、`predictShortcut`、`sidebarEntry`、`language`、`habitSuggestions`、`pinnedPhrases`、`redactSecrets`、`includeTurnFacts`、`announceSuggestions`、`fakeSuggestion`。预设只写其自身管理的字段。
 
 ## 配置版本
+
+本地更新按生成的构建标识检测，由设置页按钮触发。它没有配置开关，且构建标识独立于以下配置指纹。
 
 后台对生效配置计算一个 32 位指纹（`configRevision`）。每个预测请求带上发出时的指纹；配置在请求途中变化时，后台回答“设置刚刚发生变更”，页面重新读取配置，不显示过期结果。

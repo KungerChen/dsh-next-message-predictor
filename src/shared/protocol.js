@@ -9,6 +9,9 @@ export const OPERATION_PREDICT = 'predict'
 export const OPERATION_RELEASE = 'release'
 export const OPERATION_DISMISS = 'dismiss'
 export const OPERATION_ACCEPTED = 'accepted'
+export const OPERATION_SEND_CLAIM = 'send.claim'
+export const OPERATION_UPDATE_APPLY = 'update.apply'
+export const SEND_CLAIM_TIMEOUT_MS = 2500
 export const OPERATION_STATUS = 'status'
 export const OPERATION_CONFIG_GET = 'config.get'
 export const OPERATION_CONFIG_SET = 'config.set'
@@ -48,7 +51,7 @@ export function isPlainRecord(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
 }
 
-function isId(value) {
+export function isId(value) {
   return typeof value === 'string' && value.length > 0 && value.length <= MAX_ID_LENGTH
 }
 

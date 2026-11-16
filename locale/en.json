@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Next message prediction",
-    "description": "After the assistant finishes a reply, a suggestion for the next message is shown as grey text in the empty input box. Tab or → accepts it, Esc hides it; the suggestion is only filled in, never sent automatically. Each prediction is one model call."
+    "description": "After the assistant finishes a reply, a suggestion for the next message is shown as grey text in the empty input box. Tab fills the draft by default. Enable Tab send to submit with Tab. The right arrow always fills the draft, and Esc hides the suggestion. Each prediction is one model call."
   }
 }

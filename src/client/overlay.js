@@ -2,8 +2,8 @@
 //
 // Rendered into the session-scoped `conversation.input.overlay` slot. It owns
 // presentation and the two composer gestures:
-// - Tab: native captureInsertion()/insertText() adoption (never setDraft, never
-//   submit) and only when the insertion really succeeded;
+// - Tab: native adoption, with an opt-in Host grant before native submission;
+// - ArrowRight: native adoption only;
 // - Esc: dismiss for this turn.
 // Eligibility, dedupe and request lifecycle live in the controller. The ghost
 // is an independent paint layer outside the contenteditable, so it never enters
@@ -23,37 +23,41 @@ import {
   measureEditor,
   pageFocused,
   pageVisible,
+  popupChangedDuringSend,
   readCanEdit,
   readComposing,
   readEditorWritable,
 } from './dom.js'
 import { DEFAULT_PREDICT_SHORTCUT, eventMatchesShortcut, formatShortcut, parseShortcut } from '../shared/config.js'
 import { nmpLookupCode } from './labels.js'
+import { SEND_CLAIM_TIMEOUT_MS } from '../shared/protocol.js'
 import { nmpPrepareComposerUndo } from './editor-history.js'
 
 const EMPTY_NODES = []
 
+function nmpReadAdoption(runtime, painted, card, input) {
+  if (!painted || input === null || !input.isConnected || !editorHasFocus(input)) return null
+  if (input.querySelector?.('[data-composer-quote], [data-composer-chip]')) return null
+  const env = runtime.getLatestEnv()
+  if (env === null || env.sessionId !== painted.sessionId) return null
+  const offer = runtime.prepareAdoption({
+    ...env,
+    canEdit: env.canEdit === true && readEditorWritable(input) && input.textContent === '' &&
+      (input.getAttribute('data-phase') ?? 'plain') === 'plain',
+    composing: runtime.signalsStore.getSnapshot().composing === true || readComposing(input),
+    menuOpen: env.pendingInteraction === true || hasOpenMenuOrDialog(card),
+    windowVisible: pageVisible(),
+    windowFocused: pageFocused(),
+    focused: editorHasFocus(input),
+  })
+  return offer?.suggestionId === painted.suggestionId && offer.index === painted.candidateIndex ? offer : null
+}
+
 /** Commit only the painted candidate and only through the native synchronous edit. */
-export function nmpAdoptSuggestion({ runtime, painted, card, actions }) {
+export function nmpAdoptSuggestion({ runtime, painted, card, actions, send = false }) {
   const input = findInput(card)
-  if (!painted || input === null || !input.isConnected) return false
-  if (!editorHasFocus(input)) return false
   if (typeof actions?.captureInsertion !== 'function' || typeof actions?.insertText !== 'function') return false
-  const readOffer = () => {
-    const env = runtime.getLatestEnv()
-    if (env === null || env.sessionId !== painted.sessionId) return null
-    const offer = runtime.prepareAdoption({
-      ...env,
-      canEdit: env.canEdit === true && readEditorWritable(input) && input.textContent === '' &&
-        (input.getAttribute('data-phase') ?? 'plain') === 'plain',
-      composing: runtime.signalsStore.getSnapshot().composing === true || readComposing(input),
-      menuOpen: env.pendingInteraction === true || hasOpenMenuOrDialog(card),
-      windowVisible: pageVisible(),
-      windowFocused: pageFocused(),
-      focused: editorHasFocus(input),
-    })
-    return offer?.suggestionId === painted.suggestionId && offer.index === painted.candidateIndex ? offer : null
-  }
+  const readOffer = () => nmpReadAdoption(runtime, painted, card, input)
   const offer = readOffer()
   if (offer === null) return false
   let span = actions.captureInsertion()
@@ -74,8 +78,29 @@ export function nmpAdoptSuggestion({ runtime, painted, card, actions }) {
     runtime.markInsertRejected(offer)
     return false
   }
+  if (send) {
+    try {
+      actions.submit()
+    } catch {
+      runtime.noteSendFeedback(offer.sessionId, 'send-outcome-unknown')
+    }
+  }
   runtime.markAccepted(offer)
   return true
+}
+
+/** Wait for one Host grant without allowing a stale gesture to reach the editor. */
+export async function nmpClaimAndAdopt({ runtime, painted, card, input, actions, signal, isCurrent }) {
+  const started = performance.now()
+  const reason = await runtime.claimSend(painted, signal)
+  if (signal.aborted || !isCurrent() || performance.now() - started >= SEND_CLAIM_TIMEOUT_MS ||
+    input !== findInput(card) || nmpReadAdoption(runtime, painted, card, input) === null) return
+  if (reason === '' || reason === 'send-unavailable') {
+    const inserted = nmpAdoptSuggestion({ runtime, painted, card, actions, send: reason === '' })
+    if (inserted && reason !== '') runtime.noteSendFeedback(painted.sessionId, 'send-draft-only')
+  } else {
+    runtime.noteSendFeedback(painted.sessionId, reason)
+  }
 }
 
 /** Subscribe to a tiny store with the current snapshot. */
@@ -100,6 +125,7 @@ export function createOverlayComponent(react, runtime, t) {
     const inputActionsRef = useRef(inputActions)
     inputActionsRef.current = inputActions
     const visibleRef = useRef(null)
+    const sendingRef = useRef(null)
     const [geometry, setGeometry] = useState(null)
     const [fit, setFit] = useState(null)
     const [env, setEnv] = useState(null)
@@ -214,6 +240,7 @@ export function createOverlayComponent(react, runtime, t) {
       }
     }, [sessionId])
 
+    useLayoutEffect(() => () => sendingRef.current?.abort(), [sessionId, inputActions])
     useEffect(() => () => runtime.detachView(sessionId), [sessionId])
     useEffect(() => runtime.noteLegacy(nodes, turnEnds), [nodes, turnEnds])
 
@@ -277,7 +304,7 @@ export function createOverlayComponent(react, runtime, t) {
     // Manual trigger feedback: same grey text position as a suggestion, but it is
     // not a suggestion (no Tab, no ghost marker). Only for this session's empty input.
     let noticeText = ''
-    if (!visible && notice.kind !== '' && notice.sessionId === sessionId && draft === '' && signals.composing !== true) {
+    if (!visible && ['predicting', 'none'].includes(notice.kind) && notice.sessionId === sessionId && draft === '' && signals.composing !== true) {
       if (notice.kind === 'predicting') noticeText = t('ghost.predicting')
       else {
         // "The model had nothing to say" needs no further explanation.
@@ -287,7 +314,7 @@ export function createOverlayComponent(react, runtime, t) {
     }
     // A "no suggestion" notice leaves by itself; typing or a new turn clears it sooner.
     useEffect(() => {
-      if (notice.kind !== 'none') return undefined
+      if (notice.kind !== 'none' && notice.kind !== 'send-feedback') return undefined
       const timer = setTimeout(() => runtime.clearNotice(), 3500)
       return () => clearTimeout(timer)
     }, [notice.kind, notice.at])
@@ -361,9 +388,23 @@ export function createOverlayComponent(react, runtime, t) {
     }, [visible, geometry, assist.text, assist.suggestionId])
 
     const showGhost = visible && fit !== null && fit.suggestionId === assist.suggestionId && fit.geometry === geometry
-    visibleRef.current = showGhost ? assist : null
+    useLayoutEffect(() => {
+      visibleRef.current = showGhost ? assist : null
+      // Revoke even if a later render restores the previous draft or candidate.
+      if (!showGhost || !env?.focused || !env?.canEdit || draft !== '' ||
+        draftRev !== assist.offerDraftRev || running || phase !== 'plain' ||
+        attachmentIds?.length || occurrences?.length || queue?.length || claim || pendingInteraction) {
+        sendingRef.current?.abort()
+      }
+    }, [showGhost, assist, env, draft, draftRev, running, phase, attachmentIds, occurrences, queue, claim, pendingInteraction])
     // O01: 只有真正画到输入框上的建议才上报 shown（用于展示率/采纳率）。
     const shownReportedRef = useRef('')
+    useLayoutEffect(() => {
+      if (showGhost) runtime.noteDisplay('', true)
+      else if (assist.status === 'offered' && env?.sessionId === sessionId) {
+        runtime.noteDisplay(runtime.displayBlocker(env) || 'display-unavailable')
+      } else if (runtime.displayStore.getSnapshot().shown) runtime.noteDisplay('')
+    }, [showGhost, assist, env, sessionId])
     useEffect(() => {
       if (!showGhost) return
       if (assist.suggestionId === '' || shownReportedRef.current === assist.suggestionId) return
@@ -384,22 +425,93 @@ export function createOverlayComponent(react, runtime, t) {
       }
     }, [showGhost, showNotice, sessionId])
 
-    const adopt = (event, painted = visibleRef.current) => {
+    const adopt = (event, painted = visibleRef.current, draftOnly = false) => {
       if (painted === null || visibleRef.current !== painted) return
-      const inserted = nmpAdoptSuggestion({
-        runtime, painted, card: findCard(anchorRef.current), actions: inputActionsRef.current,
-      })
-      if (inserted && event !== undefined) {
-        event.preventDefault()
-        event.stopPropagation()
+      const card = findCard(anchorRef.current)
+      const input = findInput(card)
+      const actions = inputActionsRef.current
+      const config = runtime.configStore.getSnapshot()
+      const send = !draftOnly && config.config.sendOnTab === true
+      const stopKey = () => {
+        event?.preventDefault()
+        event?.stopPropagation()
       }
+      if (sendingRef.current !== null) {
+        if (send) {
+          stopKey()
+          return
+        }
+        sendingRef.current.abort()
+      }
+      if (!send || typeof actions?.submit !== 'function' || painted.text.trimStart().startsWith('/') ||
+        config.capabilities.sendClaim !== true) {
+        if (nmpAdoptSuggestion({ runtime, painted, card, actions })) {
+          stopKey()
+          if (send) runtime.noteSendFeedback(painted.sessionId, 'send-draft-only')
+        }
+        return
+      }
+      if (nmpReadAdoption(runtime, painted, card, input) === null) return
+      stopKey()
+      const aborter = new AbortController()
+      sendingRef.current = aborter
+      const { signal } = aborter
+      const session = runtime.sessionStore.getSnapshot()
+      const isCurrent = () => !signal.aborted && visibleRef.current === painted &&
+        inputActionsRef.current === actions && config.revision === runtime.configStore.getSnapshot().revision &&
+        session === runtime.sessionStore.getSnapshot() && painted === runtime.assistStore.getSnapshot()
+      const abort = () => aborter.abort()
+      const check = () => { if (!isCurrent() || nmpReadAdoption(runtime, painted, card, input) === null) abort() }
+      const watch = [
+        runtime.configStore.subscribe(check), runtime.assistStore.subscribe(check),
+        runtime.sessionStore.subscribe(check), runtime.signalsStore.subscribe(check),
+      ]
+      const events = ['focusout', 'beforeinput', 'compositionstart', 'visibilitychange']
+      // Mutations may include a popup that opened and closed before delivery.
+      const observer = typeof MutationObserver === 'function' ? new MutationObserver((records) => {
+        if (popupChangedDuringSend(records, card) ||
+          records.some((record) => record.type === 'attributes' && record.target === input &&
+            ['data-phase', 'aria-disabled', 'aria-readonly', 'contenteditable', 'data-composer-composing'].includes(record.attributeName))) abort()
+        else check()
+      }) : null
+      observer?.observe(document.body, {
+        subtree: true, childList: true, attributes: true, attributeOldValue: true,
+        attributeFilter: ['role', 'style', 'class', 'hidden', 'aria-hidden', 'aria-expanded', 'aria-modal',
+          'aria-haspopup', 'data-trigger-menu', 'data-phase', 'aria-disabled', 'aria-readonly',
+          'contenteditable', 'data-composer-composing', 'inert'],
+      })
+      for (const name of events) document.addEventListener(name, abort, true)
+      document.addEventListener('selectionchange', abort)
+      window.addEventListener('blur', abort)
+      const timer = setTimeout(() => {
+        if (isCurrent()) runtime.noteSendFeedback(painted.sessionId, 'send-interrupted')
+        abort()
+      }, SEND_CLAIM_TIMEOUT_MS)
+      const cleanup = () => {
+        clearTimeout(timer)
+        observer?.disconnect()
+        document.removeEventListener('selectionchange', abort)
+        signal.removeEventListener('abort', cleanup)
+        for (const name of events) document.removeEventListener(name, abort, true)
+        window.removeEventListener('blur', abort)
+        for (const unsubscribe of watch) unsubscribe()
+        if (sendingRef.current === aborter) sendingRef.current = null
+      }
+      signal.addEventListener('abort', cleanup, { once: true })
+      void nmpClaimAndAdopt({ runtime, painted, card, input, actions, signal, isCurrent })
+        .catch(() => { if (isCurrent()) runtime.noteSendFeedback(painted.sessionId, 'send-interrupted') })
+        .finally(cleanup)
     }
 
     // Tab adopts, Esc dismisses — captured before the composer keymap and only
     // for this exact card/editor/offer. Any failure falls through untouched.
     useEffect(() => {
       const onKeyDown = (event) => {
-        if (event.defaultPrevented === true || event.repeat === true) return
+        if (event.defaultPrevented === true) return
+        if (event.repeat === true) {
+          if (event.key === 'Tab' && sendingRef.current !== null && !isComposingEvent(event)) event.preventDefault()
+          return
+        }
         // The predict shortcut (Alt+\ unless changed in settings) asks for one
         // prediction now; it is the only shortcut here that uses a modifier.
         const manualChord = eventMatchesShortcut(
@@ -439,7 +551,7 @@ export function createOverlayComponent(react, runtime, t) {
           if (selection !== null && selection.rangeCount > 0) {
             const range = selection.getRangeAt(0)
             if (range.collapsed && range.startOffset === 0 && input.contains(range.startContainer)) {
-              adopt(event)
+              adopt(event, visibleRef.current, true)
             }
           }
           return
@@ -456,6 +568,9 @@ export function createOverlayComponent(react, runtime, t) {
       return () => document.removeEventListener('keydown', onKeyDown, true)
     }, [])
 
+    const sendOnTab = configState.config.sendOnTab === true
+    const willSend = sendOnTab && configState.capabilities.sendClaim === true &&
+      typeof inputActions?.submit === 'function' && !assist.text.trimStart().startsWith('/')
     const announce = configState.config.announceSuggestions !== false
     // Nothing left to switch to and no manual predictions left on this reply.
     const anotherAvailable = runtime.canOfferAnother()
@@ -520,8 +635,8 @@ export function createOverlayComponent(react, runtime, t) {
             {
               type: 'button',
               'data-nmp-adopt': '',
-              title: t('ghost.adoptHint'),
-              'aria-label': t('ghost.adoptHint'),
+              title: t(willSend ? 'ghost.sendHint' : sendOnTab ? 'ghost.sendUnavailable' : 'ghost.adoptHint'),
+              'aria-label': t(willSend ? 'ghost.sendHint' : sendOnTab ? 'ghost.sendUnavailable' : 'ghost.adoptHint'),
               tabIndex: -1,
               onMouseDown: (event) => event.preventDefault(),
               onClick: () => adopt(undefined, assist),
@@ -539,7 +654,7 @@ export function createOverlayComponent(react, runtime, t) {
                 cursor: 'pointer',
               },
             },
-            t('ghost.adopt'),
+            t(willSend ? 'ghost.send' : 'ghost.adopt'),
           ) : h('span', {
             'data-nmp-focus-hint': '',
             style: {
@@ -551,7 +666,7 @@ export function createOverlayComponent(react, runtime, t) {
               fontSize: '11px',
               lineHeight: '15px',
             },
-          }, t('ghost.focusToAdopt')),
+          }, t(willSend ? 'ghost.focusToSend' : 'ghost.focusToAdopt')),
           // "Another one": same as pressing Alt+\ while the suggestion is showing.
           h(
             'button',
@@ -633,6 +748,18 @@ export function createOverlayComponent(react, runtime, t) {
       },
       ghost,
       noticeNode,
+      notice.kind === 'send-feedback' && notice.sessionId === sessionId
+        ? h('div', {
+          'data-nmp-send-feedback': '',
+          role: 'status',
+          style: {
+            position: 'absolute', bottom: '4px', right: '8px', zIndex: 3, padding: '2px 6px',
+            borderRadius: '4px', background: 'var(--dsw-alias-bg-layer-1)',
+            color: 'var(--dsw-alias-label-secondary)', fontSize: '11px',
+          },
+        }, t(notice.reason === 'send-draft-only' ? 'ghost.sendDraftOnly' :
+          notice.reason === 'send-outcome-unknown' ? 'ghost.sendNotConfirmed' : 'ghost.sendNotSent'))
+        : null,
       wantButton && geometry !== null
         ? h(
             'button',

@@ -11,6 +11,8 @@
 // src/client/* wrapped in the host's ModuleLoader factory; this file must be a
 // plain function body (no imports) after concatenation.
 
+const LOCAL_UPDATE_HANDOFF = Symbol.for('dsh-next-message-predictor.local-update')
+
 function createClient(react) {
   return {
     inject: ['slots', 'locale', 'connection'],
@@ -27,7 +29,10 @@ function createClient(react) {
       // also knows the language chosen in this plugin's Settings.
       ctx.effect(() => locale.register(NS, nmpHostDictionaries()), 'next-message-predictor: locale')
 
-      const runtime = createClientRuntime({ rpc: createRouteRpc(), requireSessionState: true })
+      const runtime = createClientRuntime({
+        rpc: createRouteRpc(), requireSessionState: true, clientBuildId: PLUGIN_BUILD_ID,
+        updateHandoff: window[LOCAL_UPDATE_HANDOFF] ??= { request: null },
+      })
 
       /** The language DSH is showing, read back through the probe key; '' when unknown. */
       const hostLanguage = () => {
@@ -149,15 +154,19 @@ function createClient(react) {
       ctx.effect(() => {
         const bump = () => runtime.noteDomMutation()
         const onFocusIn = () => bump()
-        window.addEventListener('focus', bump)
+        const activate = () => {
+          bump()
+          if (pageVisible() && pageFocused()) void runtime.loadStatus()
+        }
+        window.addEventListener('focus', activate)
         window.addEventListener('blur', bump)
-        document.addEventListener('visibilitychange', bump)
+        document.addEventListener('visibilitychange', activate)
         document.addEventListener('focusin', onFocusIn, true)
         document.addEventListener('focusout', onFocusIn, true)
         return () => {
-          window.removeEventListener('focus', bump)
+          window.removeEventListener('focus', activate)
           window.removeEventListener('blur', bump)
-          document.removeEventListener('visibilitychange', bump)
+          document.removeEventListener('visibilitychange', activate)
           document.removeEventListener('focusin', onFocusIn, true)
           document.removeEventListener('focusout', onFocusIn, true)
         }
@@ -394,6 +403,7 @@ function createClient(react) {
         window.__nextMessagePredictor = {
           ...runtime.debugApi(),
           version: PLUGIN_VERSION,
+          buildId: PLUGIN_BUILD_ID,
           viewId: runtime.getViewId(),
           /** The interface language in use right now (a language id). */
           language: () => t.language(),

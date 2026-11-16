@@ -16,6 +16,7 @@ import { DEFAULT_CONFIG, LANGUAGE_IDS, PANEL_ID, ROUTE } from '../src/shared/con
 import { NMP_DICTIONARIES, NMP_LANGUAGE_NAMES } from '../src/client/i18n.js'
 import { matchPreset } from '../src/shared/presets.js'
 import { PLUGIN_VERSION } from '../src/shared/version.js'
+import { PLUGIN_BUILD_ID } from '../src/shared/build-id.js'
 import { createPredictorService } from '../src/host/predictor-service.js'
 import { createStore } from '../src/client/controller.js'
 import { createSettingsComponent } from '../src/client/settings.js'
@@ -153,6 +154,10 @@ async function boot(options) {
         capabilities: () => ({ connectionFetch: true, configEditor: true, sessionStore: true }),
         connectionAvailable: true,
         configEditorAvailable: true,
+        localBuild: options?.localBuild ?? (() => ({
+          state: 'current', runningId: PLUGIN_BUILD_ID, installedId: PLUGIN_BUILD_ID, canApply: false,
+        })),
+        applyLocalUpdate: options?.applyLocalUpdate,
         persistConfig: async (patch) => {
           writes.push(patch)
           hostConfig = { ...hostConfig, ...patch }
@@ -189,7 +194,9 @@ async function boot(options) {
   globalThis.sessionStorage = storage()
   globalThis.fetch = async (url, init) => {
     assert.equal(url, ROUTE)
-    const result = await service.handle(JSON.parse(init.body), init.signal)
+    const request = JSON.parse(init.body)
+    const result = await service.handle(request, init.signal)
+    if (options?.legacyHost && request.operation === 'status') delete result.body.value.localBuild
     return { status: result.status, json: async () => JSON.parse(JSON.stringify(result.body)) }
   }
 
@@ -440,6 +447,32 @@ test('focus-only display is off by default and saves from the settings switch', 
   }
 })
 
+test('send with Tab requires explicit confirmation, survives presets, and restores off', async () => {
+  const app = await boot({ stateful: true, config: { enabled: true } })
+  try {
+    const get = (name) => find(app.render('settings.section'), 'data-nmp-setting', name)
+    assert.equal(get('sendOnTab').props['aria-checked'], false)
+    get('sendOnTab').props.onClick()
+    assert.ok(get('sendOnTabConfirm'))
+    assert.deepEqual(app.writes, [])
+    get('sendOnTabCancel').props.onClick()
+    assert.equal(get('sendOnTabConfirm'), null)
+    assert.deepEqual(app.writes, [])
+    get('sendOnTab').props.onClick()
+    get('sendOnTabEnable').props.onClick()
+    await tick(5)
+    assert.deepEqual(app.writes, [{ sendOnTab: true }])
+    assert.equal(get('sendOnTab').props['aria-checked'], true)
+    assert.equal(matchPreset(app.hostConfig()), 'balanced')
+    get('restoreAdvanced').props.onClick()
+    await tick(5)
+    assert.equal(app.writes.at(-1).sendOnTab, false)
+    assert.equal(get('sendOnTab').props['aria-checked'], false)
+  } finally {
+    app.dispose()
+  }
+})
+
 test('settings render the localized paused session state', () => {
   for (const language of LANGUAGE_IDS) {
     const t = (key) => NMP_DICTIONARIES[language][key] ?? key
@@ -450,6 +483,8 @@ test('settings render the localized paused session state', () => {
         hostError: '', configErrors: [], capabilities: {}, diagnostics: {},
       }),
       assistStore: createStore({ status: 'paused', reason: '' }),
+      displayStore: createStore({ reason: '', shown: false }),
+      updateStore: createStore({ phase: '', failure: '' }),
       shellStore: createStore({}),
     }
     const Settings = createSettingsComponent(react, runtime, t)
@@ -463,6 +498,39 @@ test('the composer overlay speaks the chosen language too', async () => {
   try {
     assert.equal(app.api().language(), 'es')
     assert.equal(app.entry('conversation.input.overlay').options.locale, 'next-message-predictor')
+  } finally {
+    app.dispose()
+  }
+})
+
+test('local update appears only for a verified built change and checks an older same-version Host', async () => {
+  const installed = 'f'.repeat(64)
+  const requests = []
+  const app = await boot({
+    localBuild: () => ({ runningId: PLUGIN_BUILD_ID, installedId: installed, state: 'update-available', canApply: true }),
+    applyLocalUpdate: async (target) => { requests.push(target); return 'restart-required' },
+  })
+  try {
+    const render = () => app.render('settings.section')
+    const button = find(render(), 'data-nmp-setting', 'applyLocalUpdate')
+    assert.ok(button)
+    assert.deepEqual(requests, [], 'discovery is read-only')
+    button.props.onClick()
+    await tick(10)
+    assert.deepEqual(requests, [installed])
+    assert.ok(textOf(find(render(), 'data-nmp-setting', 'localUpdateResult').children).includes('手动重启 DSH'))
+  } finally {
+    app.dispose()
+  }
+})
+
+test('local update reports missing capability from an old Host on the same version', async () => {
+  const app = await boot({ legacyHost: true, config: { enabled: true } })
+  try {
+    const page = app.render('settings.section')
+    assert.equal(find(page, 'data-nmp-setting', 'applyLocalUpdate'), null)
+    assert.ok(textOf(find(page, 'data-nmp-setting', 'localBuild').children).includes('首次启用本地更新功能'))
+    assert.equal(app.api().state().config.localBuild.state, 'legacy')
   } finally {
     app.dispose()
   }

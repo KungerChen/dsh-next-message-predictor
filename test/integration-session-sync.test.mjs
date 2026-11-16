@@ -133,6 +133,24 @@ test('pausing an in-flight turn and resuming does not replay it', async () => {
   } finally { f.close() }
 })
 
+test('pause and resume cancel a completion waiting for a frozen composer', async () => {
+  const f = fixture()
+  try {
+    const a = f.create(), b = f.create(), view = env()
+    await Promise.all([prepare(a, view), prepare(b, view)])
+    await complete(a, { ...view, phase: 'sending' })
+    await until(() => a.sessionStore.getSnapshot().available, 'new turn session state')
+    assert.equal(await b.toggleSessionPause('s1'), true)
+    await until(() => a.sessionStore.getSnapshot().paused, 'pause reaches frozen view')
+    assert.equal(await b.toggleSessionPause('s1'), true)
+    await until(() => !a.sessionStore.getSnapshot().paused, 'resume reaches frozen view')
+    a.sync(view)
+    await sleep(100)
+    assert.equal(f.service.statusValue().diagnostics.counters.productionTasks, 0)
+    assert.notEqual(a.assistStore.getSnapshot().status, 'offered')
+  } finally { f.close() }
+})
+
 test('pause propagates to same session but does not pause another session', async () => {
   const f = fixture()
   try {

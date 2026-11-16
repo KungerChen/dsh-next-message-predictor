@@ -166,6 +166,90 @@ test('completion is anchored on turnId change, not on the first idle frame', asy
   assert.equal(runtime.assistStore.getSnapshot().status, 'offered')
 })
 
+for (const requireInputFocus of [false, true]) test(`a temporarily frozen composer retains the observed completion until it is plain (require focus: ${requireInputFocus})`, async () => {
+  const { runtime, calls } = await readyRuntime((operation, payload) =>
+    operation === 'predict' ? offerResponse(payload) : statusValue({ requireInputFocus }),
+  )
+  runtime.sync(makeEnv({ running: true, turnId: 'a0' }))
+  runtime.sync(makeEnv({ phase: 'sending' }))
+  await sleep(20)
+  assert.equal(calls.filter(call => call.operation === 'predict').length, 0)
+  runtime.sync(makeEnv())
+  runtime.sync(makeEnv())
+  await sleep(20)
+  assert.equal(calls.filter(call => call.operation === 'predict').length, 1)
+  assert.equal(runtime.assistStore.getSnapshot().status, 'offered')
+  runtime.dispose()
+})
+
+for (const [name, change] of Object.entries({
+  draft: { draft: 'x', draftRev: 1 }, attachment: { attachmentCount: 1 },
+  reference: { occurrencesCount: 1 }, claim: { claimed: true }, queue: { queuedCount: 1 },
+  composing: { composing: true }, menu: { menuOpen: true }, interaction: { pendingInteraction: true },
+  readonly: { canEdit: false },
+})) {
+  test(`frozen completion is cancelled by ${name}`, async () => {
+    const { runtime, calls } = await readyRuntime((operation, payload) =>
+      operation === 'predict' ? offerResponse(payload) : statusValue(),
+    )
+    runtime.sync(makeEnv({ running: true, turnId: 'a0' }))
+    runtime.sync(makeEnv({ phase: 'sending' }))
+    runtime.sync(makeEnv({ phase: 'sending', ...change }))
+    runtime.sync(makeEnv())
+    await sleep(20)
+    assert.equal(calls.filter(call => call.operation === 'predict').length, 0)
+    runtime.dispose()
+  })
+}
+
+test('frozen completion expires after the existing five second window', async () => {
+  let clock = 1000
+  const calls = []
+  const runtime = createClientRuntime({ now: () => clock, rpc: async (operation, payload) => {
+    calls.push(operation)
+    return operation === 'predict' ? offerResponse(payload) : statusValue()
+  } })
+  await runtime.loadStatus()
+  runtime.sync(makeEnv({ running: true, turnId: 'a0' }))
+  runtime.sync(makeEnv({ phase: 'sending' }))
+  clock += 5001
+  runtime.sync(makeEnv())
+  await sleep(20)
+  assert.equal(calls.filter(call => call === 'predict').length, 0)
+  runtime.dispose()
+})
+
+test('frozen completion is cancelled by a configuration revision change', async () => {
+  let revision = 1
+  const calls = []
+  const runtime = createClientRuntime({ rpc: async (operation, payload) => {
+    calls.push(operation)
+    return operation === 'predict' ? offerResponse(payload) : { ...statusValue(), value: { ...statusValue().value, configRevision: revision } }
+  } })
+  await runtime.loadStatus()
+  runtime.sync(makeEnv({ running: true, turnId: 'a0' }))
+  runtime.sync(makeEnv({ phase: 'sending' }))
+  revision = 2
+  await runtime.loadStatus()
+  runtime.sync(makeEnv())
+  await sleep(20)
+  assert.equal(calls.filter(call => call === 'predict').length, 0)
+  runtime.dispose()
+})
+
+test('frozen completion is cancelled on session switch', async () => {
+  const { runtime, calls } = await readyRuntime((operation, payload) =>
+    operation === 'predict' ? offerResponse(payload) : statusValue(),
+  )
+  runtime.sync(makeEnv({ running: true, turnId: 'a0' }))
+  runtime.sync(makeEnv({ phase: 'sending' }))
+  runtime.sync(makeEnv({ sessionId: 's2' }))
+  runtime.sync(makeEnv())
+  await sleep(20)
+  assert.equal(calls.filter(call => call.operation === 'predict').length, 0)
+  runtime.dispose()
+})
+
 test('empty draft is required; typing suppresses the turn and clearing does not revive it', async () => {
   const { runtime, calls } = await readyRuntime((operation, payload) =>
     operation === 'predict' ? offerResponse(payload) : statusValue(),

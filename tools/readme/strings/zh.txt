@@ -1,7 +1,7 @@
 title: 下一条消息预测
 product: DeepSeek Harness 输入框插件
 tagline1: 助手答完后，可在输入框里预览下一条消息的建议。
-tagline2: 聚焦输入框后按 <kbd>Tab</kbd> 填入草稿，发送由你决定。
+tagline2: 聚焦输入框后按 <kbd>Tab</kbd>，默认填入草稿。
 b_version: 版本
 b_deps: 第三方依赖
 b_langs: 界面语言
@@ -24,15 +24,16 @@ inst_d_p: 可直接调用 DeepSeek Harness 安装目录中的命令行。要修�
 ph_dsh: DSH 安装目录
 ph_plugin: 插件目录
 upd_sum: 更新与卸载
-upd_p: **更新**。从 GitHub 安装的插件可先卸载，再执行安装命令。本地目录安装的插件可在该目录执行 `git pull`。更新后完全退出并重新打开 DSH。
+upd_p: **从 GitHub 更新**。先卸载，然后重新执行安装命令并完整重开 DSH。
+upd_local: **应用本地更新**。先更新并构建本地插件目录。若“消息预测”设置检测到未加载的本地构建，会显示“{ui:settings.localUpdateApply}”。点击后，DSH 可能同时重载此 profile 中的其他已变更插件。首次使用前，或无法应用时，请完整退出并重新打开 DSH。
 unin: **卸载**。
 conflict: 同一个 profile 只启用一个输入框预测插件。检测到另一个同类插件时，本插件会暂停，并在设置页说明原因。
 f1_p: 有建议时，前台窗口的空输入框会显示灰字预览。默认即使输入框失焦也能看到。开启“{ui:settings.requireInputFocus}”后，只有输入框聚焦时才显示。此选项只控制已有建议的显示。
 f1_alt: 失焦的输入框显示灰字建议，以及点击输入框后按 Tab 采纳的提示
 k_th1: 输入框操作
 k_th2: 效果
-k1a: <kbd>Tab</kbd>、光标在开头时按 <kbd>→</kbd>，或点击“{ui:ghost.adopt}”
-k1b: 先聚焦输入框。采纳后建议成为草稿，可继续修改再发送。
+k1a: <kbd>Tab</kbd>、对应按钮，或光标在开头时按 <kbd>→</kbd>
+k1b: 先聚焦输入框。默认填入草稿。显式开启 “{ui:settings.sendOnTab}”后，Tab 和对应按钮会提交当前建议。右方向键始终只填入草稿。仅在当前建议有效且通过发送保护时提交，启用前请留意误发风险。
 k2a: <kbd>Esc</kbd>
 k2b: 聚焦输入框时隐藏当前建议，之后仍可手动请求新的建议。
 k3a: <kbd>Alt</kbd>+<kbd>\</kbd>（可改）、“{ui:ghost.predict}”或“{ui:ghost.another}”
@@ -79,7 +80,7 @@ q1: 为什么没有建议？
 a1: 先看设置页的“当前状态”。会话暂停、窗口不在前台、草稿非空、菜单打开或输入法正在组词都可能阻止显示。模型也可能不给可用建议。满足条件时，可在聚焦的空输入框中手动预测。
 q2: 预测什么时候会计费？
 a2: 费用取决于实际调用的服务商及 token 用量。切换已有候选或生成本机回退候选不会新增模型请求。希望只在需要的时候预测，可以使用省流模式。
-docs_note: 宿主版本和桌面验证范围见 [0.6.0 验证报告](docs/VALIDATION-DISPLAY-SESSION.md)。
+docs_note: 0.7.0 的宿主与验证范围见 [发布与启用](docs/RELEASE.md#release-validation-070)。
 d_th1: 文档
 d_th2: 内容
 d1: 使用指南
