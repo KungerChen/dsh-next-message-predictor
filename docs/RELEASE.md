@@ -5,7 +5,7 @@
 | 字段 | 值 |
 |---|---|
 | 包名 | `dsh-next-message-predictor` |
-| 版本 | `0.7.0`。变更见 [CHANGELOG.md](../CHANGELOG.md)。 |
+| 版本 | `0.7.0`，2026-11-16 已发布。[GitHub Release](https://github.com/KungerChen/dsh-next-message-predictor/releases/tag/v0.7.0) · [变更日志](../CHANGELOG.md) |
 | 目标 DSH | `>=0.2.2-rc.1 <0.3.0`（实测范围见 [兼容性](COMPATIBILITY.md)） |
 | 提示词版本 | `nmp-p2-v3`（结果缓存键的一部分） |
 | 构建 | `scripts/build-client.mjs` 生成 `lib/client.js`、`lib/build-manifest.json` 和 `src/shared/build-id.js`。Host 入口为 `lib/index.js`。 |
@@ -27,6 +27,7 @@
 | 验证层次 | 结果 |
 |---|---|
 | 本地正式检查 | `npm run check` 389 项通过，含本地构建校验、更新状态和混用构建的防护。 |
+| GitHub CI | [发布提交](https://github.com/KungerChen/dsh-next-message-predictor/commit/dbe3a0ad6961dde82dd9e32429b45c3fff7dc353) 的 Windows、Linux 各 389 项通过，零失败、零跳过，生成文件一致。[CI 记录](https://github.com/KungerChen/dsh-next-message-predictor/actions/runs/43896654147) |
 | 隔离 DSH Web | `0.2.2-rc.3` 高层流程中，显示与一键发送 57 项通过；后续使用实际产品副本复测本地更新 20 项通过，覆盖同版本换载、草稿保留和目标变化拒绝。 |
 | 用户桌面验收 | 2026-11-15 确认焦点显示和 Tab 一键发送；2026-11-16 确认本地更新功能。 |
 

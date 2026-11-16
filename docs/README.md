@@ -42,7 +42,7 @@
 
 | 记录 ID | 日期 | 行为 | 原记录 | 状态 |
 | --- | --- | --- | --- | --- |
-| 20261116-release-070 | 2026-11-16 | 0.7.0 验收回执与发布 | [发布记录](maintenance/20261116-release-0.7.0.md#20261116-release-070) | 发布进行中 |
+| 20261116-release-070 | 2026-11-16 | 0.7.0 验收回执与发布 | [发布记录](maintenance/20261116-release-0.7.0.md#20261116-release-070) | 用户已验收，已发布 |
 | 20261115-local-update-implementation | 2026-11-15 | 自动检测同版本本地构建差异及手动应用 | [实施记录](maintenance/20261115-local-update-implementation.md#20261115-local-update-implementation) | 用户已确认本地更新 |
 | 20261115-local-update-investigation | 2026-11-15 | 调查本机更新生效与必要时重启 DSH | [调查记录](maintenance/20261115-local-update-investigation.md#20261115-local-update-investigation) | 隔离验证完成，方案已批准 |
 | 20261115-focus-tab-send | 2026-11-15 | 修复焦点显示，增加默认关闭的 Tab 一键发送 | [维护记录](maintenance/20261115-focus-tab-send.md#20261115-focus-tab-send) | 用户已确认焦点显示及一键发送 |
